@@ -21,6 +21,10 @@ const Request = observer(() => {
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
 
+    const allowedStudentIds = (userRole === 'ADMIN' || userRole === 'TEACHER')
+        ? null
+        : data.students.filter(s => s.userId === currentUser?.id).map(s => s.id);
+
     // Инициализируем studentIds в зависимости от роли после загрузки пользователя
     useEffect(() => {
         setFormData(prev => ({
@@ -204,6 +208,7 @@ const Request = observer(() => {
                                             setFormData={setFormData}
                                             loading={loading}
                                             data={data}
+                                            allowedStudentIds={allowedStudentIds}
                                         />
                                     </Form.Group>
 

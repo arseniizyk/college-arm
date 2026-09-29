@@ -27,7 +27,8 @@ export const TABLE_COLUMNS = {
         { key: 'order_number', label: 'Приказ' },
         { key: 'enroll_date', label: 'Зачислен' },
         { key: 'expell_date', label: 'Отчислен' },
-        { key: 'groupId', label: 'Группа' }
+        { key: 'groupId', label: 'Группа' },
+        { key: 'userId', label: 'Аккаунт' }
     ],
     groups: [
         { key: 'id', label: '№' },
@@ -76,7 +77,8 @@ export const getDefaultFormData = (table, userRole) => {
             order_number: '',
             enroll_date: '',
             expell_date: '',
-            groupId: ''
+            groupId: '',
+            userId: ''
         },
         groups: {
             group_number: '',
@@ -138,7 +140,9 @@ export const getFieldsConfig = (userRole, getDropdownOptions, modalType = 'creat
         { name: 'order_number', label: 'Номер приказа', type: 'text', required: true },
         { name: 'enroll_date', label: 'Дата зачисления', type: 'date', required: true },
         { name: 'expell_date', label: 'Дата отчисления', type: 'date' },
-        { name: 'groupId', label: 'Группа', type: 'select', options: getDropdownOptions('groupId'), required: true }
+        { name: 'groupId', label: 'Группа', type: 'select', options: getDropdownOptions('groupId'), required: true },
+        { name: 'userId', label: 'Аккаунт', type: 'select', options: getDropdownOptions('studentUserId'),
+          helpText: 'Пользователь, который сможет подавать заявки только на этого студента' }
     ],
     groups: [
         { name: 'group_number', label: 'Номер группы', type: 'text', required: true },

@@ -28,7 +28,8 @@ const Student = sequelize.define('student', {
     father_name: { type: DataTypes.STRING, allowNull: true, defaultValue: '' },
     order_number: { type: DataTypes.STRING, allowNull: false },
     enroll_date: { type: DataTypes.DATE, allowNull: false },
-    expell_date: { type: DataTypes.DATE }
+    expell_date: { type: DataTypes.DATE },
+    userId: { type: DataTypes.INTEGER, allowNull: true }
 })
  
 const Supervisor = sequelize.define('supervisor', {
@@ -90,6 +91,9 @@ Supervisor.belongsTo(Group)
 
 Group.hasMany(Student)
 Student.belongsTo(Group)
+
+User.hasOne(Student)
+Student.belongsTo(User)
 
 Teacher.hasOne(Supervisor)
 Supervisor.belongsTo(Teacher)

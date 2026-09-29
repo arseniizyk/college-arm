@@ -44,7 +44,8 @@ const CRUDModal = ({
     };
 
     const renderFormFields = () => {
-        const getDropdownOptionsForField = (fieldName) => getDropdownOptions(fieldName, data);
+        // excludeStudentId — id редактируемого студента, чтобы не отфильтровать его текущий аккаунт
+        const getDropdownOptionsForField = (fieldName) => getDropdownOptions(fieldName, data, table === 'students' ? item?.id : null);
         const fieldsConfig = getFieldsConfig(userRole, getDropdownOptionsForField, type);
         const fields = fieldsConfig[table] || [];
 

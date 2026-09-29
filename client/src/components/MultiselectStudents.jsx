@@ -1,29 +1,36 @@
 import React, { useState } from 'react';
 import { Button, Form } from 'react-bootstrap';
 
-const MultiselectStudents = ({ field, formData, setFormData, loading, data }) => {
+const MultiselectStudents = ({ field, formData, setFormData, loading, data, allowedStudentIds = null }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedGroup, setSelectedGroup] = useState('');
 
     // Определяем, является ли это одиночным выбором (для обычных пользователей)
     const isSingleSelect = field.type === 'select';
 
-    // Получаем всех студентов с информацией о группах
-    const allStudents = (data.allStudents || data.students || []).map(student => {
-        const group = (data.groups || []).find(g => g.id === student.groupId);
-        return {
-            ...student,
-            groupName: group ? group.group_number : 'Без группы',
-            fullName: `${student.last_name} ${student.name} ${student.father_name || ''}`.trim()
-        };
-    });
+    // Получаем студентов с информацией о группах
+    const sourceStudents = data.allStudents || data.students || [];
+    const allStudents = sourceStudents
+        .filter(student => !allowedStudentIds || allowedStudentIds.includes(student.id))
+        .map(student => {
+            const group = (data.groups || []).find(g => g.id === student.groupId);
+            return {
+                ...student,
+                groupName: group ? group.group_number : 'Без группы',
+                fullName: `${student.last_name} ${student.name} ${student.father_name || ''}`.trim()
+            };
+        });
 
     // Если нет студентов, показываем сообщение
-    if (!data.allStudents || data.allStudents.length === 0) {
+    if (allStudents.length === 0) {
         return (
             <div className="text-center py-4 border rounded bg-light">
                 <i className="bi-persons fa-2x text-muted mb-2"></i>
-                <p className="text-muted mb-0">Загрузка студентов...</p>
+                <p className="text-muted mb-0">
+                    {allowedStudentIds && allowedStudentIds.length === 0
+                        ? 'Ваш аккаунт не привязан к студенту. Обратитесь к администратору.'
+                        : 'Загрузка студентов...'}
+                </p>
             </div>
         );
     }

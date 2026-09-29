@@ -1,15 +1,49 @@
-const { Student, Group, Specialty } = require('../models/models')
+const { Student, Group, Specialty, User } = require('../models/models')
 const ApiError = require('../error/ApiError')
 const { Op } = require('sequelize')
+
+// Приводит значение поля «Пользователь» к id или null и проверяет,
+// что аккаунт существует и ещё не привязан к другому студенту.
+// Возвращает ApiError либо { value } — корректный userId.
+async function resolveUserId(rawValue, excludeStudentId = null) {
+    const value = rawValue === '' || rawValue === undefined ? null : Number(rawValue);
+    if (value === null) return { value: null };
+    if (!Number.isInteger(value)) {
+        return { error: ApiError.badRequest('Некорректный идентификатор пользователя') };
+    }
+
+    const user = await User.findByPk(value, { attributes: ['id'] });
+    if (!user) {
+        return { error: ApiError.badRequest('Пользователь не найден') };
+    }
+
+    const alreadyTaken = await Student.findOne({
+        where: {
+            userId: value,
+            ...(excludeStudentId ? { id: { [Op.ne]: excludeStudentId } } : {})
+        },
+        attributes: ['id']
+    });
+    if (alreadyTaken) {
+        return { error: ApiError.badRequest('Этот пользователь уже привязан к другому студенту') };
+    }
+
+    return { value };
+}
 
 class StudentController {
     async create(req, res, next) {
         try {
-            const { last_name, name, father_name, order_number, enroll_date, groupId, expell_date } = req.body
+            const { last_name, name, father_name, order_number, enroll_date, groupId, expell_date, userId } = req.body
             
             // Валидация обязательных полей
             if (!last_name || !name || !order_number || !enroll_date || !groupId) {
                 return next(ApiError.badRequest('Не все обязательные поля заполнены'));
+            }
+
+            const resolvedUser = await resolveUserId(userId);
+            if (resolvedUser.error) {
+                return next(resolvedUser.error);
             }
 
             const student = await Student.create({ 
@@ -19,7 +53,8 @@ class StudentController {
                 order_number, 
                 enroll_date: new Date(enroll_date), 
                 groupId, 
-                expell_date: expell_date ? new Date(expell_date) : null 
+                expell_date: expell_date ? new Date(expell_date) : null,
+                userId: resolvedUser.value
             })
 
             res.json(student)
@@ -31,7 +66,7 @@ class StudentController {
     async update(req, res, next) {
         try {
             const { id } = req.params;
-            const { last_name, name, father_name, order_number, enroll_date, groupId, expell_date } = req.body;
+            const { last_name, name, father_name, order_number, enroll_date, groupId, expell_date, userId } = req.body;
             
             if (!id) {
                 return next(ApiError.badRequest('Не указан ID студента'));
@@ -51,6 +86,13 @@ class StudentController {
             if (groupId) updateData.groupId = groupId;
             if (expell_date !== undefined) {
                 updateData.expell_date = expell_date ? new Date(expell_date) : null;
+            }
+            if (userId !== undefined) {
+                const resolvedUser = await resolveUserId(userId, id);
+                if (resolvedUser.error) {
+                    return next(resolvedUser.error);
+                }
+                updateData.userId = resolvedUser.value;
             }
             
             await student.update(updateData);

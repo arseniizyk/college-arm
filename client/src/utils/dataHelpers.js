@@ -59,7 +59,7 @@ export const formatDuration = (years, months) => {
 };
 
 // Функции для получения данных для выпадающих списков
-export const getDropdownOptions = (fieldName, data) => {
+export const getDropdownOptions = (fieldName, data, excludeStudentId = null) => {
     switch (fieldName) {
         case 'groupId':
             // Для студентов: показываем номер группы
@@ -85,6 +85,15 @@ export const getDropdownOptions = (fieldName, data) => {
                 value: user.id,
                 label: `${user.email} (${user.role})`
             }));
+        case 'studentUserId':
+            // Для карточки студента: аккаунты, ещё не привязанные к другому студенту.
+            // excludeStudentId нужен при редактировании, чтобы не терять текущую привязку
+            return (data.users || [])
+                .filter(user => !data.students?.some(s => s.userId === user.id && s.id !== excludeStudentId))
+                .map(user => ({
+                    value: user.id,
+                    label: `${user.email} (${user.role})`
+                }));
         case 'documentId':
             // Для заявок: показываем название документа
             return (data.documents || []).map(doc => ({
@@ -310,6 +319,11 @@ export const prepareFormData = (formData, activeTab, userRole) => {
         if (submitData.documentId) {
             submitData.documentId = parseInt(submitData.documentId, 10);
         }
+    }
+
+    // Привязка студента к аккаунту пользователя
+    if (activeTab === 'students' && 'userId' in submitData) {
+        submitData.userId = submitData.userId ? parseInt(submitData.userId, 10) : null;
     }
     
     return submitData;

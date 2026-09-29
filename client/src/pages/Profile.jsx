@@ -106,8 +106,8 @@ const Profile = observer(() => {
         return () => clearInterval(intervalId);
     }, [data]);
 
-    // Фильтруем заявки текущего пользователя
-    const userRequests = data.requests.filter(req => req.userId === currentUser?.id);
+    // Заявки приходят с сервера уже отфильтрованными по текущему пользователю
+    const userRequests = data.requests;
 
     // Группируем заявки по статусам
     const requestsByStatus = useMemo(() => ({
