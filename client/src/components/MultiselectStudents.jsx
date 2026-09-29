@@ -1,0 +1,319 @@
+import React, { useState } from 'react';
+import { Button, Form } from 'react-bootstrap';
+
+const MultiselectStudents = ({ field, formData, setFormData, loading, data }) => {
+    const [searchTerm, setSearchTerm] = useState('');
+    const [selectedGroup, setSelectedGroup] = useState('');
+
+    // Определяем, является ли это одиночным выбором (для обычных пользователей)
+    const isSingleSelect = field.type === 'select';
+
+    // Получаем всех студентов с информацией о группах
+    const allStudents = (data.allStudents || data.students || []).map(student => {
+        const group = (data.groups || []).find(g => g.id === student.groupId);
+        return {
+            ...student,
+            groupName: group ? group.group_number : 'Без группы',
+            fullName: `${student.last_name} ${student.name} ${student.father_name || ''}`.trim()
+        };
+    });
+
+    // Если нет студентов, показываем сообщение
+    if (!data.allStudents || data.allStudents.length === 0) {
+        return (
+            <div className="text-center py-4 border rounded bg-light">
+                <i className="bi-persons fa-2x text-muted mb-2"></i>
+                <p className="text-muted mb-0">Загрузка студентов...</p>
+            </div>
+        );
+    }
+
+    // Получаем уникальные группы для фильтра
+    const availableGroups = [...new Set(allStudents.map(s => s.groupName))].sort();
+
+    // Фильтруем студентов по поиску и группе
+    const filteredStudents = allStudents.filter(student => {
+        const matchesSearch = searchTerm === '' || 
+            student.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            student.groupName.toLowerCase().includes(searchTerm.toLowerCase());
+        
+        const matchesGroup = selectedGroup === '' || student.groupName === selectedGroup;
+        
+        return matchesSearch && matchesGroup;
+    });
+
+    // Создаем опции для отфильтрованных студентов
+    const filteredOptions = filteredStudents.map(student => ({
+        value: student.id,
+        label: `${student.fullName} (${student.groupName})`,
+        student: student
+    }));
+
+    const handleSelectAll = () => {
+        if (isSingleSelect) return;
+        
+        const allValues = filteredOptions.map(opt => opt.value.toString());
+        setFormData(prev => ({
+            ...prev,
+            [field.name]: allValues
+        }));
+    };
+
+    const handleSelectGroup = () => {
+        if (isSingleSelect || !selectedGroup) return;
+
+        const groupValues = filteredOptions.map(opt => opt.value.toString());
+        const currentValues = formData[field.name] || [];
+        // Добавляем студентов группы к уже выбранным (без дублей)
+        const merged = [...new Set([...currentValues, ...groupValues])];
+        setFormData(prev => ({
+            ...prev,
+            [field.name]: merged
+        }));
+    };
+
+    const handleClearAll = () => {
+        setFormData(prev => ({
+            ...prev,
+            [field.name]: isSingleSelect ? '' : []
+        }));
+    };
+
+    const handleStudentToggle = (studentId, checked) => {
+        const value = studentId.toString();
+        
+        if (isSingleSelect) {
+            // Для одиночного выбора просто устанавливаем значение
+            setFormData(prev => ({
+                ...prev,
+                [field.name]: checked ? value : ''
+            }));
+        } else {
+            // Для множественного выбора работаем с массивом
+            const currentValues = formData[field.name] || [];
+            let newValues;
+            
+            if (checked) {
+                newValues = [...currentValues, value];
+            } else {
+                newValues = currentValues.filter(v => v !== value);
+            }
+            
+            setFormData(prev => ({
+                ...prev,
+                [field.name]: newValues
+            }));
+        }
+    };
+
+    // Получаем текущие выбранные значения
+    const selectedValues = (() => {
+        if (isSingleSelect) {
+            // Для одиночного выбора
+            const value = formData[field.name];
+            return (value && value !== '' && value !== '0') ? [value] : [];
+        } else {
+            // Для множественного выбора
+            const values = formData[field.name];
+            if (!Array.isArray(values)) return [];
+            // Фильтруем пустые значения
+            const filtered = values.filter(v => v && v !== '' && v !== '0');
+            return filtered;
+        }
+    })();
+
+    return (
+        <div>
+            {/* Кнопки управления */}
+            <div className="d-flex gap-2 mb-3">
+                {!isSingleSelect && (
+                    <Button
+                        variant="outline-primary"
+                        size="sm"
+                        onClick={handleSelectAll}
+                        disabled={loading || filteredOptions.length === 0}
+                    >
+                        <i className="bi-check-lg-double me-1"></i>
+                        Выбрать все ({filteredOptions.length})
+                    </Button>
+                )}
+                <Button
+                    variant="outline-secondary"
+                    size="sm"
+                    onClick={handleClearAll}
+                    disabled={loading}
+                >
+                    <i className="bi-x-lg me-1"></i>
+                    Очистить
+                </Button>
+            </div>
+
+            {/* Фильтры */}
+            <div className="row mb-3">
+                <div className="col-md-6">
+                    <div className="input-group">
+                        <span className="input-group-text">
+                            <i className="bi-search"></i>
+                        </span>
+                        <Form.Control
+                            type="text"
+                            placeholder="Поиск по ФИО..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            disabled={loading}
+                        />
+                    </div>
+                </div>
+                <div className="col-md-6">
+                    <div className="input-group">
+                        <span className="input-group-text">
+                            <i className="bi-persons"></i>
+                        </span>
+                        <Form.Select
+                            value={selectedGroup}
+                            onChange={(e) => setSelectedGroup(e.target.value)}
+                            disabled={loading}
+                        >
+                            <option value="">Все группы</option>
+                            {availableGroups.map(group => (
+                                <option key={group} value={group}>{group}</option>
+                            ))}
+                        </Form.Select>
+                        {!isSingleSelect && selectedGroup && (
+                            <Button
+                                variant="outline-primary"
+                                onClick={handleSelectGroup}
+                                disabled={loading}
+                                style={{ height: '38px', display: 'flex', alignItems: 'center' }}
+                            >
+                                <i className="bi-people-fill me-1"></i>
+                                Всю группу
+                            </Button>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* Список студентов */}
+            <div 
+                className="multiselect-container" 
+                style={{ 
+                    maxHeight: '250px', 
+                    overflowY: 'auto', 
+                    border: '1px solid #ced4da', 
+                    borderRadius: '0.375rem', 
+                    padding: '0.75rem',
+                    backgroundColor: '#f8f9fa'
+                }}
+            >
+                {filteredOptions.length > 0 ? (
+                    filteredOptions.map(opt => {
+                        const isChecked = selectedValues.includes(opt.value.toString());
+                        return (
+                            <div 
+                                key={opt.value} 
+                                className="d-flex align-items-center mb-2 p-2 bg-white rounded border"
+                                style={{ 
+                                    cursor: loading ? 'not-allowed' : 'pointer',
+                                    transition: 'all 0.2s',
+                                    backgroundColor: isChecked ? '#e7f3ff' : 'white'
+                                }}
+                                onMouseEnter={(e) => {
+                                    if (!loading) {
+                                        e.currentTarget.style.backgroundColor = isChecked ? '#d0e7ff' : '#f8f9fa';
+                                        e.currentTarget.style.borderColor = '#0d6efd';
+                                    }
+                                }}
+                                onMouseLeave={(e) => {
+                                    if (!loading) {
+                                        e.currentTarget.style.backgroundColor = isChecked ? '#e7f3ff' : 'white';
+                                        e.currentTarget.style.borderColor = '#dee2e6';
+                                    }
+                                }}
+                                onClick={() => {
+                                    if (!loading) {
+                                        handleStudentToggle(opt.value, !isChecked);
+                                    }
+                                }}
+                            >
+                                <Form.Check
+                                    type={isSingleSelect ? "radio" : "checkbox"}
+                                    name={isSingleSelect ? field.name : undefined}
+                                    id={`${field.name}-${opt.value}`}
+                                    checked={isChecked}
+                                    onChange={(e) => {
+                                        e.stopPropagation();
+                                        handleStudentToggle(opt.value, e.target.checked);
+                                    }}
+                                    onClick={(e) => e.stopPropagation()}
+                                    disabled={loading}
+                                    className="me-3"
+                                    style={{ pointerEvents: 'none' }}
+                                />
+                                <div className="flex-grow-1" style={{ pointerEvents: 'none' }}>
+                                    <div className="fw-bold">{opt.student.fullName}</div>
+                                    <small className="text-muted">
+                                        <i className="bi-persons me-1"></i>
+                                        Группа: {opt.student.groupName}
+                                    </small>
+                                </div>
+                            </div>
+                        );
+                    })
+                ) : (
+                    <div className="text-center py-4">
+                        <i className="bi-search fa-2x text-muted mb-2"></i>
+                        <p className="text-muted mb-0">
+                            {searchTerm || selectedGroup ? 
+                                'Студенты не найдены по заданным критериям' : 
+                                'Нет доступных студентов'
+                            }
+                        </p>
+                        {(searchTerm || selectedGroup) && (
+                            <Button 
+                                variant="link" 
+                                size="sm"
+                                onClick={() => {
+                                    setSearchTerm('');
+                                    setSelectedGroup('');
+                                }}
+                            >
+                                Сбросить фильтры
+                            </Button>
+                        )}
+                    </div>
+                )}
+            </div>
+
+            {/* Информация и подсказки */}
+            <div className="mt-3">
+                {field.required && (
+                    <Form.Text className="text-muted d-block">
+                        <i className="bi-info-circle me-1"></i>
+                        {isSingleSelect ? 'Выберите одного студента' : 'Выберите хотя бы одного студента'}
+                    </Form.Text>
+                )}
+                {selectedValues.length > 0 && (
+                    <Form.Text className="text-success d-block">
+                        <i className="bi-check-lg me-1"></i>
+                        {isSingleSelect 
+                            ? 'Выбран 1 студент' 
+                            : `Выбрано: ${selectedValues.length} студент(ов)`
+                        }
+                        {filteredOptions.length < allStudents.length && 
+                            ` из ${filteredOptions.length} отфильтрованных`
+                        }
+                    </Form.Text>
+                )}
+                {searchTerm && (
+                    <Form.Text className="text-info d-block">
+                        <i className="bi-funnel me-1"></i>
+                        Показано {filteredOptions.length} из {allStudents.length} студентов
+                    </Form.Text>
+                )}
+            </div>
+        </div>
+    );
+};
+
+export default MultiselectStudents;

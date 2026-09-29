@@ -1,0 +1,282 @@
+:root {
+  --mgkct-blue: #0d6efd;
+  --mgkct-blue-dark: #0a58ca;
+  --mgkct-blue-light: #e7f1ff;
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.15);
+  --shadow-lg: 0 8px 24px rgba(0,0,0,0.2);
+  --radius-lg: 16px;
+  --radius-md: 12px;
+  --transition: all 0.3s ease;
+}
+
+.request-page {
+    min-height: 100vh;
+    background-color: #f5f7fa;
+}
+
+/* Карточка формы */
+.request-card {
+    background: white;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    transition: var(--transition);
+    overflow: hidden;
+}
+
+.request-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.2);
+}
+
+/* Лейблы форм */
+.form-label-custom {
+    font-weight: 600;
+    color: #212529;
+    margin-bottom: 0.75rem;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+}
+
+.form-label-custom i {
+    color: var(--mgkct-blue);
+}
+
+/* Поля ввода */
+.form-control-custom,
+.form-select {
+    border-radius: var(--radius-md);
+    border: 2px solid #e9ecef;
+    padding: 0.875rem 1rem;
+    font-size: 1rem;
+    transition: var(--transition);
+    background-color: #f8f9fa;
+}
+
+.form-control-custom:focus,
+.form-select:focus {
+    border-color: var(--mgkct-blue);
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+    background-color: white;
+}
+
+.form-control-custom::placeholder {
+    color: #adb5bd;
+}
+
+/* Текст подсказок */
+.form-text {
+    font-size: 0.875rem;
+    margin-top: 0.5rem;
+    display: flex;
+    align-items: center;
+}
+
+/* Информационный блок */
+.info-box {
+    background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+    border-left: 4px solid #ffc107;
+    border-radius: var(--radius-md);
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.info-box i {
+    color: #fd7e14;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+    margin-top: 0.2rem;
+}
+
+.info-box strong {
+    color: #856404;
+}
+
+/* Кнопки */
+.btn-custom {
+    border-radius: 50px;
+    padding: 0.875rem 2.5rem;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: var(--transition);
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-custom-primary {
+    background: linear-gradient(135deg, var(--mgkct-blue), var(--mgkct-blue-dark));
+    color: white;
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+}
+
+.btn-custom-primary:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(13, 110, 253, 0.4);
+    background: linear-gradient(135deg, var(--mgkct-blue-dark), var(--mgkct-blue));
+}
+
+.btn-custom-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btn-custom-secondary {
+    background: white;
+    color: var(--mgkct-blue);
+    border: 2px solid var(--mgkct-blue);
+}
+
+.btn-custom-secondary:hover:not(:disabled) {
+    background: var(--mgkct-blue);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2);
+}
+
+/* Алерты */
+.alert {
+    border-radius: var(--radius-md);
+    border: none;
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: center;
+    box-shadow: var(--shadow-md);
+}
+
+.alert i {
+    font-size: 1.2rem;
+}
+
+.alert-danger {
+    background: linear-gradient(135deg, #f8d7da, #f5c2c7);
+    color: #842029;
+}
+
+.alert-success {
+    background: linear-gradient(135deg, #d1e7dd, #badbcc);
+    color: #0f5132;
+}
+
+/* Multiple select */
+.form-select[multiple] {
+    min-height: 200px;
+    background-color: #f8f9fa;
+}
+
+.form-select[multiple] option {
+    padding: 0.5rem;
+    border-radius: 6px;
+    margin: 2px 0;
+}
+
+.form-select[multiple] option:hover {
+    background-color: var(--mgkct-blue-light);
+}
+
+.form-select[multiple] option:checked {
+    background: linear-gradient(135deg, var(--mgkct-blue), var(--mgkct-blue-dark));
+    color: white;
+}
+
+/* Анимации */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.request-card {
+    animation: fadeInUp 0.5s ease-out;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .btn-custom {
+        padding: 0.75rem 1.5rem;
+        font-size: 0.9rem;
+    }
+    
+    .form-control-custom,
+    .form-select {
+        padding: 0.75rem;
+        font-size: 0.9rem;
+    }
+    
+    .info-box {
+        padding: 0.875rem 1rem;
+        font-size: 0.9rem;
+    }
+}
+
+
+/* Адаптивность для мобильных устройств */
+@media (max-width: 768px) {
+    .mgkct-header {
+        padding: 2rem 0 !important;
+    }
+    
+    .mgkct-header h1 {
+        font-size: 1.75rem !important;
+    }
+    
+    .mgkct-header .lead {
+        font-size: 0.95rem;
+    }
+    
+    .request-card {
+        padding: 1rem !important;
+    }
+    
+    .form-label-custom {
+        font-size: 0.95rem;
+    }
+    
+    .btn-custom {
+        font-size: 0.9rem;
+        padding: 0.65rem 1.25rem;
+    }
+    
+    .info-box {
+        font-size: 0.875rem;
+        padding: 0.75rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .mgkct-header h1 {
+        font-size: 1.5rem !important;
+    }
+    
+    .mgkct-header .lead {
+        font-size: 0.875rem;
+    }
+    
+    .request-card {
+        padding: 0.75rem !important;
+    }
+    
+    .btn-custom {
+        font-size: 0.85rem;
+        padding: 0.6rem 1rem;
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+    
+    .d-flex.gap-3 {
+        flex-direction: column;
+        gap: 0.5rem !important;
+    }
+    
+    .multiselect-container {
+        max-height: 200px !important;
+    }
+}

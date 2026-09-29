@@ -1,0 +1,58 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  server:
+    build:
+      context: ./server
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - ./server/.env
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      TZ: ${TZ:-Europe/Minsk}
+      PORT: ${SERVER_PORT:-7000}
+      # Внутри compose БД доступна по имени сервиса
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+      CLIENT_ORIGIN: "http://localhost:${CLIENT_PORT:-8080}"
+    ports:
+      - "${SERVER_PORT:-7000}:7000"
+    volumes:
+      # Бэкапы pg_dump переживают пересборку контейнера
+      - ./server/backups:/app/backups
+
+  client:
+    build:
+      context: ./client
+      args:
+        # Адрес API, зашивается в билд CRA
+        REACT_APP_API_URL: "http://localhost:${SERVER_PORT:-7000}"
+    restart: unless-stopped
+    depends_on:
+      - server
+    ports:
+      - "${CLIENT_PORT:-8080}:80"
+
+volumes:
+  pgdata:

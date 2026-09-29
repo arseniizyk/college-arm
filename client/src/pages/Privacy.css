@@ -1,0 +1,248 @@
+/* Privacy Page Styles */
+.privacy-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+    padding: 2rem 0;
+}
+
+.privacy-container {
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.privacy-header {
+    background: linear-gradient(135deg, var(--mgkct-blue) 0%, var(--mgkct-blue-dark) 100%);
+    color: white;
+    padding: 3rem 2rem;
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    margin-bottom: 0;
+}
+
+.privacy-header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+}
+
+.privacy-header h1 i {
+    font-size: 2.5rem;
+}
+
+.privacy-header .text-muted {
+    color: rgba(255, 255, 255, 0.8) !important;
+    font-size: 0.95rem;
+    margin-bottom: 0;
+}
+
+.privacy-content {
+    background: white;
+    padding: 2.5rem;
+    border-radius: 0 0 12px 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.privacy-section {
+    margin-bottom: 2.5rem;
+    padding-bottom: 2rem;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.privacy-section:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.privacy-section h2 {
+    color: var(--mgkct-blue);
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+}
+
+.privacy-section h2 i {
+    font-size: 1.4rem;
+}
+
+.privacy-section p {
+    color: #495057;
+    line-height: 1.8;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+}
+
+.privacy-section ul {
+    list-style: none;
+    padding-left: 0;
+    margin-bottom: 1rem;
+}
+
+.privacy-section ul li {
+    color: #495057;
+    line-height: 1.8;
+    margin-bottom: 0.75rem;
+    padding-left: 2rem;
+    position: relative;
+    font-size: 1rem;
+}
+
+.privacy-section ul li::before {
+    content: '\f00c';
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+    position: absolute;
+    left: 0;
+    color: var(--mgkct-blue);
+    font-size: 0.9rem;
+}
+
+.contact-info {
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-radius: 8px;
+    border-left: 4px solid var(--mgkct-blue);
+    margin-top: 1rem;
+}
+
+.contact-info p {
+    margin-bottom: 0.75rem;
+    font-size: 0.95rem;
+}
+
+.contact-info p:last-child {
+    margin-bottom: 0;
+}
+
+.contact-info strong {
+    color: var(--mgkct-blue);
+    font-weight: 600;
+}
+
+.agreement-section {
+    background: linear-gradient(135deg, #e7f3ff 0%, #f0f8ff 100%);
+    padding: 2rem;
+    border-radius: 8px;
+    border: 2px solid var(--mgkct-blue);
+    border-bottom: 2px solid var(--mgkct-blue) !important;
+}
+
+.agreement-section h2 {
+    color: var(--mgkct-blue);
+}
+
+.agreement-section ul li::before {
+    color: var(--mgkct-blue);
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+    .privacy-page {
+        padding: 1rem 0;
+    }
+
+    .privacy-header {
+        padding: 2rem 1.5rem;
+        border-radius: 8px 8px 0 0;
+    }
+
+    .privacy-header h1 {
+        font-size: 1.5rem;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .privacy-header h1 i {
+        font-size: 2rem;
+    }
+
+    .privacy-content {
+        padding: 1.5rem;
+        border-radius: 0 0 8px 8px;
+    }
+
+    .privacy-section {
+        margin-bottom: 2rem;
+        padding-bottom: 1.5rem;
+    }
+
+    .privacy-section h2 {
+        font-size: 1.25rem;
+        flex-wrap: wrap;
+    }
+
+    .privacy-section h2 i {
+        font-size: 1.2rem;
+    }
+
+    .privacy-section p,
+    .privacy-section ul li {
+        font-size: 0.95rem;
+    }
+
+    .contact-info {
+        padding: 1rem;
+    }
+
+    .agreement-section {
+        padding: 1.5rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .privacy-header {
+        padding: 1.5rem 1rem;
+    }
+
+    .privacy-header h1 {
+        font-size: 1.25rem;
+    }
+
+    .privacy-header h1 i {
+        font-size: 1.5rem;
+    }
+
+    .privacy-content {
+        padding: 1rem;
+    }
+
+    .privacy-section {
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+    }
+
+    .privacy-section h2 {
+        font-size: 1.1rem;
+    }
+
+    .privacy-section h2 i {
+        font-size: 1rem;
+    }
+
+    .privacy-section p,
+    .privacy-section ul li {
+        font-size: 0.9rem;
+        line-height: 1.6;
+    }
+
+    .privacy-section ul li {
+        padding-left: 1.5rem;
+    }
+
+    .contact-info {
+        padding: 0.75rem;
+    }
+
+    .contact-info p {
+        font-size: 0.85rem;
+    }
+
+    .agreement-section {
+        padding: 1rem;
+    }
+}
