@@ -1,4 +1,4 @@
-const { exec } = require('child_process');
+const { execFile } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
@@ -8,12 +8,36 @@ if (!fs.existsSync(backupDir)) {
     fs.mkdirSync(backupDir, { recursive: true });
 }
 
+// Имя файла бэкапа: строго backup_ГГГГ-ММ-ДД.sql
+const BACKUP_FILE_NAME_REGEX = /^backup_\d{4}-\d{2}-\d{2}\.sql$/;
+
+const resolveBackupPath = (backupFileName) => {
+    if (typeof backupFileName !== 'string' || !BACKUP_FILE_NAME_REGEX.test(backupFileName)) {
+        throw new Error('Неверное имя файла бэкапа');
+    }
+
+    const backupPath = path.resolve(backupDir, backupFileName);
+    if (!backupPath.startsWith(backupDir + path.sep)) {
+        throw new Error('Неверное имя файла бэкапа');
+    }
+
+    return backupPath;
+};
+
+const getDbArgs = () => ({
+    dbHost: process.env.DB_HOST || 'localhost',
+    dbPort: process.env.DB_PORT || '5432',
+    dbName: process.env.DB_NAME || 'diplom',
+    dbUser: process.env.DB_USER || 'postgres',
+    dbPassword: process.env.DB_PASSWORD || ''
+});
+
 /**
  * Проверяет наличие утилиты pg_dump в системе
  */
 const checkPgDumpAvailable = () => {
     return new Promise((resolve) => {
-        exec('pg_dump --version', (error) => {
+        execFile('pg_dump', ['--version'], (error) => {
             resolve(!error);
         });
     });
@@ -35,21 +59,17 @@ const createBackup = async () => {
         const backupPath = path.join(backupDir, backupFileName);
 
         // Получаем параметры подключения из переменных окружения
-        const dbHost = process.env.DB_HOST || 'localhost';
-        const dbPort = process.env.DB_PORT || '5432';
-        const dbName = process.env.DB_NAME || 'diplom';
-        const dbUser = process.env.DB_USER || 'postgres';
-        const dbPassword = process.env.DB_PASSWORD || '';
+        const { dbHost, dbPort, dbName, dbUser, dbPassword } = getDbArgs();
 
-        // Команда для создания бэкапа
-        const command = `pg_dump -h ${dbHost} -p ${dbPort} -U ${dbUser} -d ${dbName} -F p -f "${backupPath}"`;
+        // Аргументы команды: запуск без шелла, чтобы исключить инъекцию
+        const args = ['-h', dbHost, '-p', dbPort, '-U', dbUser, '-d', dbName, '-F', 'p', '-f', backupPath];
 
         // Устанавливаем переменную окружения для пароля
         const env = { ...process.env, PGPASSWORD: dbPassword };
 
         console.log(`[BACKUP] Начало создания бэкапа: ${backupFileName}`);
 
-        exec(command, { env }, (error, stdout, stderr) => {
+        execFile('pg_dump', args, { env }, (error, stdout, stderr) => {
             if (error) {
                 console.error(`[BACKUP] Ошибка создания бэкапа: ${error.message}`);
                 return reject(error);
@@ -101,24 +121,26 @@ const cleanOldBackups = (keepCount = 7) => {
  */
 const restoreBackup = (backupFileName) => {
     return new Promise((resolve, reject) => {
-        const backupPath = path.join(backupDir, backupFileName);
+        let backupPath;
+        try {
+            backupPath = resolveBackupPath(backupFileName);
+        } catch (error) {
+            return reject(error);
+        }
 
         if (!fs.existsSync(backupPath)) {
             return reject(new Error(`Файл бэкапа не найден: ${backupFileName}`));
         }
 
-        const dbHost = process.env.DB_HOST || 'localhost';
-        const dbPort = process.env.DB_PORT || '5432';
-        const dbName = process.env.DB_NAME || 'diplom';
-        const dbUser = process.env.DB_USER || 'postgres';
-        const dbPassword = process.env.DB_PASSWORD || '';
+        const { dbHost, dbPort, dbName, dbUser, dbPassword } = getDbArgs();
 
-        const command = `psql -h ${dbHost} -p ${dbPort} -U ${dbUser} -d ${dbName} -f "${backupPath}"`;
+        // Аргументы команды: запуск без шелла, чтобы исключить инъекцию
+        const args = ['-h', dbHost, '-p', dbPort, '-U', dbUser, '-d', dbName, '-f', backupPath];
         const env = { ...process.env, PGPASSWORD: dbPassword };
 
         console.log(`[BACKUP] Начало восстановления из бэкапа: ${backupFileName}`);
 
-        exec(command, { env }, (error, stdout, stderr) => {
+        execFile('psql', args, { env }, (error, stdout, stderr) => {
             if (error) {
                 console.error(`[BACKUP] Ошибка восстановления: ${error.message}`);
                 return reject(error);

@@ -125,6 +125,21 @@ export default class DataStore {
     }
   }
 
+  // Получение заявок текущего пользователя (фильтрация на сервере)
+  async fetchMyRequests() {
+    const data = await this._makeRequest('requests', () =>
+      $authHost.get(`${ENDPOINTS.requests}/mine`)
+    )
+
+    const entities = data || []
+
+    runInAction(() => {
+      this._entities.requests = entities
+    })
+
+    return entities
+  }
+
   // Создание записи
   async create(entityType, data) {
     try {

@@ -73,8 +73,8 @@ class BackupController {
     async restore(req, res, next) {
         try {
             const { fileName } = req.body;
-            
-            if (!fileName || !fileName.endsWith('.sql')) {
+
+            if (!fileName || !/^backup_\d{4}-\d{2}-\d{2}\.sql$/.test(fileName)) {
                 return next(ApiError.badRequest('Неверное имя файла'));
             }
 

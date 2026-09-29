@@ -5,13 +5,11 @@
 **Дата аудита:** 29.09.2026. **Область:** `server/` (Express + Sequelize) и `client/` (React 19 + CRA + MobX).
 **Что не проверялось:** тесты и CI в проекте отсутствуют, динамический анализ не проводился. Все находки — статический разбор кода; выводы помечены `[!]`, если требуют подтверждения на живой БД.
 
-> **Важно про конкурентные правки.** Во время аудита репозиторий параллельно меняли: добавлены `server/Dockerfile`, `server/.dockerignore`, `server/.env.example`, переписан `server/.gitignore` и `server/index.js` (CORS переведён на `CLIENT_ORIGIN` из `.env`). Находки ниже отражают состояние файлов на момент окончания аудита. Уже исправленные этими правками проблемы (закоммиченные дампы БД, жёстко зашитый CORS-origin, секреты в git) в список не включены.
-
 ---
 
 ## Секьюрити (блокер)
 
-### S1. Чтение, удаление и пометка заявок полностью без аутентификации
+### ✅ DONE — S1. Чтение, удаление и пометка заявок полностью без аутентификации
 `server/routes/requestRouter.js:7,10,11`
 
 ```js
@@ -27,7 +25,10 @@ router.delete('/:id', requestController.delete)      // без authMiddleware
 
 **Фикс:** добавить `authMiddleware` на все четыре маршрута; на `GET /` и `DELETE /:id` дополнительно `checkRoleMiddleware('ADMIN')`.
 
-### S2. IDOR: любой авторизованный пользователь может изменить чужую заявку
+> **Исправлено.** На все маршруты `requestRouter` добавлен `authMiddleware`, на `GET /` и `DELETE /:id` — также `checkRoleMiddleware('ADMIN')`.
+> Побочное следствие, потребовавшее отдельной правки: `GET /api/request` стал доступен только администратору, а `client/src/pages/Profile.jsx` загружал **все** заявки и фильтровал их в браузере — вкладка «мои заявки» перестала бы работать. Поэтому добавлен `GET /api/request/mine` (`requestController.getMine`, фильтр `where: { userId: req.user.id }` на сервере), метод `DataStore.fetchMyRequests()` и переход `Profile.jsx` на него (см. также B2).
+
+### ✅ DONE — S2. IDOR: любой авторизованный пользователь может изменить чужую заявку
 `server/routes/requestRouter.js:9` + `server/controllers/requestController.js:146-248`
 
 На `PUT /api/request/:id` стоит только `authMiddleware`. Внутри `update` переменная `userId` объявлена (`:150`), но **нигде не используется** — принадлежность заявки к пользователю не проверяется. В результате пользователь с ролью `USER` может:
@@ -38,7 +39,9 @@ router.delete('/:id', requestController.delete)      // без authMiddleware
 
 **Фикс:** сравнивать `request.userId !== req.user.id` и отклонять запрос, либо разрешать правку статуса только при `checkRoleMiddleware('ADMIN')`.
 
-### S3. Command injection при восстановлении из бэкапа
+> **Исправлено.** В `requestController.update` добавлены две проверки: 403 (`ApiError.forbiddenRequest`), если `request.userId !== req.user.id` и роль не `ADMIN`; 403, если передан `status` и роль не `ADMIN`. Роль берётся из `req.user.role` (то есть из токена) — наряду с S8 это остаётся слабым местом: понижение роли в БД не действует до истечения токена.
+
+### ✅ DONE — S3. Command injection при восстановлении из бэкапа
 `server/utils/backup.js:102,116` (валидация — `server/controllers/backupController.js:77`)
 
 ```js
@@ -53,6 +56,9 @@ exec(command, { env }, ...);
 `fileName` из тела запроса подставляется в строку команды через `path.join`, который не экранирует кавычки. Значение вида `x"; whoami; echo ".sql` проходит проверку `endsWith('.sql')` и разрывает кавычки внутри команды — выполняется произвольная команда ОС от имени процесса Node.
 
 **Фикс:** не собирать команду строками — использовать `execFile('psql', [...args])` без shell, либо `spawnSync` с массивом аргументов. Как минимум добавить `path.basename(fileName)` и whitelist регулярным выражением `^backup_\d{4}-\d{2}-\d{2}\.sql$`.
+
+> **Исправлено.** `server/utils/backup.js`: `exec` заменён на `execFile` с массивами аргументов — и для `psql` (восстановление), и для `pg_dump` (создание, там та же строка со сборкой команды); параметры подключения вынесены в `getDbArgs()`. Добавлен `resolveBackupPath()`: whitelist `^backup_\d{4}-\d{2}-\d{2}\.sql$` + проверка, что `path.resolve` не вышел за пределы каталога `backups`. `backupController.restore` теперь тоже проверяет имя регулярным выражением, а не `endsWith('.sql')`.
+> Рядом осталась не закрытая этим пунктом дыра в том же файле — см. S4.
 
 ### S4. Path traversal при скачивании бэкапа
 `server/controllers/backupController.js:50-58`

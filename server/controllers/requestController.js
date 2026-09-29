@@ -3,6 +3,37 @@ const path = require('path')
 const ApiError = require('../error/ApiError')
 const { Request, StudentRequest, Student, Document, Group, Specialty, Notification, User } = require('../models/models')
 
+// Общее дерево связей для заявки. sortStudents включает сортировку студентов по фамилии —
+// она нужна только при отображении списка заявок (get, getMine), но не при create/update
+const getRequestInclude = (sortStudents = false) => [
+    {
+        model: User,
+        attributes: ['id', 'email', 'role']
+    },
+    {
+        model: Document,
+        attributes: ['id', 'document_name']
+    },
+    {
+        model: Student,
+        through: { attributes: [] },
+        attributes: ['id', 'last_name', 'name', 'father_name', 'order_number', 'groupId', 'enroll_date', 'expell_date', 'createdAt', 'updatedAt'],
+        include: [
+            {
+                model: Group,
+                attributes: ['id', 'group_number', 'enroll_date', 'specialtyId'],
+                include: [
+                    {
+                        model: Specialty,
+                        attributes: ['id', 'name', 'qualification', 'duration_years', 'duration_months']
+                    }
+                ]
+            }
+        ],
+        ...(sortStudents ? { order: [['last_name', 'ASC']] } : {})
+    }
+];
+
 class RequestController {
     async create(req, res, next) {
         try {
@@ -68,33 +99,7 @@ class RequestController {
 
             // Возвращаем созданную заявку с полной информацией
             const createdRequest = await Request.findByPk(request.id, {
-                include: [
-                    {
-                        model: User,
-                        attributes: ['id', 'email', 'role']
-                    },
-                    {
-                        model: Document,
-                        attributes: ['id', 'document_name']
-                    },
-                    {
-                        model: Student,
-                        through: { attributes: [] },
-                        attributes: ['id', 'last_name', 'name', 'father_name', 'order_number', 'groupId', 'enroll_date', 'expell_date', 'createdAt', 'updatedAt'],
-                        include: [
-                            {
-                                model: Group,
-                                attributes: ['id', 'group_number', 'enroll_date', 'specialtyId'],
-                                include: [
-                                    {
-                                        model: Specialty,
-                                        attributes: ['id', 'name', 'qualification', 'duration_years', 'duration_months']
-                                    }
-                                ]
-                            }
-                        ]
-                    }
-                ]
+                include: getRequestInclude()
             });
 
             return res.json(createdRequest);
@@ -107,34 +112,7 @@ class RequestController {
     async get(req, res) {
         try {
             const requests = await Request.findAll({
-                include: [
-                    {
-                        model: User,
-                        attributes: ['id', 'email', 'role']
-                    },
-                    {
-                        model: Document,
-                        attributes: ['id', 'document_name']
-                    },
-                    {
-                        model: Student,
-                        through: { attributes: [] },
-                        attributes: ['id', 'last_name', 'name', 'father_name', 'order_number', 'groupId', 'enroll_date', 'expell_date', 'createdAt', 'updatedAt'],
-                        include: [
-                            {
-                                model: Group,
-                                attributes: ['id', 'group_number', 'enroll_date', 'specialtyId'],
-                                include: [
-                                    {
-                                        model: Specialty,
-                                        attributes: ['id', 'name', 'qualification', 'duration_years', 'duration_months']
-                                    }
-                                ]
-                            }
-                        ],
-                        order: [['last_name', 'ASC']]
-                    }
-                ],
+                include: getRequestInclude(true),
                 order: [['createdAt', 'DESC']]
             });
             return res.json(requests);
@@ -148,7 +126,8 @@ class RequestController {
             const { id } = req.params;
             const { documentId, description, studentIds, status } = req.body;
             const userId = req.user.id; // Берем ID пользователя из токена
-            
+            const userRole = req.user.role; // Роль пользователя из токена
+
             if (!id) {
                 return next(ApiError.badRequest('Не указан ID заявки'));
             }
@@ -156,6 +135,16 @@ class RequestController {
             const request = await Request.findByPk(id);
             if (!request) {
                 return next(ApiError.badRequest('Заявка не найдена'));
+            }
+
+            // Заявку может править только её автор или администратор
+            if (request.userId !== userId && userRole !== 'ADMIN') {
+                return next(ApiError.forbiddenRequest('Нет доступа к этой заявке'));
+            }
+
+            // Статус заявки вправе менять только администратор
+            if (status !== undefined && userRole !== 'ADMIN') {
+                return next(ApiError.forbiddenRequest('Изменять статус заявки может только администратор'));
             }
             
             // Сохраняем старый статус для проверки изменения
@@ -212,38 +201,25 @@ class RequestController {
             
             // Возвращаем обновленную заявку с полной информацией
             const updatedRequest = await Request.findByPk(id, {
-                include: [
-                    {
-                        model: User,
-                        attributes: ['id', 'email', 'role']
-                    },
-                    {
-                        model: Document,
-                        attributes: ['id', 'document_name']
-                    },
-                    {
-                        model: Student,
-                        through: { attributes: [] },
-                        attributes: ['id', 'last_name', 'name', 'father_name', 'order_number', 'groupId', 'enroll_date', 'expell_date', 'createdAt', 'updatedAt'],
-                        include: [
-                            {
-                                model: Group,
-                                attributes: ['id', 'group_number', 'enroll_date', 'specialtyId'],
-                                include: [
-                                    {
-                                        model: Specialty,
-                                        attributes: ['id', 'name', 'qualification', 'duration_years', 'duration_months']
-                                    }
-                                ]
-                            }
-                        ]
-                    }
-                ]
+                include: getRequestInclude()
             });
             
             return res.json(updatedRequest);
         } catch (error) {
             next(ApiError.internalRequest(error.message));
+        }
+    }
+
+    async getMine(req, res, next) {
+        try {
+            const requests = await Request.findAll({
+                where: { userId: req.user.id },
+                include: getRequestInclude(true),
+                order: [['createdAt', 'DESC']]
+            });
+            return res.json(requests);
+        } catch (error) {
+            return next(ApiError.internalRequest(error.message));
         }
     }
 

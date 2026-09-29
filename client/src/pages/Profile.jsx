@@ -69,7 +69,7 @@ const Profile = observer(() => {
                 }
 
                 await Promise.all([
-                    data.fetchAll('requests'),
+                    data.fetchMyRequests(),
                     data.fetchAll('documents'),
                     data.fetchAll('students'),
                     data.fetchAll('groups')
@@ -92,7 +92,7 @@ const Profile = observer(() => {
                 const viewedRequestIds = viewedRequestsStr ? JSON.parse(viewedRequestsStr) : [];
                 
                 // Обновляем заявки
-                await data.fetchAll('requests');
+                await data.fetchMyRequests();
                 
                 // Восстанавливаем статус просмотренных заявок
                 viewedRequestIds.forEach(id => {
