@@ -3,6 +3,7 @@ import { Container, Card, Form, Button, Alert, Spinner } from 'react-bootstrap';
 import { Context } from '../index';
 import { observer } from 'mobx-react-lite';
 import MultiselectStudents from '../components/MultiselectStudents';
+import { getMe } from '../http/userAPI';
 import './Request.css';
 
 const Request = observer(() => {
@@ -18,12 +19,27 @@ const Request = observer(() => {
 
     const [loading, setLoading] = useState(false);
     const [dataLoading, setDataLoading] = useState(true);
+    const [supervisorGroupId, setSupervisorGroupId] = useState(null);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
 
-    const allowedStudentIds = (userRole === 'ADMIN' || userRole === 'TEACHER')
-        ? null
-        : data.students.filter(s => s.userId === currentUser?.id).map(s => s.id);
+    // Кому каких студентов можно выбирать:
+    //  - ADMIN — всем, кто зарегистрирован;
+    //  - TEACHER — только учащимся группы, куратором которой он назначен (groupId приходит из /api/user/me);
+    //  - остальные — только привязанному к аккаунту студенту.
+    const allowedStudentIds = (() => {
+        if (userRole === 'ADMIN') return null;
+        if (userRole === 'TEACHER') {
+            return supervisorGroupId
+                ? data.students.filter(s => s.groupId === supervisorGroupId).map(s => s.id)
+                : [];
+        }
+        return data.students.filter(s => s.userId === currentUser?.id).map(s => s.id);
+    })();
+
+    const noStudentsMessage = userRole === 'TEACHER'
+        ? 'Ваш аккаунт не привязан к куратору группы. Обратитесь к администратору.'
+        : 'Ваш аккаунт не привязан к студенту. Обратитесь к администратору.';
 
     // Инициализируем studentIds в зависимости от роли после загрузки пользователя
     useEffect(() => {
@@ -38,11 +54,16 @@ const Request = observer(() => {
         const loadData = async () => {
             setDataLoading(true);
             try {
-                await Promise.all([
+                const loaders = [
                     data.fetchAll('documents'),
                     data.fetchAll('students'),
                     data.fetchAll('groups')
-                ]);
+                ];
+                // Куратору нужен его groupId, чтобы показать студентов только своей группы
+                if (userRole === 'TEACHER') {
+                    loaders.push(getMe().then(me => setSupervisorGroupId(me.groupId ?? null)));
+                }
+                await Promise.all(loaders);
             } catch (err) {
                 setError('Ошибка загрузки данных');
             } finally {
@@ -50,7 +71,7 @@ const Request = observer(() => {
             }
         };
         loadData();
-    }, [data]);
+    }, [data, userRole]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -209,6 +230,7 @@ const Request = observer(() => {
                                             loading={loading}
                                             data={data}
                                             allowedStudentIds={allowedStudentIds}
+                                            noStudentsMessage={noStudentsMessage}
                                         />
                                     </Form.Group>
 

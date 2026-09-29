@@ -59,7 +59,7 @@ export const formatDuration = (years, months) => {
 };
 
 // Функции для получения данных для выпадающих списков
-export const getDropdownOptions = (fieldName, data, excludeStudentId = null) => {
+export const getDropdownOptions = (fieldName, data, excludeOwnerId = null) => {
     switch (fieldName) {
         case 'groupId':
             // Для студентов: показываем номер группы
@@ -87,9 +87,17 @@ export const getDropdownOptions = (fieldName, data, excludeStudentId = null) => 
             }));
         case 'studentUserId':
             // Для карточки студента: аккаунты, ещё не привязанные к другому студенту.
-            // excludeStudentId нужен при редактировании, чтобы не терять текущую привязку
+            // excludeOwnerId нужен при редактировании, чтобы не терять текущую привязку
             return (data.users || [])
-                .filter(user => !data.students?.some(s => s.userId === user.id && s.id !== excludeStudentId))
+                .filter(user => !data.students?.some(s => s.userId === user.id && s.id !== excludeOwnerId))
+                .map(user => ({
+                    value: user.id,
+                    label: `${user.email} (${user.role})`
+                }));
+        case 'teacherUserId':
+            // Для карточки куратора: аккаунты, ещё не привязанные к другому преподавателю
+            return (data.users || [])
+                .filter(user => !data.teachers?.some(t => t.userId === user.id && t.id !== excludeOwnerId))
                 .map(user => ({
                     value: user.id,
                     label: `${user.email} (${user.role})`
@@ -321,8 +329,8 @@ export const prepareFormData = (formData, activeTab, userRole) => {
         }
     }
 
-    // Привязка студента к аккаунту пользователя
-    if (activeTab === 'students' && 'userId' in submitData) {
+    // Привязка аккаунта к студенту или куратору
+    if ((activeTab === 'students' || activeTab === 'teachers') && 'userId' in submitData) {
         submitData.userId = submitData.userId ? parseInt(submitData.userId, 10) : null;
     }
     

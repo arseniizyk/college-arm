@@ -1,6 +1,8 @@
 const ApiError = require('../error/ApiError')
 const sequelize = require('../db')
+const { Op } = require('sequelize')
 const { Request, StudentRequest, Student, Document, Group, Specialty, Notification, User } = require('../models/models')
+const { findSupervisorGroupId } = require('../utils/supervisorGroup')
 
 // Общее дерево связей для заявки. sortStudents включает сортировку студентов по фамилии —
 // она нужна только при отображении списка заявок (get, getMine), но не при create/update
@@ -33,15 +35,49 @@ const getRequestInclude = (sortStudents = false) => [
     }
 ];
 
-// Роли, которым разрешено заказывать документы на любого студента.
-// Остальные (USER) могут подавать заявку только на студента,
-// привязанного к их аккаунту (student.userId === req.user.id).
-const ROLES_WITH_ANY_STUDENT = ['ADMIN', 'TEACHER'];
+// Правила доступа к студентам при подаче заявки:
+//  - ADMIN  — любой студент колледжа;
+//  - TEACHER — только студенты группы, куратором которой он назначен;
+//  - остальные (USER) — только студент, привязанный к их аккаунту (student.userId === req.user.id).
+const ROLES_WITH_ANY_STUDENT = ['ADMIN'];
 
 // Проверяет, что пользователь имеет право заказывать документы на переданных студентов.
 // Возвращает ApiError или null.
 async function checkStudentsAccess(userId, userRole, studentIds) {
     if (ROLES_WITH_ANY_STUDENT.includes(userRole)) {
+        return null;
+    }
+
+    const ids = studentIds.map(id => Number(id));
+    if (ids.some(id => !Number.isInteger(id))) {
+        return ApiError.badRequest('Некорректный идентификатор студента');
+    }
+
+    if (userRole === 'TEACHER') {
+        const groupId = await findSupervisorGroupId(userId);
+        if (!groupId) {
+            return ApiError.forbiddenRequest(
+                'Ваш аккаунт не привязан к куратору группы. Обратитесь к администратору'
+            );
+        }
+
+        // Чужие — те, у которых группа отличается от группы куратора либо не заполнена вовсе
+        const foreign = await Student.findAll({
+            where: {
+                id: ids,
+                [Op.or]: [
+                    { groupId: null },
+                    { groupId: { [Op.ne]: groupId } }
+                ]
+            },
+            attributes: ['id']
+        });
+        if (foreign.length > 0) {
+            return ApiError.forbiddenRequest(
+                'Можно подать заявку только на студентов своей группы'
+            );
+        }
+
         return null;
     }
 
@@ -51,7 +87,7 @@ async function checkStudentsAccess(userId, userRole, studentIds) {
     });
     const ownIds = ownStudents.map(s => s.id);
     // id могут прийти строками — сравниваем по числовому значению
-    const foreign = studentIds.filter(id => !ownIds.includes(Number(id)));
+    const foreign = ids.filter(id => !ownIds.includes(id));
 
     if (foreign.length > 0) {
         return ApiError.forbiddenRequest(

@@ -41,6 +41,7 @@ const Teacher = sequelize.define('teacher', {
     last_name: { type: DataTypes.STRING, allowNull: false },
     name: { type: DataTypes.STRING, allowNull: false },
     father_name: { type: DataTypes.STRING, allowNull: true, defaultValue: '' },
+    userId: { type: DataTypes.INTEGER, allowNull: true }
 })
 
 const Request = sequelize.define('request', {
@@ -94,6 +95,9 @@ Student.belongsTo(Group)
 
 User.hasOne(Student)
 Student.belongsTo(User)
+
+User.hasOne(Teacher)
+Teacher.belongsTo(User)
 
 Teacher.hasOne(Supervisor)
 Supervisor.belongsTo(Teacher)

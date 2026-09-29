@@ -49,7 +49,8 @@ export const TABLE_COLUMNS = {
         { key: 'id', label: '№' },
         { key: 'last_name', label: 'Фамилия' },
         { key: 'name', label: 'Имя' },
-        { key: 'father_name', label: 'Отчество' }
+        { key: 'father_name', label: 'Отчество' },
+        { key: 'userId', label: 'Аккаунт' }
     ]
 };
 
@@ -96,7 +97,8 @@ export const getDefaultFormData = (table, userRole) => {
         teachers: {
             last_name: '',
             name: '',
-            father_name: ''
+            father_name: '',
+            userId: ''
         }
     };
     return defaults[table] || {};
@@ -166,7 +168,9 @@ export const getFieldsConfig = (userRole, getDropdownOptions, modalType = 'creat
     teachers: [
         { name: 'last_name', label: 'Фамилия', type: 'text', required: true },
         { name: 'name', label: 'Имя', type: 'text', required: true },
-        { name: 'father_name', label: 'Отчество', type: 'text' }
+        { name: 'father_name', label: 'Отчество', type: 'text' },
+        { name: 'userId', label: 'Аккаунт', type: 'select', options: getDropdownOptions('teacherUserId'),
+          helpText: 'Куратор, который сможет подавать заявки только на студентов своей группы' }
     ]
 });
 

@@ -44,8 +44,9 @@ const CRUDModal = ({
     };
 
     const renderFormFields = () => {
-        // excludeStudentId — id редактируемого студента, чтобы не отфильтровать его текущий аккаунт
-        const getDropdownOptionsForField = (fieldName) => getDropdownOptions(fieldName, data, table === 'students' ? item?.id : null);
+        // excludeOwnerId — id редактируемой записи, чтобы не отфильтровать её текущий аккаунт
+        const ownedTables = ['students', 'teachers'];
+        const getDropdownOptionsForField = (fieldName) => getDropdownOptions(fieldName, data, ownedTables.includes(table) ? item?.id : null);
         const fieldsConfig = getFieldsConfig(userRole, getDropdownOptionsForField, type);
         const fields = fieldsConfig[table] || [];
 

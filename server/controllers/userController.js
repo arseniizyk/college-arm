@@ -2,6 +2,7 @@ const ApiError = require('../error/ApiError')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const { User, USER_WITH_PASSWORD } = require('../models/models')
+const { findSupervisorGroupId } = require('../utils/supervisorGroup')
 
 const generateJwt = (id, email, role) => {
     return jwt.sign(
@@ -67,8 +68,15 @@ class UserController {
             if (!user) {
                 return next(ApiError.badRequest('Пользователь не найден'));
             }
-            
-            return res.json(user);
+
+            const payload = user.get({ plain: true });
+
+            // Куратору сообщаем его группу, чтобы форма заявки показала только её студентов
+            if (payload.role === 'TEACHER') {
+                payload.groupId = await findSupervisorGroupId(userId);
+            }
+
+            return res.json(payload);
         } catch (error) {
             next(ApiError.internalRequest(error.message));
         }

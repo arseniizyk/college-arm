@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button, Form } from 'react-bootstrap';
 
-const MultiselectStudents = ({ field, formData, setFormData, loading, data, allowedStudentIds = null }) => {
+const MultiselectStudents = ({ field, formData, setFormData, loading, data, allowedStudentIds = null, noStudentsMessage }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedGroup, setSelectedGroup] = useState('');
 
@@ -28,7 +28,7 @@ const MultiselectStudents = ({ field, formData, setFormData, loading, data, allo
                 <i className="bi-persons fa-2x text-muted mb-2"></i>
                 <p className="text-muted mb-0">
                     {allowedStudentIds && allowedStudentIds.length === 0
-                        ? 'Ваш аккаунт не привязан к студенту. Обратитесь к администратору.'
+                        ? (noStudentsMessage || 'Ваш аккаунт не привязан к студенту. Обратитесь к администратору.')
                         : 'Загрузка студентов...'}
                 </p>
             </div>
