@@ -67,7 +67,12 @@ const User = sequelize.define('user', {
     email: { type: DataTypes.STRING, allowNull: false },
     password: { type: DataTypes.STRING, allowNull: false },
     role: { type: DataTypes.STRING, defaultValue: "USER", allowNull: false }
+}, {
+    defaultScope: { attributes: { exclude: ['password'] } }
 })
+
+const USER_WITH_PASSWORD = 'withPassword'
+User.addScope(USER_WITH_PASSWORD, { attributes: { include: ['password'] } })
 
 const Notification = sequelize.define('notification', {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
@@ -112,5 +117,6 @@ module.exports = {
     Student,
     StudentRequest,
     User,
-    Notification
+    Notification,
+    USER_WITH_PASSWORD
 }

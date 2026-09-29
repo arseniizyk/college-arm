@@ -7,116 +7,31 @@
 
 ---
 
-## Секьюрити (блокер)
+## Секьюрити (блокер) — закрыто
 
-### ✅ DONE — S1. Чтение, удаление и пометка заявок полностью без аутентификации
-`server/routes/requestRouter.js:7,10,11`
+Блок S закрыт полностью 8 пунктами (S1–S8). Ниже — что было сделано и что осталось осознанно незакрытым.
+Детализация исходных находок удалена; проверяется по коду.
 
-```js
-router.get('/', requestController.get)               // без authMiddleware
-router.get('/:id', requestController.getOne)         // без authMiddleware
-router.patch('/:id/view', requestController.markAsViewed) // без authMiddleware
-router.delete('/:id', requestController.delete)      // без authMiddleware
-```
+| # | Что закрыто | Где смотреть |
+|---|---|---|
+| S1 | На все маршруты `requestRouter` добавлен `authMiddleware`; на `GET /` и `DELETE /:id` — также `checkRoleMiddleware('ADMIN')` | `server/routes/requestRouter.js:8-13` |
+| S2 | В `requestController.update` — 403, если заявка не своя и роль не `ADMIN`; 403, если передан `status` и роль не `ADMIN` | `server/controllers/requestController.js:140-148` |
+| S3 | `exec` заменён на `execFile` с массивами аргументов (и `psql`, и `pg_dump`); параметры подключения вынесены в `getDbArgs()`; добавлен `resolveBackupPath()` с whitelist-именем | `server/utils/backup.js:12-33, 64-72, 122-143` |
+| S4 | `download` и `restore` проверяют имя whitelist-регулярным выражением `^backup_\d{4}-\d{2}-\d{2}\.sql$`, путь строится через `path.resolve`, проверяется выход за пределы каталога `backups` | `server/controllers/backupController.js:52-61, 84` |
+| S5 | `authMiddleware` на `GET /` во всех пяти роутерах: `student`, `group`, `specialty`, `teacher`, `document` | `server/routes/studentRouter.js` и соседние |
+| S6 | `defaultScope` с `exclude: ['password']` в модели `User`; заведён именованный scope `USER_WITH_PASSWORD` для `login`, `changePassword`, `changeEmail`, `deleteMyAccount` | `server/models/models.js:70-78`, `server/controllers/userController.js` |
+| S7 | `return next()` в `authMiddleware` и `checkRoleMiddleware` | `server/middleware/authMiddleware.js:5`, `server/middleware/checkRoleMiddleware.js:8` |
+| S8 | Роль читается из БД в `checkRoleMiddleware`; `userController.check` перевыпускает токен по `User.findByPk` | `server/middleware/checkRoleMiddleware.js:15-28`, `server/controllers/userController.js:45-60` |
 
-`requestController.get` (`controllers/requestController.js:107-144`) отдаёт **все** заявки со всеми связанными сущностями: ФИО, отчество, номер приказа, даты зачисления/отчисления студентов, email и роль пользователей-авторов, статус и описание заявки. Это персональные данные всех студентов колледжа.
+Побочные изменения, сделанные вместе с S1: добавлен `GET /api/request/mine` (`requestController.getMine`, фильтр по `req.user.id` на сервере), метод `DataStore.fetchMyRequests()` и переход `Profile.jsx` на него. Это заодно закрывает B2.
 
-`requestController.delete` (`:276-295`) без проверок удаляет заявку вместе со связями `StudentRequest` — неавторизованный запрос `DELETE /api/request/1` стирает данные.
+### Напоминания
 
-**Фикс:** добавить `authMiddleware` на все четыре маршрута; на `GET /` и `DELETE /:id` дополнительно `checkRoleMiddleware('ADMIN')`.
-
-> **Исправлено.** На все маршруты `requestRouter` добавлен `authMiddleware`, на `GET /` и `DELETE /:id` — также `checkRoleMiddleware('ADMIN')`.
-> Побочное следствие, потребовавшее отдельной правки: `GET /api/request` стал доступен только администратору, а `client/src/pages/Profile.jsx` загружал **все** заявки и фильтровал их в браузере — вкладка «мои заявки» перестала бы работать. Поэтому добавлен `GET /api/request/mine` (`requestController.getMine`, фильтр `where: { userId: req.user.id }` на сервере), метод `DataStore.fetchMyRequests()` и переход `Profile.jsx` на него (см. также B2).
-
-### ✅ DONE — S2. IDOR: любой авторизованный пользователь может изменить чужую заявку
-`server/routes/requestRouter.js:9` + `server/controllers/requestController.js:146-248`
-
-На `PUT /api/request/:id` стоит только `authMiddleware`. Внутри `update` переменная `userId` объявлена (`:150`), но **нигде не используется** — принадлежность заявки к пользователю не проверяется. В результате пользователь с ролью `USER` может:
-
-- менять `status` любой заявки (`in_progress` / `completed` / `rejected`);
-- подменять `documentId` и `description`;
-- переписывать список `studentIds` (`:180-193` — полное удаление и пересоздание связей).
-
-**Фикс:** сравнивать `request.userId !== req.user.id` и отклонять запрос, либо разрешать правку статуса только при `checkRoleMiddleware('ADMIN')`.
-
-> **Исправлено.** В `requestController.update` добавлены две проверки: 403 (`ApiError.forbiddenRequest`), если `request.userId !== req.user.id` и роль не `ADMIN`; 403, если передан `status` и роль не `ADMIN`. Роль берётся из `req.user.role` (то есть из токена) — наряду с S8 это остаётся слабым местом: понижение роли в БД не действует до истечения токена.
-
-### ✅ DONE — S3. Command injection при восстановлении из бэкапа
-`server/utils/backup.js:102,116` (валидация — `server/controllers/backupController.js:77`)
-
-```js
-// backupController.js:77 — единственная проверка
-if (!fileName || !fileName.endsWith('.sql')) { ... }
-// backup.js:111-116
-const backupPath = path.join(backupDir, fileName);
-const command = `psql -h ${dbHost} -p ${dbPort} -U ${dbUser} -d ${dbName} -f "${backupPath}"`;
-exec(command, { env }, ...);
-```
-
-`fileName` из тела запроса подставляется в строку команды через `path.join`, который не экранирует кавычки. Значение вида `x"; whoami; echo ".sql` проходит проверку `endsWith('.sql')` и разрывает кавычки внутри команды — выполняется произвольная команда ОС от имени процесса Node.
-
-**Фикс:** не собирать команду строками — использовать `execFile('psql', [...args])` без shell, либо `spawnSync` с массивом аргументов. Как минимум добавить `path.basename(fileName)` и whitelist регулярным выражением `^backup_\d{4}-\d{2}-\d{2}\.sql$`.
-
-> **Исправлено.** `server/utils/backup.js`: `exec` заменён на `execFile` с массивами аргументов — и для `psql` (восстановление), и для `pg_dump` (создание, там та же строка со сборкой команды); параметры подключения вынесены в `getDbArgs()`. Добавлен `resolveBackupPath()`: whitelist `^backup_\d{4}-\d{2}-\d{2}\.sql$` + проверка, что `path.resolve` не вышел за пределы каталога `backups`. `backupController.restore` теперь тоже проверяет имя регулярным выражением, а не `endsWith('.sql')`.
-> Рядом осталась не закрытая этим пунктом дыра в том же файле — см. S4.
-
-### S4. Path traversal при скачивании бэкапа
-`server/controllers/backupController.js:50-58`
-
-```js
-if (!fileName || !fileName.endsWith('.sql')) { ... }
-const backupPath = path.join(__dirname, '../backups', fileName);
-res.download(backupPath, fileName, ...)
-```
-
-`path.join` нормализует `..`, поэтому `..%2f..%2fetc%2fpasswd.sql` (Express декодирует `%2f` в параметре маршрута) выходит за пределы каталога `backups`. Ограничение по расширению `.sql` сужает, но не закрывает возможность читать произвольные `.sql`-файлы на диске.
-
-**Фикс:** `const safe = path.basename(fileName); if (safe !== fileName) return 400;` плюс `path.resolve` + проверка, что итоговый путь начинается с `backupDir + path.sep`.
-
-### S5. Публичный доступ к персональным данным всех студентов
-`server/routes/studentRouter.js:7`
-
-```js
-router.get('/', studentController.get)  // без authMiddleware
-```
-
-`studentController.get` (`controllers/studentController.js:64-157`) отдаёт ФИО, отчество, номер приказа, даты зачисления и отчисления, группу и специальность **всех** студентов без токена. Скриптовое сканирование одного эндпоинта даёт полную базу студентов.
-
-Публичными (без auth) остаются также `GET /api/group`, `/api/specialty`, `/api/teacher`, `/api/document` — они менее чувствительны, но по той же причине не требуют токен.
-
-**Фикс:** `authMiddleware` на `GET /:resource`; для `/api/student` — `checkRoleMiddleware('ADMIN')`.
-
-### S6. Хеши паролей уходят в ответе API
-`server/controllers/userController.js:69` и `:91`
-
-```js
-let users = await User.findAll()   // без attributes — отдаёт password
-res.json(user)                    // create: тоже без exclude
-```
-
-В модели `User` нет `defaultScope` (`server/models/models.js:65-70`), поэтому `findAll` сериализует колонку `password` (bcrypt-хеш). При этом `update` и `getMe` пароль исключают корректно (`:130`, `:54`) — поведение непоследовательно.
-
-**Фикс:** добавить `defaultScope: { attributes: { exclude: ['password'] } }` в модель `User`; в `get`/`create` передавать явный `attributes`.
-
-### S7. `next()` без `return` на preflight-запросах
-`server/middleware/authMiddleware.js:4-6`, `server/middleware/checkRoleMiddleware.js:6-8`
-
-```js
-if (req.method === "OPTIONS") {
-    next()          // выполнение продолжается в try → падение на req.headers.authorization
-}
-```
-
-Для CORS-preflight вызывается `next()`, после чего код проваливается в `try` и пытается разобрать отсутствующий заголовок → 401 вместо успешного preflight.
-
-**Фикс:** `return next()` в обеих функциях.
-
-### S8. Роль зашивается в токен и не перечитывается из БД
-`server/middleware/checkRoleMiddleware.js:14-16`, `server/controllers/userController.js:6-12`
-
-`checkRoleMiddleware` сверяет `decoded.role` из JWT и не обращается к БД. `userController.check` (`:44-47`, эндпоинт `GET /api/user/auth`) перевыпускает токен из данных **самого токена**, а не из записи пользователя. Итог: понижение/повышение роли через админку или вручную в БД не действует, пока пользователь не выполнит вход заново. Для процесса выдачи справок с правами администратора это означает, что отозванный доступ продолжает работать до истечения 24-часового токена.
-
-**Фикс:** в `checkRoleMiddleware` после `jwt.verify` подтягивать пользователя из БД и сверять актуальную роль; в `check` перевыпускать токен по `User.findByPk(req.user.id)`.
+- **S5 закрыт не полностью, а с осознанным отклонением.** `checkRoleMiddleware('ADMIN')` на `GET /api/student` **не установлен**: список студентов нужен всем авторизованным для подачи заявки (`Request.jsx`, `Profile.jsx`), при `ADMIN`-ограничении пользователь с ролью `USER` не сможет подать заявку. Анонимный доступ закрыт, но **любой зарегистрированный пользователь по-прежнему видит ФИО, номер приказа и даты зачисления/отчисления всех студентов**. Ограничить выдачу по роли сейчас нечем — связи «пользователь → студент» в модели нет. Порядок: сначала **B1**, затем `GET /api/student/mine` и `checkRoleMiddleware('ADMIN')` на общем `GET /`. В коде отмечено комментарием в `studentRouter.js`.
+- **S2 частично опирается на роль из токена.** `requestController.update` берёт `req.user.role`, а `authMiddleware` (`server/middleware/authMiddleware.js:12`) роль по-прежнему читает из JWT, не из БД. Для маршрутов под `checkRoleMiddleware` это не важно (роль пересобирается из БД), но для `PUT /api/request/:id` понижение `ADMIN` → `USER` в БД продолжит действовать до истечения 24-часового токена: бывший админ сможет править чужие заявки и менять статусы. Либо переводить эти решения на `checkRoleMiddleware('ADMIN')`/сверку с БД, либо учитывать это как принятый риск.
+- **S8 добавил лишний `SELECT` на каждый admin-запрос** (`User.findByPk` в `checkRoleMiddleware`). Для учебного проекта приемлемо; при росте нагрузки роль стоит кэшировать (например, `redis`, TTL до 60 с).
+- **S4 сузил функциональность:** скачивание и восстановление работают только для файлов, названных `backup_ГГГГ-ММ-ДД.sql`. Бэкапы с другими именами вернут 400.
+- **S6, важно на будущее:** способ вернуть `password` через `attributes: { include: ['password'] }` в Sequelize 6.37 **не работает** — атрибуты сливаются в `{ exclude, include }`, `exclude` остаётся, пароль не возвращается и `login` падает. Пользоваться только `User.scope(USER_WITH_PASSWORD)`.
 
 ---
 
@@ -137,9 +52,10 @@ await Promise.all([ data.fetchAll('requests'), ... ]);   // тянет ВСЕ з
 const userRequests = data.requests.filter(req => req.userId === currentUser?.id);
 ```
 
-Браузер пользователя забирает и держит в памяти заявки всех остальных пользователей (см. также S1 — сервер их и так отдаёт всем).
+**Фикс:** эндвоинт `GET /api/request/mine`, фильтрация по `req.user.id` на сервере.
 
-**Фикс:** эндпоинт `GET /api/request/mine`, фильтрация по `req.user.id` на сервере.
+> ✅ **Серверная часть закрыта** вместе с S1: `GET /api/request/mine` (`requestController.getMine`, `where: { userId: req.user.id }`), `DataStore.fetchMyRequests()`, переход `Profile.jsx` на него.
+> Остался косметический хвост: `Profile.jsx:110` по-прежнему фильтрует уже отфильтрованный список (`data.requests.filter(req => req.userId === currentUser?.id)`) — теперь это no-op, но при выдаче `userId: null` (см. B5) такие заявки исчезнут из вкладки.
 
 ### B3. `ApiError.badRequest` возвращает HTTP 404
 `server/error/ApiError.js:9-11`
@@ -268,7 +184,7 @@ if (notification?.requestId && userRole === 'ADMIN') {
 ### B11. Клиентские проверки прав не имеют серверного эквивалента
 `client/src/components/Admin.jsx`, `client/src/hooks/useAdminLogic.js:173-183`
 
-`handleDelete` запрещает удалять собственный аккаунт только на клиенте. `UserStore` вообще не хранит persisted-состояние — `checkToken()` (`:12-15`) смотрит лишь на наличие ключа в `localStorage` и не декодирует его, поэтому до первого ответа `GET /api/user/auth` в интерфейсе пользователь считается анонимом, а роль доступна как `USER` (не как `ADMIN`), если токен ещё не проверен. Проверки прав в `AppRouter` (`:11-13`) — косметика: сервер всё равно должен быть единственным источником истины (см. S1, S2, S5).
+`handleDelete` запрещает удалять собственный аккаунт только на клиенте. `UserStore` вообще не хранит persisted-состояние — `checkToken()` (`:12-15`) смотрит лишь на наличие ключа в `localStorage` и не декодирует его, поэтому до первого ответа `GET /api/user/auth` в интерфейсе пользователь считается анонимом, а роль доступна как `USER` (не как `ADMIN`), если токен ещё не проверен. Проверки прав в `AppRouter` (`:11-13`) — косметика: сервер всё равно должен быть единственным источником истины (см. S1, S2, S5 в закрытом блоке выше).
 
 **Фикс:** не полагаться на клиентские проверки; синхронизировать `UserStore` из ответа `/api/user/me` при монтировании `App`.
 
@@ -537,13 +453,14 @@ studentIds: request.students.map(s => s.id)
 
 ## Рекомендуемый порядок работ
 
-1. **S1, S2, S5, S7** — закрыть пробелы в авторизации; это правки на несколько строк в роутерах и дают немедленный эффект.
-2. **S3, S4** — заменить строковые `exec` на `execFile`, добавить `path.basename` + whitelist.
-3. **S6, S8** — `defaultScope` для `User`, чтение роли из БД в `checkRoleMiddleware`.
-4. **B5 (только специальность)** — запретить удаление специальности при наличии групп. Дёшево, а предотвращает тихую порчу выдачи справок; группы и преподаватели по решению владельца не трогаем.
-5. **B7, B4, B2, B9, M9** — привести бизнес-правила к единому виду: один дефолт `payment_type`, транзакции на заявках, серверная выборка «своих» заявок и рабочая ручка `/:id` (они закрываются одним куском работы, B9 — её предпосылка).
-6. **B8** — сначала продуктовое решение по правилу «один студент / вся группа» (пометка в самом пункте), затем единая функция проверки в `consts.js` + серверная валидация объёма `studentIds`.
-7. **D1, D2, D3** — параметризация генерации документов и HTTP-слоя: одна правка снимает ~350 строк копипасты и 18 неверных fallback-URL.
-8. **M1–M9** — чистка мёртвого кода; безопасна, делается механически.
-9. **B6** — Sequelize CLI-миграции вместо `sync({ alter: true })`; требует отдельного плана и тестовой БД.
-10. **C1–C8, K1–K3** — точечные исправления UI и Docker.
+1. ~~**S1, S2, S5, S7**~~ — **закрыто**, см. блок «Секьюрити» выше.
+2. ~~**S3, S4**~~ — **закрыто**, см. блок «Секьюрити» выше.
+3. ~~**S6, S8**~~ — **закрыто**, см. блок «Секьюрити» выше.
+4. **B1** — связь «пользователь → студент». Это то, что разблокирует полное закрытие S5 и половину B8; без неё остальные правки бесполезны.
+5. **B5 (только специальность)** — запретить удаление специальности при наличии групп. Дёшево, а предотвращает тихую порчу выдачи справок; группы и преподаватели по решению владельца не трогаем.
+6. **B7, B4, B9, M9** — привести бизнес-правила к единому виду: один дефолт `payment_type`, транзакции на заявках, рабочая ручка `/:id`. (B2 закрыт вместе с S1.)
+7. **B8** — сначала продуктовое решение по правилу «один студент / вся группа» (пометка в самом пункте), затем единая функция проверки в `consts.js` + серверная валидация объёма `studentIds`.
+8. **D1, D2, D3** — параметризация генерации документов и HTTP-слоя: одна правка снимает ~350 строк копипасты и 18 неверных fallback-URL.
+9. **M1–M9** — чистка мёртвого кода; безопасна, делается механически.
+10. **B6** — Sequelize CLI-миграции вместо `sync({ alter: true })`; требует отдельного плана и тестовой БД.
+11. **C1–C8, K1–K3** — точечные исправления UI и Docker.

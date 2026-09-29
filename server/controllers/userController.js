@@ -1,7 +1,7 @@
 const ApiError = require('../error/ApiError')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
-const { User } = require('../models/models')
+const { User, USER_WITH_PASSWORD } = require('../models/models')
 
 const generateJwt = (id, email, role) => {
     return jwt.sign(
@@ -29,7 +29,7 @@ class UserController {
 
     async login(req, res, next) {
         const { email, password } = req.body
-        const user = await User.findOne({ where: { email } })
+        const user = await User.scope(USER_WITH_PASSWORD).findOne({ where: { email } })
         if (!user) {
             return next(ApiError.internalRequest("Пользователь не найден"))
         }
@@ -42,8 +42,18 @@ class UserController {
     }
 
     async check(req, res, next) {
-        const token = generateJwt(req.user.id, req.user.email, req.user.role)
-        return res.json({token})
+        try {
+            const user = await User.findByPk(req.user.id, {
+                attributes: ['id', 'email', 'role']
+            })
+            if (!user) {
+                return res.status(401).json({ message: 'Пользователь не авторизован' })
+            }
+            const token = generateJwt(user.id, user.email, user.role)
+            return res.json({ token })
+        } catch (error) {
+            next(ApiError.internalRequest(error.message));
+        }
     }
 
     async getMe(req, res, next) {
@@ -66,7 +76,9 @@ class UserController {
 
     async get(req, res, next) {
         try {
-            let users = await User.findAll()
+            let users = await User.findAll({
+                attributes: { exclude: ['password'] }
+            })
             res.json(users)
         } catch (e) {
             next(ApiError.badRequest(e.message))
@@ -88,7 +100,9 @@ class UserController {
             
             const hashPassword = await bcrypt.hash(password, 5)
             const user = await User.create({ email, role: role || 'USER', password: hashPassword })
-            res.json(user)
+            const safeUser = { ...user.get({ plain: true }) };
+            delete safeUser.password;
+            res.json(safeUser)
         } catch (error) {
             next(ApiError.internalRequest(error.message));
         }
@@ -169,8 +183,8 @@ class UserController {
                 return next(ApiError.badRequest('Новый пароль должен содержать минимум 4 символа'));
             }
 
-            // Находим пользователя
-            const user = await User.findByPk(userId);
+            // Находим пользователя (нужен хеш пароля для проверки)
+            const user = await User.scope(USER_WITH_PASSWORD).findByPk(userId);
             if (!user) {
                 return next(ApiError.badRequest('Пользователь не найден'));
             }
@@ -212,8 +226,8 @@ class UserController {
                 return next(ApiError.badRequest('Некорректный формат email'));
             }
 
-            // Находим пользователя
-            const user = await User.findByPk(userId);
+            // Находим пользователя (нужен хеш пароля для проверки)
+            const user = await User.scope(USER_WITH_PASSWORD).findByPk(userId);
             if (!user) {
                 return next(ApiError.badRequest('Пользователь не найден'));
             }
@@ -259,8 +273,8 @@ class UserController {
                 return next(ApiError.badRequest('Необходимо ввести пароль для подтверждения'));
             }
 
-            // Находим пользователя
-            const user = await User.findByPk(userId);
+            // Находим пользователя (нужен хеш пароля для проверки)
+            const user = await User.scope(USER_WITH_PASSWORD).findByPk(userId);
             if (!user) {
                 return next(ApiError.badRequest('Пользователь не найден'));
             }

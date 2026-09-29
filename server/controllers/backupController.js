@@ -46,13 +46,20 @@ class BackupController {
     async download(req, res, next) {
         try {
             const { fileName } = req.params;
-            
-            if (!fileName || !fileName.endsWith('.sql')) {
+
+            // Имя файла приходит из параметра маршрута, поэтому проверяем его строго:
+            // без проверки итогового пути можно выйти за пределы каталога backups через ".."
+            if (!fileName || !/^backup_\d{4}-\d{2}-\d{2}\.sql$/.test(fileName)) {
                 return next(ApiError.badRequest('Неверное имя файла'));
             }
 
-            const backupPath = path.join(__dirname, '../backups', fileName);
-            
+            const backupDir = path.resolve(__dirname, '../backups');
+            const backupPath = path.resolve(backupDir, fileName);
+
+            if (path.dirname(backupPath) !== backupDir) {
+                return next(ApiError.badRequest('Неверное имя файла'));
+            }
+
             if (!fs.existsSync(backupPath)) {
                 return next(ApiError.badRequest('Файл бэкапа не найден'));
             }
