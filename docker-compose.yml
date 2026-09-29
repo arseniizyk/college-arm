@@ -1,6 +1,9 @@
+name: college-arm
+
 services:
   db:
     image: postgres:16-alpine
+    container_name: college-arm-db
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
@@ -19,6 +22,8 @@ services:
   server:
     build:
       context: ./server
+    image: college-arm-server
+    container_name: college-arm-server
     restart: unless-stopped
     depends_on:
       db:
@@ -48,6 +53,8 @@ services:
       args:
         # Адрес API, зашивается в билд CRA
         REACT_APP_API_URL: "http://localhost:${SERVER_PORT:-7000}"
+    image: college-arm-client
+    container_name: college-arm-client
     restart: unless-stopped
     depends_on:
       - server
