@@ -3,6 +3,7 @@ import { Table, Button, Spinner } from 'react-bootstrap';
 import SearchAndFilters from './SearchAndFilters';
 import Pagination from './Pagination';
 import TableCell from './TableCell';
+import { formatFio } from '../utils/dataHelpers';
 
 const TableContent = ({
     data,
@@ -132,7 +133,7 @@ const TableContent = ({
                                                 const teacher = supervisor.teacher;
                                                 return (
                                                     <td key={col.key}>
-                                                        {`${teacher.last_name} ${teacher.name} ${teacher.father_name || ''}`.trim()}
+                                                        {formatFio(teacher)}
                                                     </td>
                                                 );
                                             }
@@ -143,8 +144,8 @@ const TableContent = ({
                                         if (col.key === 'students') {
                                             const students = item.students;
                                             if (students && Array.isArray(students) && students.length > 0) {
-                                                const studentNames = students.map(student => 
-                                                    `${student.last_name} ${student.name} ${student.father_name || ''}`.trim()
+                                                const studentNames = students.map(student =>
+                                                    formatFio(student)
                                                 ).join(', ');
                                                 return (
                                                     <td key={col.key} title={studentNames}>

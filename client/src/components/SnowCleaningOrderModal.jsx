@@ -115,7 +115,7 @@ const SnowCleaningOrderModal = observer(({ show, onHide }) => {
         try {
             const token = localStorage.getItem('token');
             const response = await fetch(
-                `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/generate/admin/snow-cleaning-order`,
+                `${process.env.REACT_APP_API_URL || 'http://localhost:7000'}/api/generate/admin/snow-cleaning-order`,
                 {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },

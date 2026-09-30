@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card, Badge, Button, Collapse, ListGroup, Row, Col } from 'react-bootstrap';
-import { calculateCourse, MISSING_SPECIALTY_LABEL } from '../utils/dataHelpers';
+import { calculateCourse, formatFio, MISSING_SPECIALTY_LABEL } from '../utils/dataHelpers';
 
 const StudentDetailsItem = ({ student, index, getNameById }) => {
     const [showDetails, setShowDetails] = useState(false);
@@ -30,7 +30,7 @@ const StudentDetailsItem = ({ student, index, getNameById }) => {
                         style={{ cursor: 'pointer' }}
                     >
                         <i className="bi-person-fill me-2"></i>
-                        {index + 1}. {student.last_name} {student.name} {student.father_name || ''}
+                        {index + 1}. {formatFio(student)}
                     </div>
 
                     {/* Сворачиваемая дополнительная информация */}
@@ -185,7 +185,7 @@ const RequestCard = ({ request, onStatusChange, getNameById, onViewUpdate }) => 
         if (newExpandedState && !isViewed && request.status === 'in_progress') {
             try {
                 const token = localStorage.getItem('token');
-                const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/request/${request.id}/view`, {
+                const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:7000'}/api/request/${request.id}/view`, {
                     method: 'PATCH',
                     headers: {
                         'Authorization': `Bearer ${token}`
@@ -215,7 +215,7 @@ const RequestCard = ({ request, onStatusChange, getNameById, onViewUpdate }) => 
         setGenerating(true);
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/generate/study-certificate/${request.id}`, {
+            const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:7000'}/api/generate/study-certificate/${request.id}`, {
                 method: 'GET',
                 headers: {
                     'Authorization': `Bearer ${token}`

@@ -1,6 +1,6 @@
 const { Document, Packer } = require('docx');
 const { Request, Student, Group, Specialty, Document: DocumentModel } = require('../models/models');
-const { declineFullName } = require('../utils/declension');
+const { declineFullName, detectGender } = require('../utils/declension');
 const { parseOrderNumber } = require('../utils/orderParser');
 const { createStudyCertificateTemplate } = require('../templates/studyCertificateTemplate');
 const ApiError = require('../error/ApiError');
@@ -179,9 +179,8 @@ function prepareStudyCertificateData(student, group, specialty) {
     const endDateMonthGenitive = endDate.toLocaleDateString('ru-RU', { month: 'long' }).replace(/ь$/, 'я');
     const endDateYear = endDate.getFullYear();
     
-    // Определяем пол для правильного склонения
-    const gender = student.father_name && (student.father_name.endsWith('овна') || student.father_name.endsWith('евна')) ? 'женский' : 'мужской';
-    const genderSuffix = gender === 'женский' ? 'а' : '';
+    // Определяем пол для правильного склонения.
+    const genderSuffix = detectGender(student.father_name) === 'female' ? 'а' : '';
     
     // Проверяем, нужен ли абзац о переименовании
     const needsRenameNote = new Date(student.enroll_date) < new Date('2022-12-06');

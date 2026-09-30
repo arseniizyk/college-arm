@@ -4,6 +4,7 @@ import { Context } from '../index';
 import { observer } from 'mobx-react-lite';
 import { useNavigate } from 'react-router-dom';
 import RequestCard from '../components/RequestCard';
+import { getNameById as getNameByIdForField } from '../utils/dataHelpers';
 import Pagination from '../components/Pagination';
 import './Profile.css';
 
@@ -57,7 +58,7 @@ const Profile = observer(() => {
             try {
                 // Загружаем полную информацию о пользователе
                 const token = localStorage.getItem('token');
-                const userResponse = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/user/me`, {
+                const userResponse = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:7000'}/api/user/me`, {
                     headers: {
                         'Authorization': `Bearer ${token}`
                     }
@@ -134,9 +135,7 @@ const Profile = observer(() => {
         setCurrentPage(1);
     }, [requestsTab]);
 
-    const getNameById = (entityType, id) => {
-        return data.getNameById(entityType, id);
-    };
+    const getNameById = (fieldName, id) => getNameByIdForField(fieldName, id, data);
 
     const statusInfo = {
         all: { label: 'Все заявки', icon: 'fa-list', color: 'secondary' },
@@ -209,7 +208,7 @@ const Profile = observer(() => {
 
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/user/change-password`, {
+            const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:7000'}/api/user/change-password`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -272,7 +271,7 @@ const Profile = observer(() => {
 
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/user/change-email`, {
+            const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:7000'}/api/user/change-email`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -335,7 +334,7 @@ const Profile = observer(() => {
 
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/user/delete-my-account`, {
+            const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:7000'}/api/user/delete-my-account`, {
                 method: 'DELETE',
                 headers: {
                     'Content-Type': 'application/json',

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Form, Button } from 'react-bootstrap';
+import { formatFio } from '../utils/dataHelpers';
 
 /**
  * Компонент выбора студентов для приказов
@@ -47,7 +48,7 @@ const OrderStudentSelector = ({ students, selectedIds, onChange }) => {
                         key={s.id}
                         type="checkbox"
                         id={`order-student-${s.id}`}
-                        label={`${s.last_name} ${s.name} ${s.father_name || ''}`}
+                        label={formatFio(s)}
                         checked={selectedIds.includes(String(s.id))}
                         onChange={() => handleToggle(s.id)}
                         className="mb-1"

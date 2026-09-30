@@ -93,7 +93,7 @@ const HolidaysOrderModal = observer(({ show, onHide }) => {
         try {
             const token = localStorage.getItem('token');
             const response = await fetch(
-                `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/generate/admin/holidays-order`,
+                `${process.env.REACT_APP_API_URL || 'http://localhost:7000'}/api/generate/admin/holidays-order`,
                 {
                     method: 'POST',
                     headers: {

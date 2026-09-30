@@ -125,7 +125,7 @@ const NavBar = observer(() => {
             // Помечаем заявку как просмотренную
             try {
                 const token = localStorage.getItem('token');
-                await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/request/${notification.requestId}/view`, {
+                await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:7000'}/api/request/${notification.requestId}/view`, {
                     method: 'PATCH',
                     headers: {
                         'Authorization': `Bearer ${token}`

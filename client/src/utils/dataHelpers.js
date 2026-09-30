@@ -1,6 +1,30 @@
 import { toJS } from 'mobx';
 
 /**
+ * Собирает ФИО в одну строку.
+ * Раньше формат собирался вручную в восьми местах, и в части из них не было
+ * .trim() — при пустом отчестве в таблице оставался хвостовой пробел.
+ * @param {{last_name?: string, name?: string, father_name?: string}} person
+ * @param {{lowercase?: boolean}} options
+ * @returns {string}
+ */
+export const formatFio = (person, { lowercase = false } = {}) => {
+    if (!person) return '';
+    const fio = [person.last_name, person.name, person.father_name]
+        .filter(Boolean)
+        .join(' ')
+        .trim();
+    return lowercase ? fio.toLowerCase() : fio;
+};
+
+/** Короткая форма ФИО для приказов: «Иванов И.И.». */
+export const formatFioShort = (person) => {
+    if (!person) return '';
+    const initial = (value) => (value ? `${value.charAt(0)}.` : '');
+    return `${person.last_name || ''} ${initial(person.name)}${initial(person.father_name)}`.trim();
+};
+
+/**
  * Вычисляет текущий курс группы на основе даты зачисления и длительности обучения
  * @param {Date|string} enrollDate - Дата зачисления группы
  * @param {number} durationYears - Длительность обучения в годах
@@ -77,7 +101,7 @@ export const getDropdownOptions = (fieldName, data, excludeOwnerId = null) => {
             // Для групп: показываем ФИО преподавателя
             return (data.teachers || []).map(teacher => ({
                 value: teacher.id,
-                label: `${teacher.last_name} ${teacher.name} ${teacher.father_name || ''}`.trim()
+                label: formatFio(teacher)
             }));
         case 'userId':
             // Для заявок: показываем email пользователя
@@ -112,7 +136,7 @@ export const getDropdownOptions = (fieldName, data, excludeOwnerId = null) => {
             // Для заявок: показываем ФИО студентов с группой
             return (data.students || []).map(student => ({
                 value: student.id,
-                label: `${student.last_name} ${student.name} ${student.father_name || ''}`.trim() + 
+                label: formatFio(student) +
                        (student.groupId ? ` (${getNameById('groupId', student.groupId, data)})` : '')
             }));
         default:
@@ -144,7 +168,7 @@ export const getNameById = (fieldName, id, data) => {
             return spec ? `${spec.name}` : `ID: ${id}`;
         case 'teacherId':
             const teacher = (data.teachers || []).find(t => t.id === id);
-            return teacher ? `${teacher.last_name} ${teacher.name} ${teacher.father_name || ''}`.trim() : `ID: ${id}`;
+            return teacher ? formatFio(teacher) : `ID: ${id}`;
         case 'userId':
             const user = (data.users || []).find(u => u.id === id);
             return user ? `${user.email}` : `ID: ${id}`;
@@ -212,7 +236,7 @@ export const filterData = (
             if (searchTerm && searchTerm.trim()) {
                 const searchLower = searchTerm.toLowerCase();
                 filteredData = filteredData.filter(student => {
-                    const fullName = `${student.last_name || ''} ${student.name || ''} ${student.father_name || ''}`.toLowerCase();
+                    const fullName = formatFio(student, { lowercase: true });
                     return fullName.includes(searchLower);
                 });
             }
@@ -276,7 +300,7 @@ export const filterData = (
             if (searchTerm && searchTerm.trim()) {
                 const searchLower = searchTerm.toLowerCase();
                 filteredData = filteredData.filter(teacher => {
-                    const fullName = `${teacher.last_name || ''} ${teacher.name || ''} ${teacher.father_name || ''}`.toLowerCase();
+                    const fullName = formatFio(teacher, { lowercase: true });
                     return fullName.includes(searchLower);
                 });
             }

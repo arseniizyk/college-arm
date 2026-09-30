@@ -1,5 +1,6 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { Modal, Form, Button, Row, Col, Spinner, Alert } from 'react-bootstrap';
+import { formatFioShort } from '../utils/dataHelpers';
 import { Context } from '../index';
 import { observer } from 'mobx-react-lite';
 import OrderStudentSelector from './OrderStudentSelector';
@@ -47,7 +48,7 @@ const StudentDirectionOrderModal = observer(({ show, onHide }) => {
     // Куратор берётся из вложенного supervisor.teacher в группе
     const curatorTeacher = selectedGroup?.supervisor?.teacher;
     const curatorName = curatorTeacher
-        ? `${curatorTeacher.last_name} ${curatorTeacher.name.charAt(0)}.${curatorTeacher.father_name ? curatorTeacher.father_name.charAt(0) + '.' : ''}`
+        ? formatFioShort(curatorTeacher)
         : '';
 
     const handleChange = (e) => {
@@ -111,7 +112,7 @@ const StudentDirectionOrderModal = observer(({ show, onHide }) => {
         try {
             const token = localStorage.getItem('token');
             const response = await fetch(
-                `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/generate/admin/student-direction-order`,
+                `${process.env.REACT_APP_API_URL || 'http://localhost:7000'}/api/generate/admin/student-direction-order`,
                 {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },

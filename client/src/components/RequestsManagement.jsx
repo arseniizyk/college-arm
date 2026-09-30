@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Form, InputGroup, Row, Col, Alert, Spinner } from 'react-bootstrap';
 import RequestCard from './RequestCard';
 import Pagination from './Pagination';
+import { formatFio } from '../utils/dataHelpers';
 
 const RequestsManagement = ({ 
     requests, 
@@ -34,7 +35,7 @@ const RequestsManagement = ({
                 const matchesDescription = req.description?.toLowerCase().includes(searchLower);
                 const matchesDocument = req.document?.document_name?.toLowerCase().includes(searchLower);
                 const matchesStudent = req.students?.some(student => {
-                    const fullName = `${student.last_name} ${student.name} ${student.father_name || ''}`.toLowerCase();
+                    const fullName = formatFio(student, { lowercase: true });
                     return fullName.includes(searchLower);
                 });
                 

@@ -1,5 +1,6 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { Modal, Form, Button, Row, Col, Spinner, Alert } from 'react-bootstrap';
+import { formatFio, formatFioShort } from '../utils/dataHelpers';
 import { Context } from '../index';
 import { observer } from 'mobx-react-lite';
 
@@ -57,7 +58,7 @@ const DuplicateTicketOrderModal = observer(({ show, onHide }) => {
 
         // Инициалы для основания
         const initials = selectedStudent
-            ? `${selectedStudent.last_name} ${selectedStudent.name.charAt(0)}.${selectedStudent.father_name ? selectedStudent.father_name.charAt(0) + '.' : ''}`
+            ? formatFioShort(selectedStudent)
             : '';
 
         const payload = {
@@ -77,7 +78,7 @@ const DuplicateTicketOrderModal = observer(({ show, onHide }) => {
         try {
             const token = localStorage.getItem('token');
             const response = await fetch(
-                `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/generate/admin/duplicate-ticket-order`,
+                `${process.env.REACT_APP_API_URL || 'http://localhost:7000'}/api/generate/admin/duplicate-ticket-order`,
                 {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -149,7 +150,7 @@ const DuplicateTicketOrderModal = observer(({ show, onHide }) => {
                                     <option value="">— Выберите —</option>
                                     {groupStudents.map(s => (
                                         <option key={s.id} value={s.id}>
-                                            {s.last_name} {s.name} {s.father_name || ''}
+                                            {formatFio(s)}
                                         </option>
                                     ))}
                                 </Form.Select>

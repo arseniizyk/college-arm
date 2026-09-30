@@ -3,7 +3,7 @@ import { Modal, Form, Button, Row, Col, Spinner, Alert } from 'react-bootstrap';
 import { Context } from '../index';
 import { observer } from 'mobx-react-lite';
 import OrderStudentSelector from './OrderStudentSelector';
-import { calculateCourse } from '../utils/dataHelpers';
+import { calculateCourse, formatFio } from '../utils/dataHelpers';
 
 const INITIAL = {
     groupId: '',
@@ -118,7 +118,7 @@ const TransferOrderModal = observer(({ show, onHide }) => {
         try {
             const token = localStorage.getItem('token');
             const response = await fetch(
-                `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/generate/admin/transfer-order`,
+                `${process.env.REACT_APP_API_URL || 'http://localhost:7000'}/api/generate/admin/transfer-order`,
                 {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -279,7 +279,7 @@ const TransferOrderModal = observer(({ show, onHide }) => {
                                 <option value="">— Выберите студента —</option>
                                 {groupStudents.map(s => (
                                     <option key={s.id} value={s.id}>
-                                        {s.last_name} {s.name} {s.father_name || ''}
+                                        {formatFio(s)}
                                     </option>
                                 ))}
                             </Form.Select>

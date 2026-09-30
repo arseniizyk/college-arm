@@ -124,7 +124,7 @@ const ExamAdmissionOrderModal = observer(({ show, onHide }) => {
         try {
             const token = localStorage.getItem('token');
             const response = await fetch(
-                `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/generate/admin/exam-admission-order`,
+                `${process.env.REACT_APP_API_URL || 'http://localhost:7000'}/api/generate/admin/exam-admission-order`,
                 {
                     method: 'POST',
                     headers: {

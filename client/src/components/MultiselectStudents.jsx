@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Button, Form } from 'react-bootstrap';
+import { formatFio } from '../utils/dataHelpers';
 
 const MultiselectStudents = ({ field, formData, setFormData, loading, data, allowedStudentIds = null, noStudentsMessage }) => {
     const [searchTerm, setSearchTerm] = useState('');
@@ -17,7 +18,7 @@ const MultiselectStudents = ({ field, formData, setFormData, loading, data, allo
             return {
                 ...student,
                 groupName: group ? group.group_number : 'Без группы',
-                fullName: `${student.last_name} ${student.name} ${student.father_name || ''}`.trim()
+                fullName: formatFio(student)
             };
         });
 

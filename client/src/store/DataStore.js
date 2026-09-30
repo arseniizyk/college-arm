@@ -355,22 +355,6 @@ export default class DataStore {
     return Promise.all(promises)
   }
 
-  // Получение данных для выпадающих списков
-  getDropdownOptions(entityType, labelField = 'name', valueField = 'id') {
-    const items = this._entities[entityType] || []
-    return items.map(item => ({
-      value: item[valueField],
-      label: item[labelField] || `ID: ${item[valueField]}`
-    }))
-  }
-
-  // Получение названия по ID
-  getNameById(entityType, id, nameField = 'name') {
-    if (!id) return '-'
-    const item = this.findById(entityType, id)
-    return item ? item[nameField] || `ID: ${id}` : `ID: ${id}`
-  }
-
   // Получение информации о пагинации
   get pagination() {
     return this._pagination

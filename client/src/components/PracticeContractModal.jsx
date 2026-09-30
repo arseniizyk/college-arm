@@ -1,5 +1,6 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { Modal, Form, Button, Row, Col, Spinner, Alert } from 'react-bootstrap';
+import { formatFio } from '../utils/dataHelpers';
 import { Context } from '../index';
 import { observer } from 'mobx-react-lite';
 
@@ -115,7 +116,7 @@ const PracticeContractModal = observer(({ show, onHide }) => {
         try {
             const token = localStorage.getItem('token');
             const response = await fetch(
-                `${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/generate/admin/practice-contract`,
+                `${process.env.REACT_APP_API_URL || 'http://localhost:7000'}/api/generate/admin/practice-contract`,
                 {
                     method: 'POST',
                     headers: {
@@ -300,7 +301,7 @@ const PracticeContractModal = observer(({ show, onHide }) => {
                                             key={s.id}
                                             type="checkbox"
                                             id={`student-${s.id}`}
-                                            label={`${s.last_name} ${s.name} ${s.father_name || ''}`}
+                                            label={formatFio(s)}
                                             checked={form.studentIds.includes(String(s.id))}
                                             onChange={() => handleStudentToggle(s.id)}
                                             className="mb-1"
