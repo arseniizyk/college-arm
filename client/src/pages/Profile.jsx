@@ -57,9 +57,13 @@ const Profile = observer(() => {
         const loadData = async () => {
             setLoading(true);
             try {
-                // Полная информация о пользователе
-                const { data: userData } = await $authHost.get('/api/user/me');
-                setUserInfo(userData);
+                // Полная информация о пользователе — её сбой не должен блокировать остальные списки
+                try {
+                    const { data: userData } = await $authHost.get('/api/user/me');
+                    setUserInfo(userData);
+                } catch (err) {
+                    console.error('Ошибка загрузки профиля:', err);
+                }
 
                 await Promise.all([
                     data.fetchMyRequests(),

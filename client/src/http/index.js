@@ -49,7 +49,8 @@ const saveBlob = (blob, fileName) => {
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
-    window.URL.revokeObjectURL(url)
+    // Firefox обрывает загрузку, если URL отозван в том же тике
+    setTimeout(() => window.URL.revokeObjectURL(url), 1000)
 }
 
 const downloadDoc = async (path, { method = 'POST', payload = null, fileName = 'документ', stamp = null } = {}) => {
@@ -63,7 +64,8 @@ const downloadDoc = async (path, { method = 'POST', payload = null, fileName = '
     try {
         response = await $authHost.request(config)
     } catch (err) {
-        throw new Error(await extractErrorMessage(err.response?.data))
+        const message = await extractErrorMessage(err.response?.data)
+        throw new Error(message, { cause: err })
     }
 
     saveBlob(response.data, name)
@@ -74,7 +76,5 @@ export {
     $host,
     $authHost,
     downloadDoc,
-    saveBlob,
-    extractErrorMessage,
     errorMessage
 }

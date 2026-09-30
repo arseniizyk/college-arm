@@ -5,7 +5,7 @@
 **Дата аудита:** 29.09.2026. **Область:** `server/` (Express + Sequelize) и `client/` (React 19 + CRA + MobX).
 **Что не проверялось:** тесты и CI в проекте отсутствуют, динамический анализ не проводился. Все находки — статический разбор кода; выводы помечены `[!]`, если требуют подтверждения на живой БД.
 
-**Осталось:** 6 в бизнес-логике, 5 в дублировании, 9 в мёртвом коде, 8 в клиенте, 1 в Docker, 8 из ревью.
+**Осталось:** 6 в бизнес-логике, 5 в дублировании, 9 в мёртвом коде, 8 в клиенте, 1 в Docker, 4 из ревью.
 
 ---
 
@@ -13,24 +13,7 @@
 
 Все проверены по коду и, где возможно, на живом сервере. Вердикт — по фактам, а не по формулировке.
 
-### R1. Регрессия в `Profile.loadData` — верно
-`client/src/pages/Profile.jsx:59-69`
-
-Было:
-```js
-const userResponse = await fetch(`/api/user/me`, ...)
-if (userResponse.ok) { setUserInfo(...) }   // ошибка глушилась
-await Promise.all([ fetchMyRequests(), ... ])   // выполнялось всегда
-```
-Стало:
-```js
-const { data: userData } = await $authHost.get('/api/user/me')   // бросает на non-2xx
-await Promise.all([ ... ])   // при ошибке /me не выполняется
-```
-
-При любой ошибке `/me` (500 на БД, таймаут) пользователь видит «Ошибка загрузки данных» и пустые списки заявок, документов, студентов и групп. Рендер `userInfo === null` переживает (`userInfo?.email || currentUser?.email`), то есть проблема именно в потере данных, а не в падении страницы.
-
-**Фикс:** завернуть вызов `/me` в отдельный `try/catch`, чтобы `Promise.all` выполнялся в любом случае.
+R1, R3, R7, R8 → перенесены в [issues-solved.md](issues-solved.md)
 
 ### R2. Изменилось поведение `updateLocal` в `NavBar` — верно по механике, ветка недостижима
 `client/src/components/NavBar.jsx:127-128`
@@ -40,17 +23,6 @@ await Promise.all([ ... ])   // при ошибке /me не выполняет�
 **Оговорка:** ветка `notification?.requestId && userRole === 'ADMIN'` **недостижима** — в модели `Notification` поля `requestId` нет, условие всегда ложно (это **B10**). Регрессия реальна, но потенциальная.
 
 **Фикс:** зависит от решения по B10. Если `requestId` добавляют — восстанавливать `try/catch` вокруг только `patch`, а локальное обновление выполнять независимо.
-
-### R3. `downloadDoc` теряет исходную ошибку axios — верно
-`client/src/http/index.js:66`
-
-```js
-throw new Error(await extractErrorMessage(err.response?.data))
-```
-
-Теряются `err.response.status`, `err.config`, `err.stack`. Для сетевой ошибки, CORS и таймаута `err.response` вообще `undefined`, и пользователь получит generic «Ошибка запроса» вместо причины («Network Error», «timeout of 5000ms exceeded»).
-
-**Фикс:** прикрепить `cause` (`new Error(msg, { cause: err })`) или дописать статус. Второе полезнее для диагностики — статус виден в консоли.
 
 ### R4. Многословный HTML-дамп в сообщении — преувеличено
 `client/src/http/index.js:20-35`
@@ -80,20 +52,6 @@ throw new Error(await extractErrorMessage(err.response?.data))
 Единственный `GET`-вызов — справка с `:requestId` в пути, query-параметров у него нет. Тихая ловушка реальна, но касается только будущих вызовов.
 
 **Фикс:** либо `params` в опциях, либо `throw`, если `payload` передан при `GET`.
-
-### R7. `revokeObjectURL` сразу после `click()` — верно, но не регрессия
-`client/src/http/index.js:52`
-
-В Firefox иногда обрывает загрузку. Проверено по `HEAD`: паттерн `revokeObjectURL` сразу после `click()` был в коде до меня, `setTimeout` не использовался. Рефакторинг ничего не ухудшил, а лишь централизовал поведение.
-
-**Фикс:** отложить `revokeObjectURL` через `setTimeout(…, 0)` или `setTimeout(…, 1000)`. Самое дешёвое место — здесь.
-
-### R8. Мёртвые экспорты `saveBlob` и `extractErrorMessage` — верно
-`client/src/http/index.js:77-78`
-
-Проверено grep'ом по всему `client/src`: используются только внутри самого модуля. `errorMessage` — только в `Profile.jsx`.
-
-**Фикс:** сузить `export` до `downloadDoc`, `errorMessage`, `$host`, `$authHost`; `saveBlob` и `extractErrorMessage` оставить внутренними.
 
 ---
 
@@ -402,8 +360,8 @@ studentIds: request.students.map(s => s.id)
 
 ## Рекомендуемый порядок работ
 
-1. ~~**B14**~~ — **закрыто**, см. [issues-solved.md](issues-solved.md). Следующий шаг — **пункт 2**.
-2. **R1, R3, R7, R8** — регрессии и дешёвые правки, внесённые вместе с D3: изоляция `/me` в `Profile`, сохранение `cause` в `downloadDoc`, отложенный `revokeObjectURL`, сужение экспортов.
+1. ~~**B14**~~ — **закрыто**, см. [issues-solved.md](issues-solved.md).
+2. ~~**R1, R3, R7, R8**~~ — **закрыто**, см. [issues-solved.md](issues-solved.md). Следующий шаг — **пункт 3**.
 3. **B7, B9, M9** — привести бизнес-правила к единому виду: один дефолт `payment_type`, рабочая ручка `/:id`, лишний `destroy`.
 4. **B8, C6** — серверная валидация объёма `studentIds` + единая `canSelectMultipleStudents(userRole)`.
 5. **B10, R2** — решение по `Notification.requestId`; от него зависит, чинить ли R2.
