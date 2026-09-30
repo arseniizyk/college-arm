@@ -16,6 +16,10 @@ class ApiError extends Error{
     static forbiddenRequest(message) {
         return new ApiError(403, message)
     }
+
+    static serviceUnavailable(message) {
+        return new ApiError(503, message)
+    }
 }
 
 module.exports = ApiError 

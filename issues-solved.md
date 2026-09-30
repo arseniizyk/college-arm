@@ -7,7 +7,7 @@
 
 Здесь нет исходных формулировок находок — только что было сделано, чем доказано и что осталось осознанно незакрытым. Проверяется по коду.
 
-**Сводка:** 25 пунктов закрыто — 8 в блоке безопасности, 9 в бизнес-логике и дублировании, 4 из ревью, 4 в Docker.
+**Сводка:** 26 пунктов закрыто — 8 в блоке безопасности, 9 в бизнес-логике и дублировании, 4 из ревью, 5 в Docker.
 
 | Пункт | Тема |
 |---|---|
@@ -34,6 +34,7 @@
 | D10 | Вёрстка приказов в `server/templates/` |
 | M2 | Частично: `getNameById` / `getDropdownOptions` |
 | K1 | Контейнер запускается от root |
+| K2 | Healthcheck контейнера и публичный `/api/health` |
 | K3 | `nodemon` в production-образе |
 | K4 | Порядок копирования в Dockerfile |
 | K5 | `pg_dump` из образа старше сервера БД |
@@ -370,6 +371,15 @@
 **Почему `user` продублирован в compose, если в образе уже `USER node`:** `backups` монтируются bind-mount'ом из `./server/backups`, и права тома задаёт хост, а не образ. `chown` в Dockerfile на bind-mount не действует. Без явного `user` контейнер стартует от `node` (1000) и упадёт с `EACCES` на `pg_dump`, если каталог на хосте принадлежит другому uid — поэтому uid/gid вынесены в `.env` (`SERVER_UID=$(id -u) SERVER_GID=$(id -g)` для Linux).
 
 **Проверено:** `docker build` проходит; в контейнере `uid=1000(node)`, `pg_dump` на месте, `/app`, `/app/backups` и `/app/node_modules` доступны на запись. Полный `docker compose up` не запускался — он поднимает БД и прогоняет `sequelize.sync({ alter: true })` по живой базе.
+
+### K2. Контейнер не сообщал о готовности — закрыто
+
+- `server/controllers/healthController.js` — публичный `GET /api/health` без `authMiddleware`: делает `SELECT 1` и отвечает `{ status: 'ok', database: 'up' }`, при недоступной БД отдаёт 503 через новую фабрику `ApiError.serviceUnavailable`. Проверка БД, а не только TCP, потому что порт поднимается после `sequelize.authenticate()` и `sync({ alter: true })` — без неё healthcheck стал бы зелёным раньше, чем схема приведена в порядок.
+- `server/Dockerfile` — `HEALTHCHECK` с `--start-period=40s` (на живой базе `sync({ alter: true })` идёт дольше), probe идёт по HTTP, а не по TCP, поскольку поднятый порт ещё не означает готовность.
+- Probe написан на встроенном `fetch` Node 20, а не на `curl`: `curl` из образа вычищен (`apt-get purge -y curl`, см. **K5**), возвращать его ради healthcheck не стоит. Порт читается из `process.env.PORT`, поэтому смена `PORT` в compose не ломает проверку.
+- `docker-compose.yml` — клиент ждёт `condition: service_healthy` вместо простого списка `depends_on`, иначе healthcheck ничего не меняет: compose и так поднимает его сразу после старта сервера.
+
+**Проверено:** сервер поднят локально, `GET http://127.0.0.1:7000/api/health` → `200 {"status":"ok","database":"up"}`. Ветка 503 на живой БД не проверялась, она следует из `catch` вокруг `sequelize.query`. `docker build` и `docker compose up` после фикса не запускались.
 
 ### K3. `nodemon` попадал в production-образ — закрыто
 

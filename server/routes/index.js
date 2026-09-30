@@ -11,6 +11,7 @@ const studentRouter = require('./studentRouter')
 const notificationRouter = require('./notificationRouter')
 const documentGeneratorRouter = require('./documentGeneratorRouter')
 const backupRouter = require('./backupRouter')
+const healthRouter = require('./healthRouter')
 
 
 router.use('/user', userRouter)
@@ -23,6 +24,7 @@ router.use('/student', studentRouter)
 router.use('/notification', notificationRouter)
 router.use('/generate', documentGeneratorRouter)
 router.use('/backup', backupRouter)
+router.use('/health', healthRouter)
 
 
 module.exports = router
