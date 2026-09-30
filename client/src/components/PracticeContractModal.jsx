@@ -1,6 +1,7 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { Modal, Form, Button, Row, Col, Spinner, Alert } from 'react-bootstrap';
 import { formatFio } from '../utils/dataHelpers';
+import { downloadDoc } from '../http';
 import { Context } from '../index';
 import { observer } from 'mobx-react-lite';
 
@@ -114,31 +115,11 @@ const PracticeContractModal = observer(({ show, onHide }) => {
 
         setLoading(true);
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(
-                `${process.env.REACT_APP_API_URL || 'http://localhost:7000'}/api/generate/admin/practice-contract`,
-                {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify(payload)
-                }
-            );
-
-            if (!response.ok) {
-                const err = await response.json();
-                throw new Error(err.message || 'Ошибка генерации документа');
-            }
-
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `Договор_практика_${form.contractNumber || Date.now()}.docx`;
-            a.click();
-            window.URL.revokeObjectURL(url);
+            await downloadDoc('/api/generate/admin/practice-contract', {
+                payload,
+                fileName: 'Договор_практика',
+                stamp: form.contractNumber || Date.now()
+            });
 
             onHide();
             setForm(INITIAL);

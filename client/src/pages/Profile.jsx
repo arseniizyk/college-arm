@@ -5,6 +5,7 @@ import { observer } from 'mobx-react-lite';
 import { useNavigate } from 'react-router-dom';
 import RequestCard from '../components/RequestCard';
 import { getNameById as getNameByIdForField } from '../utils/dataHelpers';
+import { $authHost, errorMessage } from '../http';
 import Pagination from '../components/Pagination';
 import './Profile.css';
 
@@ -56,18 +57,9 @@ const Profile = observer(() => {
         const loadData = async () => {
             setLoading(true);
             try {
-                // Загружаем полную информацию о пользователе
-                const token = localStorage.getItem('token');
-                const userResponse = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:7000'}/api/user/me`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                
-                if (userResponse.ok) {
-                    const userData = await userResponse.json();
-                    setUserInfo(userData);
-                }
+                // Полная информация о пользователе
+                const { data: userData } = await $authHost.get('/api/user/me');
+                setUserInfo(userData);
 
                 await Promise.all([
                     data.fetchMyRequests(),
@@ -207,24 +199,10 @@ const Profile = observer(() => {
         setPasswordLoading(true);
 
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:7000'}/api/user/change-password`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    currentPassword: passwordForm.currentPassword,
-                    newPassword: passwordForm.newPassword
-                })
+            await $authHost.post('/api/user/change-password', {
+                currentPassword: passwordForm.currentPassword,
+                newPassword: passwordForm.newPassword
             });
-
-            const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.message || 'Ошибка при смене пароля');
-            }
 
             setPasswordSuccess('Пароль успешно изменен');
             setPasswordForm({
@@ -237,7 +215,7 @@ const Profile = observer(() => {
             setTimeout(() => setPasswordSuccess(null), 5000);
 
         } catch (err) {
-            setPasswordError(err.message || 'Ошибка при смене пароля');
+            setPasswordError(errorMessage(err, 'Ошибка при смене пароля'));
         } finally {
             setPasswordLoading(false);
         }
@@ -270,24 +248,10 @@ const Profile = observer(() => {
         setEmailLoading(true);
 
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:7000'}/api/user/change-email`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    newEmail: emailForm.newEmail,
-                    password: emailForm.password
-                })
+            const { data: result } = await $authHost.post('/api/user/change-email', {
+                newEmail: emailForm.newEmail,
+                password: emailForm.password
             });
-
-            const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.message || 'Ошибка при смене email');
-            }
 
             // Обновляем токен в localStorage
             if (result.token) {
@@ -309,7 +273,7 @@ const Profile = observer(() => {
             setTimeout(() => setEmailSuccess(null), 5000);
 
         } catch (err) {
-            setEmailError(err.message || 'Ошибка при смене email');
+            setEmailError(errorMessage(err, 'Ошибка при смене email'));
         } finally {
             setEmailLoading(false);
         }
@@ -333,23 +297,9 @@ const Profile = observer(() => {
         setDeleteLoading(true);
 
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:7000'}/api/user/delete-my-account`, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    password: deleteForm.password
-                })
+            await $authHost.delete('/api/user/delete-my-account', {
+                data: { password: deleteForm.password }
             });
-
-            const result = await response.json();
-
-            if (!response.ok) {
-                throw new Error(result.message || 'Ошибка при удалении аккаунта');
-            }
 
             // Очищаем данные пользователя и перенаправляем на страницу входа
             localStorage.removeItem('token');
@@ -358,7 +308,7 @@ const Profile = observer(() => {
             navigate('/login');
 
         } catch (err) {
-            setDeleteError(err.message || 'Ошибка при удалении аккаунта');
+            setDeleteError(errorMessage(err, 'Ошибка при удалении аккаунта'));
         } finally {
             setDeleteLoading(false);
         }

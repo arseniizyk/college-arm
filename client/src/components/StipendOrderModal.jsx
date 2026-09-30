@@ -3,6 +3,7 @@ import { Modal, Form, Button, Row, Col, Spinner, Alert } from 'react-bootstrap';
 import { Context } from '../index';
 import { observer } from 'mobx-react-lite';
 import { calculateCourse } from '../utils/dataHelpers';
+import { downloadDoc } from '../http';
 
 import OrderStudentSelector from './OrderStudentSelector';
 
@@ -97,28 +98,10 @@ const StipendOrderModal = observer(({ show, onHide }) => {
 
         setLoading(true);
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(
-                `${process.env.REACT_APP_API_URL || 'http://localhost:7000'}/api/generate/admin/stipend-order`,
-                {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify(payload)
-                }
-            );
-
-            if (!response.ok) {
-                const err = await response.json();
-                throw new Error(err.message || 'Ошибка генерации документа');
-            }
-
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `Приказ_стипендия_${Date.now()}.docx`;
-            a.click();
-            window.URL.revokeObjectURL(url);
+            await downloadDoc('/api/generate/admin/stipend-order', {
+                payload,
+                fileName: 'Приказ_стипендия'
+            });
 
             onHide();
             setForm(INITIAL);

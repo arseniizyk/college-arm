@@ -25,8 +25,9 @@ cd client && npm install && npm start        # CRA dev server, MUST be localhost
 
 - `server/.env` and `client/.env` are gitignored but required to boot; `server/.env.example` is the committed template. DB is on port **1111** (not 5432).
 - **`server/.env` has corrupted Russian text** in `COLLEGE_NAME` / `DIRECTOR_NAME` (stored as double-encoded mojibake, unrecoverable). Every generated document ships garbled college/director names. Fix the file before trusting document output.
-- The client never uses axios for 18 call sites — 11 `*OrderModal.jsx`, `NavBar.jsx`, `RequestCard.jsx`, `Profile.jsx` call raw `fetch()` with a hardcoded `localhost:5000` fallback (server runs on **7000**). They only work because `REACT_APP_API_URL` is set in `client/.env`.
-- **No migrations.** `server/index.js` runs `sequelize.sync({ alter: true })` on every boot, so model changes mutate the live schema. Treat model edits as immediate production DDL.
+- All client HTTP goes through `client/src/http/index.js` (`$host` / `$authHost`). Use `downloadDoc(path, { method, payload, fileName, stamp })` for document downloads — it handles the blob save and error parsing. Note `errorMessage(err, fallback)` to show the server's message: axios throws on non-2xx, so `err.message` alone reads "Request failed with status code 400".
+- **No migrations.** `server/index.js` runs `sequelize.sync({ alter: true })` on every boot, so model changes mutate the live schema. Treat model edits as immediate production DDL. See B6 in `issues.md`.
+- Open problems live in `issues.md`; closed ones in `issues-solved.md`. New audit findings go to `issues.md` with a short entry: what, where, how to verify, how to fix.
 - **No API path to create an `ADMIN`.** Registration hardcodes `role: 'USER'`, so you must `UPDATE "user" SET role='ADMIN'` directly in Postgres.
 - **`server/seed.js` (`npm run seed`) fills the DB with fake data** — the script creates the first ADMIN for you, so the manual UPDATE above is only needed if you never seed. It refuses to run on a non-empty DB unless given `--force` (wipe) or `--keep` (append).
 - All models live in one file: `server/models/models.js` (Sequelize `define` + associations). Table names are the model keys, snake_case, singular.
@@ -46,7 +47,7 @@ cd client && npm install && npm start        # CRA dev server, MUST be localhost
 - JWT signed with `SECRET_KEY`, TTL 24h, payload `{ id, email, role }`. Token lives in `localStorage.token`.
 - `role` is baked into the token. Changing a user's role in the DB has no effect until they re-login or the client calls `GET /api/user/auth` (which re-signs from the token, so it does **not** pick up DB changes either).
 - `middleware/checkRoleMiddleware` re-verifies the token and compares `decoded.role`; it does not hit the DB. `middleware/authMiddleware` populates `req.user` — controllers read the user id from there, never from body params.
-- `authMiddleware` and `checkRoleMiddleware` both `next()` on `OPTIONS` but forget to `return`, so preflight requests also fall through into the handler. CORS origin now comes from `CLIENT_ORIGIN` in `server/index.js` (comma-separated, default `http://localhost:3000`) — but 18 client call sites bypass this entirely by hardcoding their own URL, see above.
+- `authMiddleware` and `checkRoleMiddleware` both `next()` on `OPTIONS` but forget to `return`, so preflight requests also fall through into the handler. CORS origin comes from `CLIENT_ORIGIN` in `server/index.js` (comma-separated, default `http://localhost:3000`). Every client request shares the axios `baseURL` (`REACT_APP_API_URL`), so a mismatched `CLIENT_ORIGIN` blocks the whole app.
 - Client-side route gating (`AppRouter` + `routes.js`) is cosmetic; the server is the only real enforcement. Don't trust it as an authorization check.
 
 ## Client architecture
@@ -74,5 +75,8 @@ Conventions worth matching: `server/utils/declension.js` handles Russian name de
 ## Conventions
 
 - UI text, API error messages, and code comments are **in Russian**. Match the surrounding file.
+- **`POST /api/user/login` with an empty body kills the server** (`userController.login` has no input validation and no `try/catch`; Express 4 does not catch rejected promises from `async` handlers, and Node 26 exits on unhandled rejection). Reproduced 3/3. Fix before anything else — see B14 in `issues.md`.
+- **Keep comments short.** A comment is for what the code does not say on its own — and for *why* it is done that way when the reason isn't obvious. A non-obvious rationale is welcome; it just has to fit in a line or two.
+- **Do not put change history in the code.** No dates ("added 30.09.2026"), no issue or commit references, no "previously this did X", no enumeration of everything that was replaced. `git log` already records that, and `issues.md` holds the reasoning at the level of a whole change. The comment describes the present state, not the history that produced it.
 - Server code is CommonJS with no semicolon consistency guarantee (mixed). Client is ESM/JSX. Some client files are `.js`, most components `.jsx` — do not rename.
 - `server/error/ApiError.js` factories are the expected way to signal errors; `ErrorHandlingMiddleware` must stay the last registered middleware.

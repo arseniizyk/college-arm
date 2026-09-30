@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Card, Badge, Button, Collapse, ListGroup, Row, Col } from 'react-bootstrap';
 import { calculateCourse, formatFio, MISSING_SPECIALTY_LABEL } from '../utils/dataHelpers';
+import { $authHost, downloadDoc } from '../http';
 
 const StudentDetailsItem = ({ student, index, getNameById }) => {
     const [showDetails, setShowDetails] = useState(false);
@@ -184,20 +185,11 @@ const RequestCard = ({ request, onStatusChange, getNameById, onViewUpdate }) => 
         // Если раскрываем заявку и она еще не просмотрена, помечаем как просмотренную
         if (newExpandedState && !isViewed && request.status === 'in_progress') {
             try {
-                const token = localStorage.getItem('token');
-                const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:7000'}/api/request/${request.id}/view`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
-                
-                if (response.ok) {
-                    setIsViewed(true);
-                    // Обновляем только эту заявку локально, без перезагрузки всех данных
-                    if (onViewUpdate) {
-                        onViewUpdate(request.id);
-                    }
+                await $authHost.patch(`/api/request/${request.id}/view`);
+                setIsViewed(true);
+                // Обновляем только эту заявку локально, без перезагрузки всех данных
+                if (onViewUpdate) {
+                    onViewUpdate(request.id);
                 }
             } catch (error) {
                 console.error('Ошибка при пометке заявки как просмотренной:', error);
@@ -214,33 +206,16 @@ const RequestCard = ({ request, onStatusChange, getNameById, onViewUpdate }) => 
     const handleGenerateDocument = async () => {
         setGenerating(true);
         try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:7000'}/api/generate/study-certificate/${request.id}`, {
+            // downloadDoc разбирает тело ответа, поэтому в alert попадает текст
+            // сервера, а не общее «Ошибка при генерации».
+            await downloadDoc(`/api/generate/study-certificate/${request.id}`, {
                 method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
+                fileName: 'Справка_об_обучении',
+                stamp: request.id
             });
-
-            if (!response.ok) {
-                throw new Error('Ошибка генерации документа');
-            }
-
-            // Получаем blob из ответа
-            const blob = await response.blob();
-            
-            // Создаем ссылку для скачивания
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `Справка_об_обучении_${request.id}.docx`;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
         } catch (error) {
             console.error('Ошибка при генерации документа:', error);
-            alert('Ошибка при генерации документа');
+            alert(error.message || 'Ошибка при генерации документа');
         } finally {
             setGenerating(false);
         }

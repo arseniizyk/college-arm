@@ -5,6 +5,7 @@ import { observer } from 'mobx-react-lite';
 import { Container, Button, Navbar, Nav, Dropdown, Badge, Offcanvas } from 'react-bootstrap'
 import { NavLink, useNavigate } from 'react-router-dom';
 import { markNotificationAsRead, markAllNotificationsAsRead } from '../http/notificationAPI';
+import { $authHost } from '../http';
 import './NavBar.css';
 
 const NavBar = observer(() => {
@@ -124,13 +125,7 @@ const NavBar = observer(() => {
         if (notification?.requestId && userRole === 'ADMIN') {
             // Помечаем заявку как просмотренную
             try {
-                const token = localStorage.getItem('token');
-                await fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:7000'}/api/request/${notification.requestId}/view`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    }
-                });
+                await $authHost.patch(`/api/request/${notification.requestId}/view`);
                 // Обновляем локально
                 data.updateLocal('requests', notification.requestId, { isViewed: true });
                 // Сохраняем в localStorage
