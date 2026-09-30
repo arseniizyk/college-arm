@@ -84,61 +84,67 @@ npm run seed -- --force
 
 ## Статистика проекта
 
-Подсчёт выполнен 30.09.2026. Исключены `node_modules/`, `.git/`, `.idea/`,
-`client/build/` и `server/backups/` (дампы с персональными данными).
+Подсчёт выполнен 30.09.2026. Считаются все строки файла, включая пустые.
+Исключены `node_modules/`, `.git/`, `.idea/`, `client/build/`,
+`server/backups/` (дампы с персональными данными), сгенерированные документы
+`docs/` и временные отладочные скрипты `server/_*.tmp.js` — это артефакты,
+а не исходный код.
 
 ### По типам файлов
 
 | Категория | Файлов | Строк |
 |---|---:|---:|
-| Клиентский код (`client/src`, `.js` / `.jsx`) | 47 | 9 868 |
-| Шаблоны документов (`server/templates/*.js`) | 12 | 3 214 |
-| Серверный код (`server/**`, `.js`, кроме шаблонов) | 36 | 3 025 |
-| Стили (`.css`) | 7 | 2 155 |
-| Документация и служебное (`.md`, `.txt`, `.gitignore`, `.dockerignore`, `.iml`) | 7 | 741 |
-| Конфигурация (`.json`, `.env`, `.conf`, `.yml`, `.xml`, `.example`) | 11 | 251 |
-| `Dockerfile` | 2 | 43 |
-| HTML-шаблон (`client/public/index.html`) | 1 | 16 |
-| **ВСЕГО** | **123** | **19 313** |
+| Клиентский код (`client/src`, `.js` / `.jsx`) | 47 | 10 706 |
+| Шаблоны документов (`server/templates/*.js`) | 13 | 2 314 |
+| Серверный код (`server/**`, `.js`, кроме шаблонов) | 36 | 3 382 |
+| Стили (`.css`) | 7 | 2 428 |
+| Документация и служебное (`.md`, `.txt`, `.gitignore`, `.dockerignore`) | 8 | 984 |
+| Конфигурация (`.json`, `.env`, `.conf`, `.yml`, `.xml`, `.example`) | 11 | 288 |
+| `Dockerfile` | 2 | 51 |
+| HTML-шаблон (`client/public/index.html`) | 1 | 21 |
+| **ВСЕГО** | **125** | **20 174** |
 
-В серверный код входит новый `server/seed.js` (346 строк) — заполнение базы
+В серверный код входит `server/seed.js` (382 строки) — заполнение базы
 тестовыми данными, см. раздел выше.
 
-Бинарных файлов (`public/*.png`, `favicon.ico`) — 3, ~18.5 КБ, строки не считались.
-Всего файлов в проекте — 128 (из них 2 — `package-lock.json`, они исключены из подсчёта).
+Бинарных файлов — 15, строки не считались: `client/public/*.png` и `favicon.ico`
+(~18.5 КБ), 11 документов в `docs/` (~93 КБ) и один `.docx` в корне репозитория
+(~4.2 МБ). Всего файлов в проекте — 147; из них 2 — `package-lock.json` и ещё 5 —
+`docs/_README.txt` и четыре временных скрипта `server/_*.tmp.js`, они в подсчёт не входят.
 
-`package-lock.json` генерируется npm и в статистику не входит: 2 файла, ~19.7 тыс. строк,
-743 КБ — это 1356 транзитивных пакетов в клиенте и 178 в сервере.
+`package-lock.json` генерируется npm и в статистику не входит: 2 файла, 19 724 строки,
+~726 КБ — это 1356 транзитивных пакетов в клиенте и 178 в сервере.
 
 ### По расширениям
 
 | Расширение | Файлов | Строк |
 |---|---:|---:|
-| `.jsx` | 31 | 8 320 |
-| `.js` | 64 | 7 733 |
-| `.json` (`package.json`, `tsconfig.json`, `manifest.json`, `jsconfig.json`) | 3 | 107 |
-| `.css` | 7 | 2 155 |
-| `.md` (`README.md`, `issues.md`, `AGENTS.md`) | 3 | 574 |
-| `.yml` | 1 | 55 |
-| `.gitignore` | 2 | 50 |
-| без расширения (`Dockerfile`) | 2 | 43 |
-| `.example` | 3 | 35 |
-| `.env` | 3 | 35 |
+| `.jsx` | 31 | 9 055 |
+| `.js` | 65 | 7 347 |
+| `.css` | 7 | 2 428 |
+| `.md` (`README.md`, `issues.md`, `AGENTS.md`) | 3 | 899 |
+| `.json` (`package.json`, `tsconfig.json`, `manifest.json`, `jsconfig.json`) | 3 | 108 |
+| `.yml` (`docker-compose.yml`) | 1 | 65 |
+| `.gitignore` | 2 | 61 |
+| без расширения (`Dockerfile`) | 2 | 51 |
+| `.example` | 3 | 46 |
+| `.env` | 3 | 46 |
+| `.conf` | 1 | 23 |
+| `.html` | 1 | 21 |
 | `.dockerignore` | 2 | 21 |
-| `.conf` | 1 | 19 |
-| `.html` | 1 | 16 |
 | `.txt` | 1 | 3 |
+| **ВСЕГО** | **125** | **20 174** |
 
 ### Самые крупные файлы
 
 | Файл | Строк |
 |---|---:|
-| `server/templates/practiceContractTemplate.js` | 1 013 |
-| `client/src/pages/Profile.jsx` | 822 |
-| `client/src/pages/Admin.css` | 673 |
-| `client/src/components/NavBar.jsx` | 444 |
-| `client/src/components/RequestCard.jsx` | 423 |
-| `client/src/components/PracticeContractModal.jsx` | 379 |
+| `server/templates/practiceContractTemplate.js` | 1 038 |
+| `client/src/pages/Profile.jsx` | 904 |
+| `client/src/pages/Admin.css` | 722 |
+| `client/src/components/NavBar.jsx` | 470 |
+| `client/src/components/RequestCard.jsx` | 464 |
+| `client/src/components/PracticeContractModal.jsx` | 408 |
 
 ## Известные проблемы
 
