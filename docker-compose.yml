@@ -30,6 +30,7 @@ services:
         condition: service_healthy
     env_file:
       - ./server/.env
+    user: "${SERVER_UID:-1000}:${SERVER_GID:-1000}"
     environment:
       NODE_ENV: ${NODE_ENV:-production}
       TZ: ${TZ:-Europe/Minsk}
