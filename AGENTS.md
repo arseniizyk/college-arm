@@ -27,7 +27,8 @@ cd client && npm install && npm start        # CRA dev server, MUST be localhost
 - **`server/.env` has corrupted Russian text** in `COLLEGE_NAME` / `DIRECTOR_NAME` (stored as double-encoded mojibake, unrecoverable). Every generated document ships garbled college/director names. Fix the file before trusting document output.
 - The client never uses axios for 18 call sites — 11 `*OrderModal.jsx`, `NavBar.jsx`, `RequestCard.jsx`, `Profile.jsx` call raw `fetch()` with a hardcoded `localhost:5000` fallback (server runs on **7000**). They only work because `REACT_APP_API_URL` is set in `client/.env`.
 - **No migrations.** `server/index.js` runs `sequelize.sync({ alter: true })` on every boot, so model changes mutate the live schema. Treat model edits as immediate production DDL.
-- **No seed script.** There is no way to create the first `ADMIN` through the API (registration hardcodes `role: 'USER'`); you must `UPDATE "user" SET role='ADMIN'` directly in Postgres.
+- **No API path to create an `ADMIN`.** Registration hardcodes `role: 'USER'`, so you must `UPDATE "user" SET role='ADMIN'` directly in Postgres.
+- **`server/seed.js` (`npm run seed`) fills the DB with fake data** — the script creates the first ADMIN for you, so the manual UPDATE above is only needed if you never seed. It refuses to run on a non-empty DB unless given `--force` (wipe) or `--keep` (append).
 - All models live in one file: `server/models/models.js` (Sequelize `define` + associations). Table names are the model keys, snake_case, singular.
 - `GET /api/student` returns an envelope `{ students, pagination }` when `limit`/`offset` are passed, but a bare array otherwise. `DataStore.fetchAll` special-cases this; other controllers return plain arrays.
 - Backups use `pg_dump`/`psql` from PATH (see below). `.gitignore` now covers `server/backups/*.sql`, but several real dumps with full PII still sit in that directory on disk — don't read, commit, or attach them.

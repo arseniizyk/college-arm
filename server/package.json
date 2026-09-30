@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "server": "nodemon index.js",
+    "seed": "node seed.js",
     "test-backup": "node testBackup.js"
   },
   "keywords": [],
