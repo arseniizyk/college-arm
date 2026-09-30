@@ -33,6 +33,11 @@ app.use('/api', router)
 //Обработчик ошибок, последний Middleware
 app.use(errorHandler)
 
+// Падение процесса из-за непойманного rejected promise не должно быть молчаливым
+process.on('unhandledRejection', (reason) => {
+    console.error('Unhandled rejection:', reason)
+})
+
 const start = async () => {
     try {
         await sequelize.authenticate()
@@ -43,7 +48,8 @@ const start = async () => {
         
         app.listen(PORT, () => console.log(`Server started un port ${PORT}`))
     } catch (e) {
-        console.log(e)
+        console.error('Не удалось запустить сервер:', e.message)
+        process.exit(1)
     }
 }
 

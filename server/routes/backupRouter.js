@@ -1,6 +1,7 @@
 const Router = require('express');
 const router = new Router();
-const backupController = require('../controllers/backupController');
+const { wrapController } = require('../utils/asyncHandler');
+const backupController = wrapController(require('../controllers/backupController'));
 const checkRoleMiddleware = require('../middleware/checkRoleMiddleware');
 
 // Все операции с бэкапами доступны только администраторам

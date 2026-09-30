@@ -24,7 +24,7 @@ cd client && npm install && npm start        # CRA dev server, MUST be localhost
 ## Database
 
 - `server/.env` and `client/.env` are gitignored but required to boot; `server/.env.example` is the committed template. DB is on port **1111** (not 5432).
-- **`server/.env` has corrupted Russian text** in `COLLEGE_NAME` / `DIRECTOR_NAME` (stored as double-encoded mojibake, unrecoverable). Every generated document ships garbled college/director names. Fix the file before trusting document output.
+- **Never rewrite `.env` (or any file with Cyrillic text) with Windows PowerShell 5.1 cmdlets** — `Set-Content` / `Out-File` write UTF-8 with a BOM and can re-encode text through cp1252, which produces the double-encoded mojibake `Ð›Ð¾ÐºÐ°Ð»ÑŒÐ½Ñ‹Ð¹`. It already did this once to `server/.env`: `COLLEGE_NAME` / `DIRECTOR_NAME` were rewritten into `«Минский государственный колледж цифровых технологий»`-shaped mojibake, and because the `||` fallbacks in `server/templates/layout.js:118` and the order templates only trigger on an *empty* value, every generated document shipped garbled college/director names. It is recoverable: map each character back to its cp1252 byte and decode as UTF-8. `server/.env` is already fixed and matches `.env.example`; if mojibake reappears, fix it that way rather than retyping the values.
 - All client HTTP goes through `client/src/http/index.js` (`$host` / `$authHost`). Use `downloadDoc(path, { method, payload, fileName, stamp })` for document downloads — it handles the blob save and error parsing. Note `errorMessage(err, fallback)` to show the server's message: axios throws on non-2xx, so `err.message` alone reads "Request failed with status code 400".
 - **No migrations.** `server/index.js` runs `sequelize.sync({ alter: true })` on every boot, so model changes mutate the live schema. Treat model edits as immediate production DDL. See B6 in `issues.md`.
 - Open problems live in `issues.md`; closed ones in `issues-solved.md`. New audit findings go to `issues.md` with a short entry: what, where, how to verify, how to fix.
@@ -70,13 +70,14 @@ Conventions worth matching: `server/utils/declension.js` handles Russian name de
 
 ## Docker
 
-`server/Dockerfile` (added 29.09.2026) builds a two-stage image with `postgresql-client` so `pg_dump`/`psql` work inside the container. `.dockerignore` excludes `node_modules`, `.env`, and `backups`. Known gaps are listed in `issues.md` (K1–K3): no `USER`, no healthcheck, dev deps shipped to runtime.
+`server/Dockerfile` builds a two-stage image with `postgresql-client-16` from the PGDG repo (so `pg_dump` matches `postgres:16-alpine` in compose), and runs as `USER node` (uid 1000) with `/app` owned by `node`. `npm ci --omit=dev` in the build stage — `bcrypt` is native, so the toolchain stays there but never reaches the image. `.dockerignore` excludes `node_modules`, `.env`, and `backups`. `docker-compose.yml` bind-mounts `./server/backups` over `/app/backups` and sets `user: "${SERVER_UID:-1000}:${SERVER_GID:-1000}"` — the host directory's owner must match that uid or `pg_dump` fails with `EACCES`. Bumping the database major version means bumping `ARG PG_MAJOR` in the Dockerfile too, or backups stop being created. Known gap is listed in `issues.md` (K2): no healthcheck.
 
 ## Conventions
 
 - UI text, API error messages, and code comments are **in Russian**. Match the surrounding file.
-- **`POST /api/user/login` with an empty body kills the server** (`userController.login` has no input validation and no `try/catch`; Express 4 does not catch rejected promises from `async` handlers, and Node 26 exits on unhandled rejection). Reproduced 3/3. Fix before anything else — see B14 in `issues.md`.
+- **Every `async` route handler must be registered through `wrapController`** (`server/utils/asyncHandler.js`). Express 4 does not catch rejected promises from `async` handlers, so an unwrapped `throw` silently becomes an unhandled rejection and kills the process on Node 26. Routers wire it as `const someController = wrapController(require('../controllers/someController'))`.
 - **Keep comments short.** A comment is for what the code does not say on its own — and for *why* it is done that way when the reason isn't obvious. A non-obvious rationale is welcome; it just has to fit in a line or two.
 - **Do not put change history in the code.** No dates ("added 30.09.2026"), no issue or commit references, no "previously this did X", no enumeration of everything that was replaced. `git log` already records that, and `issues.md` holds the reasoning at the level of a whole change. The comment describes the present state, not the history that produced it.
 - Server code is CommonJS with no semicolon consistency guarantee (mixed). Client is ESM/JSX. Some client files are `.js`, most components `.jsx` — do not rename.
+- **Do not edit `README.md` unless explicitly asked.** Nobody reads it yet, so edits are churn on an unverified file. Document findings in `issues.md` / `issues-solved.md` and this file instead.
 - `server/error/ApiError.js` factories are the expected way to signal errors; `ErrorHandlingMiddleware` must stay the last registered middleware.

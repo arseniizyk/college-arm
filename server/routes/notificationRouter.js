@@ -1,6 +1,7 @@
 const Router = require('express')
 const router = new Router()
-const notificationController = require('../controllers/notificationController')
+const { wrapController } = require('../utils/asyncHandler')
+const notificationController = wrapController(require('../controllers/notificationController'))
 const authMiddleware = require('../middleware/authMiddleware')
 
 // Все роуты требуют авторизации

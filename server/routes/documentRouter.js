@@ -1,6 +1,7 @@
 const Router = require('express')
 const router = new Router()
-const documentController = require('../controllers/documentController')
+const { wrapController } = require('../utils/asyncHandler')
+const documentController = wrapController(require('../controllers/documentController'))
 const checkRole = require('../middleware/checkRoleMiddleware')
 const authMiddleware = require('../middleware/authMiddleware')
 
