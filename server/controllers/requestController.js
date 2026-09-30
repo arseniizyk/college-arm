@@ -4,9 +4,8 @@ const { Op } = require('sequelize')
 const { Request, StudentRequest, Student, Document, Group, Specialty, Notification, User } = require('../models/models')
 const { findSupervisorGroupId } = require('../utils/supervisorGroup')
 
-// Общее дерево связей для заявки. sortStudents включает сортировку студентов по фамилии —
-// она нужна только при отображении списка заявок (get, getMine), но не при create/update
-const getRequestInclude = (sortStudents = false) => [
+// Общее дерево связей для заявки
+const getRequestInclude = () => [
     {
         model: User,
         attributes: ['id', 'email', 'role']
@@ -30,8 +29,7 @@ const getRequestInclude = (sortStudents = false) => [
                     }
                 ]
             }
-        ],
-        ...(sortStudents ? { order: [['last_name', 'ASC']] } : {})
+        ]
     }
 ];
 
@@ -196,7 +194,7 @@ class RequestController {
     async get(req, res) {
         try {
             const requests = await Request.findAll({
-                include: getRequestInclude(true),
+                include: getRequestInclude(),
                 order: [['createdAt', 'DESC']]
             });
             return res.json(requests);
@@ -315,7 +313,7 @@ class RequestController {
         try {
             const requests = await Request.findAll({
                 where: { userId: req.user.id },
-                include: getRequestInclude(true),
+                include: getRequestInclude(),
                 order: [['createdAt', 'DESC']]
             });
             return res.json(requests);
@@ -324,8 +322,29 @@ class RequestController {
         }
     }
 
-    async getOne(req, res) {
+    async getOne(req, res, next) {
+        try {
+            const { id } = req.params;
 
+            if (!id) {
+                return next(ApiError.badRequest('Не указан ID заявки'));
+            }
+
+            const request = await Request.findByPk(id, {
+                include: getRequestInclude()
+            });
+            if (!request) {
+                return next(ApiError.badRequest('Заявка не найдена'));
+            }
+
+            if (request.userId !== req.user.id && req.user.role !== 'ADMIN') {
+                return next(ApiError.forbiddenRequest('Нет доступа к этой заявке'));
+            }
+
+            return res.json(request);
+        } catch (error) {
+            return next(ApiError.internalRequest(error.message));
+        }
     }
 
     async markAsViewed(req, res, next) {
@@ -360,7 +379,6 @@ class RequestController {
             if (!request) {
                 return next(ApiError.badRequest('Заявка не найдена'));
             }
-            await StudentRequest.destroy({ where: { requestId: id } });
             await request.destroy();
             return res.json({
                 message: 'Request deleted successfully',
