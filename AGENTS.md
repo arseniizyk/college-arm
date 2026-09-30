@@ -7,6 +7,10 @@ client/  React 19 + CRA (react-scripts 5) + MobX + react-bootstrap
 server/  Express 4 (CommonJS) + Sequelize + PostgreSQL + docx
 ```
 
+## Git
+
+- **The `archive` branch is off limits.** Do not check it out, read its files, diff against it, merge it, cherry-pick from it, or rebase onto it — no reading and no interaction of any kind. Work on the current branch only. If a task seems to need `archive`, ask the user instead of touching it.
+
 ## Commands
 
 Run each app from its own directory; there is no root install.
@@ -41,6 +45,11 @@ cd client && npm install && npm start        # CRA dev server, MUST be localhost
 - Cron `BACKUP_SCHEDULE` (default `0 3 * * *`) is hardcoded to timezone `Europe/Minsk`.
 - Only the newest 7 dumps are kept; the rest are deleted automatically.
 - `POST /api/backup/restore` is destructive and re-runs `psql -f` against the live DB.
+- `pg_dump` writes straight into `backups/` — no temp dir, no rename. An interrupted dump leaves a `.sql` that `cleanOldBackups` counts as valid and that can evict a good one from the 7-file rotation.
+
+## Shutdown
+
+`server/index.js` handles `SIGTERM`/`SIGINT`: stop the cron task → `server.close()` + `closeAllConnections` → `waitForIdle` (counts in-flight `pg_dump`/`psql` in `utils/backup.js`) → `sequelize.close()` → exit 0. A second signal exits immediately with 1; the whole thing is capped by `SHUTDOWN_TIMEOUT_MS` (20 s). `docker-compose.yml` sets `stop_grace_period: 25s` — if that drops below the cap, compose SIGKILLs the container before shutdown finishes and the ordered steps become pointless.
 
 ## Auth
 
