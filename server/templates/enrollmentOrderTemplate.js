@@ -22,7 +22,10 @@ const createEnrollmentOrderTemplate = (data) => {
 
     // Пункты по группам
     const groupParagraphs = [];
-    groups.forEach((group, gi) => {
+    groups.forEach((rawGroup, gi) => {
+        // specialtyName без дефолта печатал литеральное 'undefined' в приказ, если
+        // клиент не присылал ключ (в отличие от остальных 10 шаблонов).
+        const { groupNumber, specialtyName = '', ...group } = rawGroup;
         const pointNum = gi + 1;
         groupParagraphs.push(
             new Paragraph({
@@ -71,7 +74,8 @@ const createEnrollmentOrderTemplate = (data) => {
             })
         );
 
-        exclusions.forEach((exc, index) => {
+        exclusions.forEach((rawExc, index) => {
+            const { specialtyName = '', ...exc } = rawExc;
             const isLast = index === exclusions.length - 1;
             exclusionParagraphs.push(
                 new Paragraph({

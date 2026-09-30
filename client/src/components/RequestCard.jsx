@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card, Badge, Button, Collapse, ListGroup, Row, Col } from 'react-bootstrap';
-import { calculateCourse } from '../utils/dataHelpers';
+import { calculateCourse, MISSING_SPECIALTY_LABEL } from '../utils/dataHelpers';
 
 const StudentDetailsItem = ({ student, index, getNameById }) => {
     const [showDetails, setShowDetails] = useState(false);
@@ -45,8 +45,10 @@ const StudentDetailsItem = ({ student, index, getNameById }) => {
                                 </small>
                             </div>
 
-                            {/* Специальность и квалификация */}
-                            {student.group?.specialty && (
+                            {/* Специальность и квалификация. Без специальности блок не
+                                скрываем целиком: иначе карточка выглядит как «не показано»,
+                                а на деле у группы удалена специальность и справка не соберётся. */}
+                            {student.group?.specialty ? (
                                 <>
                                     <div className="mb-2">
                                         <small className="text-muted">
@@ -61,6 +63,13 @@ const StudentDetailsItem = ({ student, index, getNameById }) => {
                                         </small>
                                     </div>
                                 </>
+                            ) : (
+                                <div className="mb-2">
+                                    <small className="text-danger">
+                                        <i className="bi-exclamation-triangle me-2" style={{ width: '16px', display: 'inline-block' }}></i>
+                                        {MISSING_SPECIALTY_LABEL}
+                                    </small>
+                                </div>
                             )}
 
                             {/* Номер приказа */}

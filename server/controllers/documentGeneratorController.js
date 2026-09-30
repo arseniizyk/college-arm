@@ -53,14 +53,26 @@ class DocumentGeneratorController {
             
             // Создаем секции для документа
             const sections = [];
-            
+
+            // Группы, у которых удалена специальность (FK groups.specialtyId = ON DELETE SET NULL),
+            // раньше молча пропускались через continue: справка приходила неполной, а если
+            // таких студентов были все — приходил пустой валидный .docx с кодом 200.
+            // Собираем их и отказываем до формирования документа.
+            const skipped = [];
+
             // Генерируем справку для каждого студента
             for (let i = 0; i < request.students.length; i++) {
                 const student = request.students[i];
                 const group = student.group;
                 const specialty = group?.specialty;
-                
+
                 if (!group || !specialty) {
+                    const fio = [student.last_name, student.name, student.father_name]
+                        .filter(Boolean).join(' ');
+                    skipped.push({
+                        fio,
+                        reason: !group ? 'без группы' : 'без специальности'
+                    });
                     continue;
                 }
                 
@@ -87,6 +99,14 @@ class DocumentGeneratorController {
             }
             
             // Создаем документ
+            if (skipped.length > 0) {
+                const list = skipped.map(s => `${s.fio} (${s.reason})`).join(', ');
+                return next(ApiError.badRequest(
+                    `Не удалось сформировать справку: у ${skipped.length} из ${request.students.length} студентов ` +
+                    `отсутствует группа или специальность. Укажите специальность в группе — после этого справка соберётся полностью. ${list}`
+                ));
+            }
+
             const doc = new Document({
                 sections: sections
             });

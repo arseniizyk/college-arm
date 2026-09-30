@@ -120,9 +120,20 @@ export const getDropdownOptions = (fieldName, data, excludeOwnerId = null) => {
     }
 };
 
+// Специальность удаляется без предупреждения (FK = ON DELETE SET NULL), поэтому у групп
+// остаётся specialtyId = null. Такой случай показываем явно, а не молчаливым дефисом:
+// иначе строка выглядит как обычная, и groups пропадают из фильтра по специальности.
+export const MISSING_SPECIALTY_LABEL = 'Без специальности';
+
+// Специальное значение фильтра «Без специальности»: показывает группы, у которых
+// specialtyId = null (специальность удалена). Без него такие группы не попадали
+// ни под один фильтр и просто исчезали из таблицы.
+export const MISSING_SPECIALTY_FILTER = 'none';
+
 // Функция для получения названия по ID
 export const getNameById = (fieldName, id, data) => {
-    if (!id) return '-';
+    if (!id && fieldName !== 'specialtyId') return '-';
+    if (!id && fieldName === 'specialtyId') return MISSING_SPECIALTY_LABEL;
     
     switch (fieldName) {
         case 'groupId':
@@ -244,8 +255,10 @@ export const filterData = (
         case 'groups':
             // Фильтрация по специальности
             if (selectedSpecialtyFilter && selectedSpecialtyFilter !== '') {
-                filteredData = filteredData.filter(group => 
-                    group.specialtyId === parseInt(selectedSpecialtyFilter, 10)
+                filteredData = filteredData.filter(group =>
+                    selectedSpecialtyFilter === MISSING_SPECIALTY_FILTER
+                        ? !group.specialtyId
+                        : group.specialtyId === parseInt(selectedSpecialtyFilter, 10)
                 );
             }
             

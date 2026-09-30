@@ -113,7 +113,16 @@ class GroupController {
             const updateData = {};
             if (group_number) updateData.group_number = group_number;
             if (enroll_date) updateData.enroll_date = new Date(enroll_date);
-            if (specialtyId) updateData.specialtyId = specialtyId;
+            if (specialtyId) {
+                // В create проверка есть (см. выше), в update её не было:
+                // несуществующий id доходил до БД и падал на FK-ограничении,
+                // то есть отдавался 500 с текстом ошибки Postgres.
+                const specialty = await Specialty.findByPk(specialtyId);
+                if (!specialty) {
+                    return next(ApiError.badRequest('Указанная специальность не существует'));
+                }
+                updateData.specialtyId = specialtyId;
+            }
             if (payment_type) updateData.payment_type = payment_type;
             
             await group.update(updateData);

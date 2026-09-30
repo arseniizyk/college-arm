@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { InputGroup, FormControl, Form, Badge } from 'react-bootstrap';
+import { MISSING_SPECIALTY_FILTER, MISSING_SPECIALTY_LABEL } from '../utils/dataHelpers';
 
 const SearchAndFilters = ({
     searchTerm,
@@ -197,6 +198,11 @@ const SearchAndFilters = ({
                                         {spec.name}
                                     </option>
                                 ))}
+                                {/* Группы с удалённой специальностью (specialtyId = null)
+                                    иначе не попадают ни под один фильтр и пропадают из таблицы */}
+                                <option value={MISSING_SPECIALTY_FILTER}>
+                                    {MISSING_SPECIALTY_LABEL}
+                                </option>
                             </Form.Select>
                         </InputGroup>
                     </div>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Badge } from 'react-bootstrap';
 import { toJS } from 'mobx';
-import { calculateCourse, formatDuration } from '../utils/dataHelpers';
+import { calculateCourse, formatDuration, MISSING_SPECIALTY_LABEL } from '../utils/dataHelpers';
 
 const TableCell = ({ value, columnKey, item }) => {
     // Специальные случаи обрабатываем ДО проверки на null
@@ -13,8 +13,13 @@ const TableCell = ({ value, columnKey, item }) => {
         
         // Получаем данные специальности из вложенного объекта
         const specialty = item.specialty;
-        const durationYears = specialty?.duration_years || 4;
-        const durationMonths = specialty?.duration_months || 0;
+        // Без специальности срок обучения неизвестен. Раньше фолбэк 4 года давал
+        // правдоподобный, но выдуманный курс — в том числе «Выпускник» не по сроку.
+        if (!specialty) {
+            return <span className="text-muted" title={MISSING_SPECIALTY_LABEL}>-</span>;
+        }
+        const durationYears = specialty.duration_years || 4;
+        const durationMonths = specialty.duration_months || 0;
         
         const course = calculateCourse(item.enroll_date, durationYears, durationMonths);
         
