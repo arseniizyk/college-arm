@@ -21,7 +21,8 @@ cd client && npm install && npm start        # CRA dev server, MUST be localhost
 ```
 
 - `server`: the script is named `server`, not `start`. `npm run test-backup` references a `testBackup.js` that does not exist.
-- `client`: no lint / format / typecheck scripts. `npm test` is CRA's Jest runner, but there are **no test files** in the repo — do not claim tests pass; there is nothing to run.
+- `client`: no lint / format / typecheck scripts. `npm test` is CRA's Jest runner; run it as `CI=true npm test` so it exits instead of watching. Only pure functions are tested — there is no jsdom-based component test, so a component change is verified by `npm run build` and by hand.
+- Tests exist for a few pure modules only: `server/utils/*.test.js` (`node --test`, run with `npm test` in `server/`) and `client/src/utils/*.test.js`. A new `*.test.js` sits next to its source in both apps.
 - The only automated check available is CRA's ESLint on `npm start` / `npm run build`.
 - Bootstrap 5 and bootstrap-icons are loaded from **CDN links in `client/public/index.html`**, not imported in JS/CSS. Offline builds lose all styling.
 
@@ -58,6 +59,7 @@ cd client && npm install && npm start        # CRA dev server, MUST be localhost
 - `middleware/checkRoleMiddleware` re-verifies the token and compares `decoded.role`; it does not hit the DB. `middleware/authMiddleware` populates `req.user` — controllers read the user id from there, never from body params.
 - `authMiddleware` and `checkRoleMiddleware` both `next()` on `OPTIONS` but forget to `return`, so preflight requests also fall through into the handler. CORS origin comes from `CLIENT_ORIGIN` in `server/index.js` (comma-separated, default `http://localhost:3000`). Every client request shares the axios `baseURL` (`REACT_APP_API_URL`), so a mismatched `CLIENT_ORIGIN` blocks the whole app.
 - Client-side route gating (`AppRouter` + `routes.js`) is cosmetic; the server is the only real enforcement. Don't trust it as an authorization check.
+- The rule "how many students a role may put into a request" lives in exactly two places: `server/utils/studentIds.js` (`resolveStudentIds` — the server-side source of truth, called from `requestController.create` and `.update`) and `canSelectMultipleStudents` in `client/src/utils/consts.js` (which only picks `select` vs `multiselect` in the UI). `ADMIN` and `TEACHER` may pass any number, everyone else exactly one. Don't add a third copy.
 
 ## Client architecture
 

@@ -4,6 +4,7 @@ import { Context } from '../index';
 import { observer } from 'mobx-react-lite';
 import MultiselectStudents from '../components/MultiselectStudents';
 import { getMe } from '../http/userAPI';
+import { canSelectMultipleStudents } from '../utils/consts';
 import './Request.css';
 
 const Request = observer(() => {
@@ -45,7 +46,7 @@ const Request = observer(() => {
     useEffect(() => {
         setFormData(prev => ({
             ...prev,
-            studentIds: userRole === 'USER' ? '' : []
+            studentIds: canSelectMultipleStudents(userRole) ? [] : ''
         }));
     }, [userRole]);
 
@@ -114,7 +115,7 @@ const Request = observer(() => {
             setFormData({
                 documentId: '',
                 description: '',
-                studentIds: userRole === 'USER' ? '' : []
+                studentIds: canSelectMultipleStudents(userRole) ? [] : ''
             });
 
             setTimeout(() => setSuccess(null), 5000);
@@ -222,7 +223,7 @@ const Request = observer(() => {
                                         <MultiselectStudents
                                             field={{
                                                 name: 'studentIds',
-                                                type: userRole === 'ADMIN' || userRole === 'TEACHER' ? 'multiselect' : 'select',
+                                                type: canSelectMultipleStudents(userRole) ? 'multiselect' : 'select',
                                                 required: true
                                             }}
                                             formData={formData}
@@ -265,7 +266,7 @@ const Request = observer(() => {
                                             variant="outline-secondary" 
                                             type="button"
                                             className="btn-custom btn-custom-secondary"
-                                            onClick={() => setFormData({ documentId: '', description: '', studentIds: userRole === 'USER' ? '' : [] })}
+                                            onClick={() => setFormData({ documentId: '', description: '', studentIds: canSelectMultipleStudents(userRole) ? [] : '' })}
                                             disabled={loading}
                                         >
                                             <i className="bi bi-arrow-clockwise me-2"></i>

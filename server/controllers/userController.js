@@ -175,6 +175,9 @@ class UserController {
             if (!id) {
                 return next(ApiError.badRequest('Не указан ID пользователя'));
             }
+            if (String(id) === String(req.user.id)) {
+                return next(ApiError.badRequest('Нельзя удалить свой собственный аккаунт'));
+            }
             const usr = await User.findByPk(id);
             if (!usr) {
                 return next(ApiError.badRequest('Пользователь не найден'));

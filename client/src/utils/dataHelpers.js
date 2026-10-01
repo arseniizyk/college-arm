@@ -340,22 +340,16 @@ export const filterData = (
 };
 
 // Функция для подготовки данных формы перед отправкой
-export const prepareFormData = (formData, activeTab, userRole) => {
+export const prepareFormData = (formData, activeTab) => {
     let submitData = { ...formData };
     
     // Специальная обработка для заявок
     if (activeTab === 'requests' && submitData.studentIds) {
-        // Для обычных пользователей studentIds - это строка, для админов/преподавателей - массив
-        if (userRole === 'USER') {
-            // Преобразуем одиночный ID в массив
-            submitData.studentIds = [parseInt(submitData.studentIds, 10)];
-        } else {
-            // Преобразуем массив строк в массив чисел
-            submitData.studentIds = Array.isArray(submitData.studentIds) 
-                ? submitData.studentIds.map(id => parseInt(id, 10))
-                : [parseInt(submitData.studentIds, 10)];
-        }
-        
+        submitData.studentIds = (Array.isArray(submitData.studentIds)
+            ? submitData.studentIds
+            : [submitData.studentIds]
+        ).map(id => parseInt(id, 10));
+
         // Преобразуем documentId в число, если он есть
         if (submitData.documentId) {
             submitData.documentId = parseInt(submitData.documentId, 10);

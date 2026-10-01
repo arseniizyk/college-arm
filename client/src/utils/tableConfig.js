@@ -1,3 +1,5 @@
+import { canSelectMultipleStudents } from './consts'
+
 // Конфигурация колонок для таблиц
 export const TABLE_COLUMNS = {
     users: [
@@ -68,7 +70,7 @@ export const getDefaultFormData = (table, userRole) => {
         requests: {
             documentId: '',
             description: '',
-            studentIds: userRole === 'USER' ? '' : [],
+            studentIds: canSelectMultipleStudents(userRole) ? [] : '',
             status: 'in_progress'
         },
         students: {
@@ -122,10 +124,12 @@ export const getFieldsConfig = (userRole, getDropdownOptions, modalType = 'creat
         { 
             name: 'studentIds', 
             label: 'Студенты', 
-            type: userRole === 'USER' ? 'select' : 'multiselect', 
+            type: canSelectMultipleStudents(userRole) ? 'multiselect' : 'select', 
             options: getDropdownOptions('studentIds'), 
             required: true,
-            helpText: userRole === 'USER' ? 'Вы можете выбрать только одного студента' : 'Вы можете выбрать нескольких студентов'
+            helpText: canSelectMultipleStudents(userRole)
+                ? 'Вы можете выбрать нескольких студентов'
+                : 'Вы можете выбрать только одного студента'
         },
         { name: 'status', label: 'Статус', type: 'select', 
           options: [

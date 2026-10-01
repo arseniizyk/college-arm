@@ -192,7 +192,7 @@ export const useAdminLogic = (data, user) => {
 
         try {
             // Подготавливаем данные для отправки
-            const submitData = prepareFormData(formData, activeTab, userRole);
+            const submitData = prepareFormData(formData, activeTab);
 
             // Валидация для заявок - проверяем наличие студентов (только для create и edit)
             if (activeTab === 'requests' && modalType !== 'delete') {

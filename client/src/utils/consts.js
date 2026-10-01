@@ -7,3 +7,7 @@ export const PROFILE_ROUTE = '/profile'
 export const PRIVACY_ROUTE = '/privacy'
 
 export const ITEMS_PER_PAGE = 10
+const ROLES_WITH_MULTIPLE_STUDENTS = ['ADMIN', 'TEACHER']
+
+export const canSelectMultipleStudents = (userRole) =>
+  ROLES_WITH_MULTIPLE_STUDENTS.includes(userRole)

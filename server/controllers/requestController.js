@@ -3,6 +3,7 @@ const sequelize = require('../db')
 const { Op } = require('sequelize')
 const { Request, StudentRequest, Student, Document, Group, Specialty, Notification, User } = require('../models/models')
 const { findSupervisorGroupId } = require('../utils/supervisorGroup')
+const { resolveStudentIds } = require('../utils/studentIds')
 
 // Общее дерево связей для заявки
 const getRequestInclude = () => [
@@ -41,14 +42,9 @@ const ROLES_WITH_ANY_STUDENT = ['ADMIN'];
 
 // Проверяет, что пользователь имеет право заказывать документы на переданных студентов.
 // Возвращает ApiError или null.
-async function checkStudentsAccess(userId, userRole, studentIds) {
+async function checkStudentsAccess(userId, userRole, ids) {
     if (ROLES_WITH_ANY_STUDENT.includes(userRole)) {
         return null;
-    }
-
-    const ids = studentIds.map(id => Number(id));
-    if (ids.some(id => !Number.isInteger(id))) {
-        return ApiError.badRequest('Некорректный идентификатор студента');
     }
 
     if (userRole === 'TEACHER') {
@@ -103,15 +99,17 @@ class RequestController {
             const userId = req.user.id; // Берем ID пользователя из токена
 
             // Валидация
-            if (!Array.isArray(studentIds) || studentIds.length === 0) {
-                return next(ApiError.badRequest('Не выбран ни один студент'));
+            const resolvedIds = resolveStudentIds(studentIds, req.user.role);
+            if (resolvedIds.error) {
+                return next(resolvedIds.error);
             }
+            const { ids } = resolvedIds;
 
             if (!documentId && !description) {
                 return next(ApiError.badRequest('Необходимо выбрать документ или указать описание'));
             }
 
-            const accessError = await checkStudentsAccess(userId, req.user.role, studentIds);
+            const accessError = await checkStudentsAccess(userId, req.user.role, ids);
             if (accessError) {
                 return next(accessError);
             }
@@ -137,7 +135,7 @@ class RequestController {
 
                 // Создаем связи со студентами
                 await StudentRequest.bulkCreate(
-                    studentIds.map(studentId => ({
+                    ids.map(studentId => ({
                         studentId,
                         requestId: request.id
                     })),
@@ -233,12 +231,19 @@ class RequestController {
             const oldStatus = request.status;
             
             // Валидация studentIds при обновлении
+            let ids;
             if (studentIds !== undefined) {
-                if (!Array.isArray(studentIds) || studentIds.length === 0) {
-                    return next(ApiError.badRequest('Необходимо выбрать хотя бы одного студента'));
+                const resolved = resolveStudentIds(
+                    studentIds,
+                    userRole,
+                    'Необходимо выбрать хотя бы одного студента'
+                );
+                if (resolved.error) {
+                    return next(resolved.error);
                 }
+                ids = resolved.ids;
 
-                const accessError = await checkStudentsAccess(userId, userRole, studentIds);
+                const accessError = await checkStudentsAccess(userId, userRole, ids);
                 if (accessError) {
                     return next(accessError);
                 }
@@ -260,13 +265,13 @@ class RequestController {
                 }
                 
                 // Если переданы новые студенты, обновляем связи
-                if (studentIds && Array.isArray(studentIds)) {
+                if (ids) {
                     // Удаляем старые связи
                     await StudentRequest.destroy({ where: { requestId: id }, transaction: t });
-                    
+
                     // Создаем новые связи
                     await StudentRequest.bulkCreate(
-                        studentIds.map(studentId => ({
+                        ids.map(studentId => ({
                             studentId,
                             requestId: id
                         })),

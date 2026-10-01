@@ -33,7 +33,6 @@ export default class DataStore {
     this._entities = {}
     this._loading = {}
     this._errors = {}
-    this._pagination = null
     this._allStudents = [] // Полный список студентов без фильтрации
 
     // Инициализируем пустые массивы для всех типов
@@ -104,8 +103,6 @@ export default class DataStore {
       if (entityType === 'students' && data.students) {
         // Новый формат ответа для студентов с пагинацией
         entities = data.students;
-        // Сохраняем информацию о пагинации
-        this._pagination = data.pagination || null;
       } else {
         entities = data || [];
       }
@@ -253,11 +250,6 @@ export default class DataStore {
 
   // ========== GETTERS ==========
 
-  // Геттер для всех сущностей
-  get entities() {
-    return this._entities
-  }
-
   // Геттеры для отдельных типов (гарантированно возвращают массивы)
   get users() {
     return Array.isArray(this._entities.users) ? this._entities.users : []
@@ -314,50 +306,5 @@ export default class DataStore {
   // Очистка ошибки
   clearError(entityType) {
     this._errors[entityType] = null
-  }
-
-  // Очистка всех ошибок
-  clearAllErrors() {
-    ENTITY_TYPES.forEach(type => {
-      this._errors[type] = null
-    })
-  }
-
-  // Поиск по ID
-  findById(entityType, id) {
-    const items = this._entities[entityType] || []
-    return items.find(item => item.id === id)
-  }
-
-  // Поиск по полю
-  findByField(entityType, fieldName, value) {
-    const items = this._entities[entityType] || []
-    return items.find(item => item[fieldName] === value)
-  }
-
-  // Фильтрация
-  filter(entityType, predicate) {
-    const items = this._entities[entityType] || []
-    return items.filter(predicate)
-  }
-
-  // Получение статистики
-  getStatistics() {
-    return {
-      users: this.users.length,
-      groups: this.groups.length,
-      students: this.students.length,
-      specialties: this.specialties.length,
-      teachers: this.teachers.length,
-      documents: this.documents.length,
-      requests: this.requests.length,
-      supervisors: this.supervisors.length,
-      notifications: this.notifications.length
-    }
-  }
-
-  // Получение информации о пагинации
-  get pagination() {
-    return this._pagination
   }
 }
