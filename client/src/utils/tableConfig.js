@@ -151,7 +151,7 @@ export const getFieldsConfig = (userRole, getDropdownOptions, modalType = 'creat
     groups: [
         { name: 'group_number', label: 'Номер группы', type: 'text', required: true },
         { name: 'specialtyId', label: 'Специальность', type: 'select', options: getDropdownOptions('specialtyId'), required: true },
-        { name: 'teacherId', label: 'Преподаватель', type: 'select', options: getDropdownOptions('teacherId'), required: true },
+        { name: 'teacherId', label: 'Преподаватель', type: 'select', options: getDropdownOptions('teacherId'), required: modalType === 'create' },
         { name: 'enroll_date', label: 'Дата зачисления', type: 'date', required: true },
         { name: 'payment_type', label: 'Основа обучения', type: 'select', 
           options: [

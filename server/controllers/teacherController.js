@@ -1,6 +1,7 @@
-const { Teacher } = require('../models/models')
+const { Teacher, Group, Supervisor } = require('../models/models')
 const ApiError = require('../error/ApiError')
 const { resolveUserId } = require('../utils/resolveUserId')
+const { formatCuratorBlockMessage } = require('../utils/supervisorGroup')
 
 // Привязка аккаунта к куратору: аккаунт должен существовать и не быть занятым другим преподавателем
 const resolveTeacherUserId = (rawValue, excludeTeacherId = null) =>
@@ -79,6 +80,21 @@ class TeacherController {
             const tch = await Teacher.findByPk(id);
             if (!tch) {
                 return next(ApiError.badRequest('Преподаватель не найден'));
+            }
+            // Без проверки FK ON DELETE SET NULL оставил бы группу без куратора
+            // и отвязал аккаунт преподавателя от его группы.
+            const supervisedGroups = await Supervisor.findAll({
+                where: { teacherId: id },
+                attributes: ['groupId'],
+                include: [{ model: Group, attributes: ['group_number'] }]
+            });
+            // Записи с groupId = null — сироты от удалённых групп: они не
+            // блокируют удаление, но и группы за собой не имеют.
+            const groupNumbers = supervisedGroups
+                .map(s => s.Group && s.Group.group_number)
+                .filter(Boolean);
+            if (groupNumbers.length) {
+                return next(ApiError.badRequest(formatCuratorBlockMessage(groupNumbers)));
             }
             await tch.destroy();
             return res.json({

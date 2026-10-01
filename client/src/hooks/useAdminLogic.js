@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { getTableData, filterData, prepareFormData, getNameById } from '../utils/dataHelpers';
+import { getTableData, filterData, prepareFormData, getNameById, toGroupFormData } from '../utils/dataHelpers';
 import { getDefaultFormData } from '../utils/tableConfig';
 import { ITEMS_PER_PAGE } from '../utils/consts';
 import { statusLabel } from '../utils/requestStatus';
@@ -156,6 +156,8 @@ export const useAdminLogic = (data, user) => {
                 studentIds: item.students.map(student => student.id.toString())
             };
             setFormData(formDataWithIds);
+        } else if (activeTab === 'groups') {
+            setFormData(toGroupFormData(item));
         } else {
             setFormData(item);
         }

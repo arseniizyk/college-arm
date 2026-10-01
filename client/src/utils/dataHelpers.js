@@ -360,6 +360,20 @@ export const prepareFormData = (formData, activeTab) => {
     if ((activeTab === 'students' || activeTab === 'teachers') && 'userId' in submitData) {
         submitData.userId = submitData.userId ? parseInt(submitData.userId, 10) : null;
     }
+
+    if (activeTab === 'groups') {
+        delete submitData.supervisor;
+        if ('teacherId' in submitData) {
+            submitData.teacherId = submitData.teacherId === '' || submitData.teacherId === null
+                ? null
+                : parseInt(submitData.teacherId, 10);
+        }
+    }
     
     return submitData;
 };
+
+export const toGroupFormData = (group) => ({
+    ...group,
+    teacherId: group?.supervisor?.teacher?.id ?? ''
+});

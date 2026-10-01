@@ -32,8 +32,12 @@ const Student = sequelize.define('student', {
     userId: { type: DataTypes.INTEGER, allowNull: true }
 })
  
+// Куратор принадлежит группе, поэтому запись на группу одна: unique выражает
+// это ограничение явно, hasOne его не создаёт. allowNull обязателен — FK
+// ON DELETE SET NULL обнуляет groupId, а unique не запрещает несколько NULL.
 const Supervisor = sequelize.define('supervisor', {
-    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true }
+    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
+    groupId: { type: DataTypes.INTEGER, unique: true, allowNull: true }
 })
 
 const Teacher = sequelize.define('teacher', {

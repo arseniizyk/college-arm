@@ -1,5 +1,6 @@
 const { Group, Supervisor, Specialty, Teacher } = require('../models/models')
 const { validatePaymentType } = require('../utils/paymentType')
+const { parseSupervisorAssignment } = require('../utils/supervisorGroup')
 const ApiError = require('../error/ApiError')
 
 class GroupController {
@@ -141,21 +142,31 @@ class GroupController {
             
             await group.update(updateData);
             
-            // Если изменился преподаватель, обновляем куратора
-            if (teacherId) {
-                const teacher = await Teacher.findByPk(teacherId);
+            // Связь «куратор группы» меняется только если поле прислано: пустое — снять.
+            const assignment = parseSupervisorAssignment(teacherId);
+            if (assignment.action === 'error') {
+                return next(ApiError.badRequest(assignment.error));
+            }
+
+            if (assignment.action === 'clear') {
+                await Supervisor.destroy({ where: { groupId: id } });
+            }
+
+            if (assignment.action === 'assign') {
+                const teacher = await Teacher.findByPk(assignment.teacherId);
                 if (!teacher) {
                     return next(ApiError.badRequest('Указанный преподаватель не существует'));
                 }
-                
+
                 // Обновляем или создаем запись куратора
                 const [supervisor] = await Supervisor.findOrCreate({
                     where: { groupId: id },
-                    defaults: { teacherId }
+                    defaults: { teacherId: assignment.teacherId }
                 });
-                
-                if (supervisor.teacherId !== teacherId) {
-                    await supervisor.update({ teacherId });
+
+                // teacherId приходит из формы числом, иначе сравнение всегда истинно
+                if (Number(supervisor.teacherId) !== assignment.teacherId) {
+                    await supervisor.update({ teacherId: assignment.teacherId });
                 }
             }
             

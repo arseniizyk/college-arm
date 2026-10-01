@@ -11,7 +11,6 @@ const ENTITY_TYPES = [
   'teachers',
   'documents',
   'requests',
-  'supervisors',
   'notifications'
 ]
 
@@ -24,7 +23,6 @@ const ENDPOINTS = {
   teachers: '/api/teacher',
   documents: '/api/document',
   requests: '/api/request',
-  supervisors: '/api/supervisor',
   notifications: '/api/notification'
 }
 
@@ -287,10 +285,6 @@ export default class DataStore {
 
   get requests() {
     return Array.isArray(this._entities.requests) ? this._entities.requests : []
-  }
-
-  get supervisors() {
-    return Array.isArray(this._entities.supervisors) ? this._entities.supervisors : []
   }
 
   get notifications() {
