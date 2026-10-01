@@ -231,7 +231,7 @@ const ReleaseOrderModal = observer(({ show, onHide }) => {
                                     </Col>
                                 </Row>
                                 <Form.Group className="mb-2">
-                                    <Form.Label>Мероприятие <span className="text-danger">*</span></Form.Label>
+                                    <Form.Label>Мероприятие (название в предложном падеже, без предлога «в») <span className="text-danger">*</span></Form.Label>
                                     <Form.Control type="text" value={period.eventName} onChange={(e) => handlePeriodChange(index, 'eventName', e.target.value)} placeholder='спортивно-массовом мероприятии «Благотворительный рождественский турнир»' required />
                                 </Form.Group>
                                 <Form.Group className="mb-2">
