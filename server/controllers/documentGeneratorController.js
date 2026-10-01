@@ -2,6 +2,7 @@ const { Document, Packer } = require('docx');
 const { Request, Student, Group, Specialty, Document: DocumentModel } = require('../models/models');
 const { declineFullName, detectGender } = require('../utils/declension');
 const { parseOrderNumber } = require('../utils/orderParser');
+const { courseTextGenitive } = require('../utils/course');
 const { createStudyCertificateTemplate } = require('../templates/studyCertificateTemplate');
 const ApiError = require('../error/ApiError');
 
@@ -149,19 +150,10 @@ function prepareStudyCertificateData(student, group, specialty) {
     });
     const orderNumber = orderInfo.number;
     
-    // Вычисляем курс
     const enrollDate = new Date(group.enroll_date);
-    const now = new Date();
-    let yearsDiff = now.getFullYear() - enrollDate.getFullYear();
-    if (now.getMonth() < 8 && enrollDate.getMonth() >= 8) {
-        yearsDiff--;
-    }
-    const course = yearsDiff + 1;
-    const maxCourse = specialty.duration_years + (specialty.duration_months > 0 ? 1 : 0);
-    
-    // Определяем курс прописью
-    const courseWords = ['первого', 'второго', 'третьего', 'четвертого'];
-    const courseText = course > maxCourse ? 'выпускник' : courseWords[course - 1] || `${course}`;
+
+    // Невычислимый курс утилита сводит к первому, а не пропускает в документ "NaN"
+    const courseText = courseTextGenitive(group.enroll_date, specialty.duration_years, specialty.duration_months);
     
     // Вычисляем дату окончания обучения
     const endDate = new Date(enrollDate);
