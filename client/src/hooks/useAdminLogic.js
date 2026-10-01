@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { getTableData, filterData, prepareFormData, getNameById } from '../utils/dataHelpers';
 import { getDefaultFormData } from '../utils/tableConfig';
 import { ITEMS_PER_PAGE } from '../utils/consts';
+import { statusLabel } from '../utils/requestStatus';
 
 export const useAdminLogic = (data, user) => {
     const [activeTab, setActiveTab] = useState('users');
@@ -128,14 +129,7 @@ export const useAdminLogic = (data, user) => {
                 data.fetchAll('notifications')
             ]);
             
-            // Определяем название статуса для сообщения
-            const statusNames = {
-                in_progress: 'В обработке',
-                completed: 'Завершено',
-                rejected: 'Отклонено'
-            };
-            
-            setSuccess(`Статус заявки #${requestId} изменен на "${statusNames[newStatus] || newStatus}"`);
+            setSuccess(`Статус заявки #${requestId} изменен на "${statusLabel(newStatus)}"`);
             
             setTimeout(() => setSuccess(null), 3000);
         } catch (err) {

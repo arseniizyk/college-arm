@@ -14,8 +14,8 @@ const Admin = observer(() => {
     const { data, user } = useContext(Context);
     const [mainTab, setMainTab] = useState('data');
     
-    // Подсчитываем количество новых заявок (со статусом in_progress и не просмотренные)
-    const newRequestsCount = (data.requests || []).filter(req => req.status === 'in_progress' && !req.isViewed).length;
+    // Подсчитываем количество новых заявок (в обработке и ещё не просмотренные)
+    const newRequestsCount = (data.requests || []).filter(req => req.status === 'pending' && !req.isViewed).length;
     
     // Автоматическое обновление заявок каждую минуту
     useEffect(() => {

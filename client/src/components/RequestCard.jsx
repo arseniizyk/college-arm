@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Card, Badge, Button, Collapse, ListGroup, Row, Col } from 'react-bootstrap';
 import { calculateCourse, formatFio, MISSING_SPECIALTY_LABEL } from '../utils/dataHelpers';
+import { isTerminalStatus, isNewRequest, statusBadge, statusLabel, statusTerminalHint, REQUEST_STATUSES, STATUS_KEYS } from '../utils/requestStatus';
 import { $authHost, downloadDoc } from '../http';
 
 const StudentDetailsItem = ({ student, index, getNameById }) => {
@@ -154,18 +155,6 @@ const RequestCard = ({ request, onStatusChange, getNameById, onViewUpdate }) => 
     const [generating, setGenerating] = useState(false);
     const [isViewed, setIsViewed] = useState(request.isViewed || false);
 
-    const statusColors = {
-        in_progress: 'info',
-        completed: 'success',
-        rejected: 'danger'
-    };
-
-    const statusTranslations = {
-        in_progress: 'В обработке',
-        completed: 'Завершено',
-        rejected: 'Отклонено'
-    };
-
     const formatDate = (dateString) => {
         if (!dateString) return '-';
         const date = new Date(dateString);
@@ -183,7 +172,7 @@ const RequestCard = ({ request, onStatusChange, getNameById, onViewUpdate }) => 
         setExpanded(newExpandedState);
         
         // Если раскрываем заявку и она еще не просмотрена, помечаем как просмотренную
-        if (newExpandedState && !isViewed && request.status === 'in_progress') {
+        if (newExpandedState && !isViewed && isNewRequest(request)) {
             try {
                 await $authHost.patch(`/api/request/${request.id}/view`);
                 setIsViewed(true);
@@ -225,13 +214,13 @@ const RequestCard = ({ request, onStatusChange, getNameById, onViewUpdate }) => 
     const isStudyCertificate = request.document?.document_name?.toLowerCase().includes('обучени');
     
     // Заявка считается новой, если она в обработке и не просмотрена
-    const isNewRequest = request.status === 'in_progress' && !isViewed;
+    const isNew = isNewRequest({ ...request, isViewed });
 
     return (
-        <Card className={`mb-3 shadow-sm request-card ${isNewRequest ? 'border-info border-2' : ''}`}>
+        <Card className={`mb-3 shadow-sm request-card ${isNew ? 'border-info border-2' : ''}`}>
             <Card.Header 
                 className="request-card-header"
-                style={{ backgroundColor: isNewRequest ? '#e7f3ff' : '#f8f9fa' }}
+                style={{ backgroundColor: isNew ? '#e7f3ff' : '#f8f9fa' }}
             >
                 <div 
                     className="request-card-header-content"
@@ -242,7 +231,7 @@ const RequestCard = ({ request, onStatusChange, getNameById, onViewUpdate }) => 
                         <h5 className="request-card-title mb-0">
                             <i className="bi-file-earmark-text me-2 text-primary"></i>
                             Заявка #{request.id}
-                            {isNewRequest && (
+                            {isNew && (
                                 <Badge bg="warning" text="dark" className="ms-2 pulse-badge">
                                     <i className="bi-exclamation-circle me-1"></i>
                                     Новая
@@ -261,8 +250,8 @@ const RequestCard = ({ request, onStatusChange, getNameById, onViewUpdate }) => 
                     onClick={handleToggleExpand}
                     style={{ cursor: 'pointer' }}
                 >
-                    <Badge bg={statusColors[request.status] || 'secondary'} className="request-card-badge me-2">
-                        {statusTranslations[request.status] || request.status}
+                    <Badge bg={statusBadge(request.status)} className="request-card-badge me-2">
+                        {statusLabel(request.status)}
                     </Badge>
                     <small className="text-muted request-card-date">
                         <i className="bi-clock me-1"></i>
@@ -391,42 +380,26 @@ const RequestCard = ({ request, onStatusChange, getNameById, onViewUpdate }) => 
                                 Управление статусом
                             </h6>
                             <div className="request-status-buttons">
-                                <Button
-                                    variant={request.status === 'in_progress' ? 'info' : 'outline-info'}
-                                    className="request-status-btn"
-                                    onClick={() => handleStatusChange('in_progress')}
-                                    disabled={request.status === 'completed' || request.status === 'rejected'}
-                                >
-                                    <i className="bi-arrow-repeat me-2"></i>
-                                    <span>В обработке</span>
-                                </Button>
-                                <Button
-                                    variant={request.status === 'completed' ? 'success' : 'outline-success'}
-                                    className="request-status-btn"
-                                    onClick={() => handleStatusChange('completed')}
-                                    disabled={request.status === 'completed' || request.status === 'rejected'}
-                                >
-                                    <i className="bi-check-lg me-2"></i>
-                                    <span>Завершено</span>
-                                </Button>
-                                <Button
-                                    variant={request.status === 'rejected' ? 'danger' : 'outline-danger'}
-                                    className="request-status-btn"
-                                    onClick={() => handleStatusChange('rejected')}
-                                    disabled={request.status === 'completed' || request.status === 'rejected'}
-                                >
-                                    <i className="bi-x-lg me-2"></i>
-                                    <span>Отклонено</span>
-                                </Button>
+                                {STATUS_KEYS.map(key => {
+                                    const variant = REQUEST_STATUSES[key].badge
+                                    const isActive = request.status === key
+                                    return (
+                                        <Button
+                                            key={key}
+                                            variant={isActive ? variant : `outline-${variant}`}
+                                            className="request-status-btn"
+                                            onClick={() => handleStatusChange(key)}
+                                            disabled={isTerminalStatus(request.status)}
+                                        >
+                                            <i className={`${REQUEST_STATUSES[key].biIcon} me-2`}></i>
+                                            <span>{statusLabel(key)}</span>
+                                        </Button>
+                                    );
+                                })}
                             </div>
                             <small className="text-muted d-block mt-2">
                                 <i className="bi-info-circle me-1"></i>
-                                {request.status === 'completed' 
-                                    ? 'Завершенную заявку нельзя изменить'
-                                    : request.status === 'rejected'
-                                    ? 'Отклоненную заявку нельзя изменить'
-                                    : 'Вы можете завершить или отклонить заявку'
-                                }
+                                {statusTerminalHint(request.status)}
                             </small>
                         </div>
                     )}

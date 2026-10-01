@@ -1,4 +1,5 @@
 import { canSelectMultipleStudents } from './consts'
+import { statusOptions } from './requestStatus'
 
 // Конфигурация колонок для таблиц
 export const TABLE_COLUMNS = {
@@ -71,7 +72,7 @@ export const getDefaultFormData = (table, userRole) => {
             documentId: '',
             description: '',
             studentIds: canSelectMultipleStudents(userRole) ? [] : '',
-            status: 'in_progress'
+            status: 'pending'
         },
         students: {
             last_name: '',
@@ -131,12 +132,8 @@ export const getFieldsConfig = (userRole, getDropdownOptions, modalType = 'creat
                 ? 'Вы можете выбрать нескольких студентов'
                 : 'Вы можете выбрать только одного студента'
         },
-        { name: 'status', label: 'Статус', type: 'select', 
-          options: [
-            { value: 'in_progress', label: 'В обработке' },
-            { value: 'completed', label: 'Завершено' },
-            { value: 'rejected', label: 'Отклонено' }
-          ] 
+        { name: 'status', label: 'Статус', type: 'select',
+          options: statusOptions()
         }
     ],
     students: [

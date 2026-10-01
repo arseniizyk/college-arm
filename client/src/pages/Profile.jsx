@@ -8,6 +8,7 @@ import { getNameById as getNameByIdForField } from '../utils/dataHelpers';
 import { $authHost, errorMessage } from '../http';
 import Pagination from '../components/Pagination';
 import { ITEMS_PER_PAGE } from '../utils/consts';
+import { REQUEST_STATUSES, STATUS_KEYS, statusLabelPlural } from '../utils/requestStatus';
 import './Profile.css';
 
 const Profile = observer(() => {
@@ -109,11 +110,11 @@ const Profile = observer(() => {
 
     // Группируем заявки по статусам
     const requestsByStatus = {
-        all: userRequests,
-        in_progress: userRequests.filter(req => req.status === 'in_progress'),
-        completed: userRequests.filter(req => req.status === 'completed'),
-        rejected: userRequests.filter(req => req.status === 'rejected')
+        all: userRequests
     };
+    for (const key of STATUS_KEYS) {
+        requestsByStatus[key] = userRequests.filter(req => req.status === key);
+    }
 
     // Пагинация для текущей вкладки
     const startIndex = (currentPage - 1) * itemsPerPage;
@@ -130,11 +131,15 @@ const Profile = observer(() => {
     const getNameById = (fieldName, id) => getNameByIdForField(fieldName, id, data);
 
     const statusInfo = {
-        all: { label: 'Все заявки', icon: 'fa-list', color: 'secondary' },
-        in_progress: { label: 'В обработке', icon: 'fa-spinner', color: 'info' },
-        completed: { label: 'Завершенные', icon: 'fa-check-circle', color: 'success' },
-        rejected: { label: 'Отклоненные', icon: 'fa-times-circle', color: 'danger' }
+        all: { label: 'Все заявки', icon: 'fa-list', color: 'secondary' }
     };
+    for (const key of STATUS_KEYS) {
+        statusInfo[key] = {
+            label: statusLabelPlural(key),
+            icon: REQUEST_STATUSES[key].icon,
+            color: REQUEST_STATUSES[key].badge
+        };
+    }
 
     // Обработчик изменения полей формы пароля
     const handlePasswordChange = (e) => {

@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Card, Row, Col, Form, Table, Badge } from 'react-bootstrap';
 import { Bar, Pie } from 'react-chartjs-2';
+import { REQUEST_STATUSES, STATUS_KEYS, countByStatus, statusLabel } from '../utils/requestStatus';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -85,34 +86,24 @@ const RequestStatistics = ({ requests }) => {
     }, [requests, startDate, endDate]);
 
     // Статистика по статусам
-    const statusStats = useMemo(() => {
-        const stats = {
-            total: filteredRequests.length,
-            in_progress: 0,
-            completed: 0,
-            rejected: 0
-        };
-
-        filteredRequests.forEach(req => {
-            if (req.status === 'in_progress') stats.in_progress++;
-            else if (req.status === 'completed') stats.completed++;
-            else if (req.status === 'rejected') stats.rejected++;
-        });
-
-        return stats;
-    }, [filteredRequests]);
+    const statusStats = useMemo(() => ({
+        total: filteredRequests.length,
+        ...countByStatus(filteredRequests)
+    }), [filteredRequests]);
 
     // Статистика по типам документов
     const documentStats = useMemo(() => {
         const stats = {};
-        
+
         filteredRequests.forEach(req => {
             const docName = req.document?.document_name || 'Без документа';
             if (!stats[docName]) {
-                stats[docName] = { total: 0, completed: 0, rejected: 0, in_progress: 0 };
+                stats[docName] = { total: 0, ...countByStatus([]) };
             }
             stats[docName].total++;
-            stats[docName][req.status]++;
+            if (Object.prototype.hasOwnProperty.call(stats[docName], req.status)) {
+                stats[docName][req.status]++;
+            }
         });
 
         return Object.entries(stats)
@@ -122,10 +113,10 @@ const RequestStatistics = ({ requests }) => {
 
     // Данные для круговой диаграммы статусов
     const pieChartData = {
-        labels: ['В обработке', 'Завершено', 'Отклонено'],
+        labels: STATUS_KEYS.map(key => statusLabel(key)),
         datasets: [{
-            data: [statusStats.in_progress, statusStats.completed, statusStats.rejected],
-            backgroundColor: ['#0dcaf0', '#198754', '#dc3545'],
+            data: STATUS_KEYS.map(key => statusStats[key]),
+            backgroundColor: STATUS_KEYS.map(key => REQUEST_STATUSES[key].chartColor),
             borderWidth: 2,
             borderColor: '#fff'
         }]
@@ -134,23 +125,11 @@ const RequestStatistics = ({ requests }) => {
     // Данные для столбчатой диаграммы по документам
     const barChartData = {
         labels: documentStats.map(d => d.name),
-        datasets: [
-            {
-                label: 'Завершено',
-                data: documentStats.map(d => d.completed),
-                backgroundColor: '#198754'
-            },
-            {
-                label: 'В обработке',
-                data: documentStats.map(d => d.in_progress),
-                backgroundColor: '#0dcaf0'
-            },
-            {
-                label: 'Отклонено',
-                data: documentStats.map(d => d.rejected),
-                backgroundColor: '#dc3545'
-            }
-        ]
+        datasets: STATUS_KEYS.map(key => ({
+            label: statusLabel(key),
+            data: documentStats.map(d => d[key]),
+            backgroundColor: REQUEST_STATUSES[key].chartColor
+        }))
     };
 
     const chartOptions = {
@@ -308,9 +287,9 @@ const RequestStatistics = ({ requests }) => {
                                 <tr>
                                     <th>Тип документа</th>
                                     <th className="text-center">Всего</th>
-                                    <th className="text-center">В обработке</th>
-                                    <th className="text-center">Завершено</th>
-                                    <th className="text-center">Отклонено</th>
+                                    {STATUS_KEYS.map(key => (
+                                        <th className="text-center" key={key}>{statusLabel(key)}</th>
+                                    ))}
                                     <th className="text-center">% Завершения</th>
                                 </tr>
                             </thead>
@@ -326,15 +305,11 @@ const RequestStatistics = ({ requests }) => {
                                             <td className="text-center">
                                                 <Badge bg="primary">{doc.total}</Badge>
                                             </td>
-                                            <td className="text-center">
-                                                <Badge bg="info">{doc.in_progress}</Badge>
-                                            </td>
-                                            <td className="text-center">
-                                                <Badge bg="success">{doc.completed}</Badge>
-                                            </td>
-                                            <td className="text-center">
-                                                <Badge bg="danger">{doc.rejected}</Badge>
-                                            </td>
+                                            {STATUS_KEYS.map(key => (
+                                                <td className="text-center" key={key}>
+                                                    <Badge bg={REQUEST_STATUSES[key].badge}>{doc[key]}</Badge>
+                                                </td>
+                                            ))}
                                             <td className="text-center">
                                                 <span className={`fw-bold ${
                                                     completionRate >= 75 ? 'text-success' :

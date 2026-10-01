@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { InputGroup, FormControl, Form, Badge } from 'react-bootstrap';
 import { MISSING_SPECIALTY_FILTER, MISSING_SPECIALTY_LABEL } from '../utils/dataHelpers';
+import { STATUS_KEYS, statusLabel } from '../utils/requestStatus';
 
 const SearchAndFilters = ({
     searchTerm,
@@ -173,9 +174,9 @@ const SearchAndFilters = ({
                                 onChange={(e) => handleStatusFilterChange(e.target.value)}
                             >
                                 <option value="">Все статусы</option>
-                                <option value="in_progress">В обработке</option>
-                                <option value="completed">Завершено</option>
-                                <option value="rejected">Отклонено</option>
+                                {STATUS_KEYS.map(key => (
+                                    <option key={key} value={key}>{statusLabel(key)}</option>
+                                ))}
                             </Form.Select>
                         </InputGroup>
                     </div>

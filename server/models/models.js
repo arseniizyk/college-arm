@@ -48,8 +48,8 @@ const Request = sequelize.define('request', {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     status: { 
         type: DataTypes.ENUM, 
-        values: ['in_progress', 'completed', 'rejected'], 
-        defaultValue: 'in_progress' 
+        values: ['pending', 'completed', 'cancelled'], 
+        defaultValue: 'pending' 
     },
     description: { type: DataTypes.STRING },
     isViewed: { type: DataTypes.BOOLEAN, defaultValue: false }

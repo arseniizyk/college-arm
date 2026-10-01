@@ -2,6 +2,7 @@ import React from 'react';
 import { Badge } from 'react-bootstrap';
 import { toJS } from 'mobx';
 import { calculateCourse, formatDuration, MISSING_SPECIALTY_LABEL } from '../utils/dataHelpers';
+import { statusBadge, statusLabel } from '../utils/requestStatus';
 
 const TableCell = ({ value, columnKey, item }) => {
     // Специальные случаи обрабатываем ДО проверки на null
@@ -69,25 +70,9 @@ const TableCell = ({ value, columnKey, item }) => {
 
     // Статусы заявок
     if (columnKey === 'status') {
-        const statusTranslations = {
-            pending: 'В обработке',
-            in_progress: 'В обработке',
-            approved: 'В обработке',
-            completed: 'Завершено',
-            rejected: 'Отклонено',
-            cancelled: 'Отклонено'
-        };
-        const statusColors = {
-            pending: 'info',
-            in_progress: 'info',
-            approved: 'info',
-            completed: 'success',
-            rejected: 'danger',
-            cancelled: 'danger'
-        };
         return (
-            <Badge bg={statusColors[cellValue] || 'secondary'}>
-                {statusTranslations[cellValue] || cellValue}
+            <Badge bg={statusBadge(cellValue)}>
+                {statusLabel(cellValue)}
             </Badge>
         );
     }

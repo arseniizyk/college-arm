@@ -4,6 +4,7 @@ const { Op } = require('sequelize')
 const { Request, StudentRequest, Student, Document, Group, Specialty, Notification, User } = require('../models/models')
 const { findSupervisorGroupId } = require('../utils/supervisorGroup')
 const { resolveStudentIds } = require('../utils/studentIds')
+const { statusLabelFeminine, isKnownStatus } = require('../utils/requestStatus')
 
 // Общее дерево связей для заявки
 const getRequestInclude = () => [
@@ -227,6 +228,9 @@ class RequestController {
             if (status !== undefined && userRole !== 'ADMIN') {
                 return next(ApiError.forbiddenRequest('Изменять статус заявки может только администратор'));
             }
+            if (status !== undefined && !isKnownStatus(status)) {
+                return next(ApiError.badRequest(`Неизвестный статус заявки: ${status}`));
+            }
             
             // Сохраняем старый статус для проверки изменения
             const oldStatus = request.status;
@@ -282,14 +286,8 @@ class RequestController {
 
                 // Создаем уведомление при изменении статуса
                 if (status && status !== oldStatus) {
-                    const statusTranslations = {
-                        in_progress: 'в обработке',
-                        completed: 'завершена',
-                        rejected: 'отклонена'
-                    };
-                    
                     const notificationTitle = `Статус заявки #${id} изменен`;
-                    const notificationBody = `Ваша заявка ${statusTranslations[status] || status}`;
+                    const notificationBody = `Ваша заявка ${statusLabelFeminine(status)}`;
                     
                     await Notification.create({
                         userId: request.userId,

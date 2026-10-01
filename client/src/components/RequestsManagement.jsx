@@ -4,6 +4,7 @@ import RequestCard from './RequestCard';
 import Pagination from './Pagination';
 import { formatFio } from '../utils/dataHelpers';
 import { ITEMS_PER_PAGE } from '../utils/consts';
+import { REQUEST_STATUSES, STATUS_KEYS, countByStatus, statusLabel, statusPriority } from '../utils/requestStatus';
 
 const RequestsManagement = ({ 
     requests, 
@@ -44,18 +45,11 @@ const RequestsManagement = ({
             });
         }
 
-        // Сортировка: заявки в обработке всегда сверху, затем завершенные, затем отклоненные
+        // Сортировка: заявки в обработке всегда сверху, затем завершенные, затем отменённые
         filtered.sort((a, b) => {
             // Определяем приоритет статуса (меньше = выше)
-            const getPriority = (status) => {
-                if (status === 'in_progress') return 1; // В обработке
-                if (status === 'completed') return 2; // Завершено
-                if (status === 'rejected') return 3; // Отклонено
-                return 4; // Неизвестный статус
-            };
-            
-            const aPriority = getPriority(a.status);
-            const bPriority = getPriority(b.status);
+            const aPriority = statusPriority(a.status);
+            const bPriority = statusPriority(b.status);
             
             // Сначала сортируем по приоритету
             if (aPriority !== bPriority) {
@@ -81,26 +75,10 @@ const RequestsManagement = ({
     }, [searchTerm, statusFilter]);
 
     // Группировка по статусам для статистики
-    const statistics = useMemo(() => {
-        const stats = {
-            total: requests?.length || 0,
-            in_progress: 0,
-            completed: 0,
-            rejected: 0
-        };
-
-        requests?.forEach(req => {
-            if (req.status === 'in_progress') {
-                stats.in_progress++;
-            } else if (req.status === 'completed') {
-                stats.completed++;
-            } else if (req.status === 'rejected') {
-                stats.rejected++;
-            }
-        });
-
-        return stats;
-    }, [requests]);
+    const statistics = useMemo(() => ({
+        total: requests?.length || 0,
+        ...countByStatus(requests)
+    }), [requests]);
 
     if (loading) {
         return (
@@ -128,24 +106,14 @@ const RequestsManagement = ({
                             <small className="text-muted">Всего заявок</small>
                         </div>
                     </Col>
-                    <Col md={3}>
-                        <div className="p-3 bg-info bg-opacity-10 rounded text-center">
-                            <h3 className="mb-0 text-info">{statistics.in_progress}</h3>
-                            <small className="text-muted">В обработке</small>
-                        </div>
-                    </Col>
-                    <Col md={3}>
-                        <div className="p-3 bg-success bg-opacity-10 rounded text-center">
-                            <h3 className="mb-0 text-success">{statistics.completed}</h3>
-                            <small className="text-muted">Завершено</small>
-                        </div>
-                    </Col>
-                    <Col md={3}>
-                        <div className="p-3 bg-danger bg-opacity-10 rounded text-center">
-                            <h3 className="mb-0 text-danger">{statistics.rejected}</h3>
-                            <small className="text-muted">Отклонено</small>
-                        </div>
-                    </Col>
+                    {STATUS_KEYS.map(key => (
+                        <Col md={3} key={key}>
+                            <div className={`p-3 bg-${REQUEST_STATUSES[key].badge} bg-opacity-10 rounded text-center`}>
+                                <h3 className={`mb-0 text-${REQUEST_STATUSES[key].badge}`}>{statistics[key]}</h3>
+                                <small className="text-muted">{statusLabel(key)}</small>
+                            </div>
+                        </Col>
+                    ))}
                 </Row>
             </div>
 
@@ -189,9 +157,9 @@ const RequestsManagement = ({
                                 onChange={(e) => setStatusFilter(e.target.value)}
                             >
                                 <option value="">Все статусы</option>
-                                <option value="in_progress">В обработке</option>
-                                <option value="completed">Завершено</option>
-                                <option value="rejected">Отклонено</option>
+                                {STATUS_KEYS.map(key => (
+                                    <option key={key} value={key}>{statusLabel(key)}</option>
+                                ))}
                             </Form.Select>
                         </InputGroup>
                     </Col>

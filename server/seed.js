@@ -6,6 +6,7 @@ const {
     User, Student, Teacher, Supervisor, Group, Specialty, Document,
     Request, Notification, StudentRequest
 } = require('./models/models')
+const { statusLabelFeminine } = require('./utils/requestStatus')
 
 // Количество сущностей можно переопределить аргументами:
 //   node seed.js --students=120 --requests=40
@@ -267,7 +268,7 @@ async function main() {
     console.log(`Студенты: ${students.length} (${userAccounts.length} с привязкой к аккаунту)`)
 
     // --- Заявки ---
-    const statuses = ['in_progress', 'completed', 'rejected']
+    const statuses = ['pending', 'completed', 'cancelled']
     const descriptions = [
         'Прошу выдать справку об обучении для поступления в вуз.',
         'Нужна справка для оформления документов в банк.',
@@ -289,7 +290,7 @@ async function main() {
             userId: author.userId,
             description: pick(descriptions),
             status,
-            isViewed: status !== 'in_progress' ? true : seededRandom() < 0.5
+            isViewed: status !== 'pending' ? true : seededRandom() < 0.5
         })
         requestsCount++
 
@@ -307,12 +308,10 @@ async function main() {
         await Notification.create({
             userId: author.userId,
             title: `Заявка №${req.id} — ${doc.document_name}`,
-            body: pick([
-                'Заявка принята в обработку.',
-                'Заявка выполнена, документ готов.',
-                'Заявка отклонена, уточните данные.'
-            ]),
-            isRead: status === 'in_progress' ? false : true
+            // Текст выводится из статуса, а не выбирается случайно:
+            // иначе заявка «в обработке» получает «Заявка отклонена».
+            body: `Ваша заявка ${statusLabelFeminine(status)}`,
+            isRead: status === 'pending' ? false : true
         })
         notificationsCount++
     }
@@ -354,7 +353,7 @@ async function main() {
             documentId: certDoc.id,
             userId: admin.id,
             description: 'Справка для группы без специальности — проверка B5.',
-            status: 'in_progress'
+            status: 'pending'
         })
         await orphanReq.addStudents(orphanStudents)
         console.log(`Заявка №${orphanReq.id} на справку для группы без специальности (ожидается 400)`)
