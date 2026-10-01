@@ -67,16 +67,20 @@ const MultiselectStudents = ({ field, formData, setFormData, loading, data, allo
         }));
     };
 
+    // Значения приходится читать из prev: formData[field.name] — это снимок на момент
+    // рендера, и два переключения до ре-рендера затёрли бы первое изменение
+    const currentSelection = (prev) => {
+        const value = prev[field.name];
+        return Array.isArray(value) ? value : [];
+    };
+
     const handleSelectGroup = () => {
         if (isSingleSelect || !selectedGroup) return;
 
         const groupValues = filteredOptions.map(opt => opt.value.toString());
-        const currentValues = formData[field.name] || [];
-        // Добавляем студентов группы к уже выбранным (без дублей)
-        const merged = [...new Set([...currentValues, ...groupValues])];
         setFormData(prev => ({
             ...prev,
-            [field.name]: merged
+            [field.name]: [...new Set([...currentSelection(prev), ...groupValues])]
         }));
     };
 
@@ -89,7 +93,7 @@ const MultiselectStudents = ({ field, formData, setFormData, loading, data, allo
 
     const handleStudentToggle = (studentId, checked) => {
         const value = studentId.toString();
-        
+
         if (isSingleSelect) {
             // Для одиночного выбора просто устанавливаем значение
             setFormData(prev => ({
@@ -97,19 +101,11 @@ const MultiselectStudents = ({ field, formData, setFormData, loading, data, allo
                 [field.name]: checked ? value : ''
             }));
         } else {
-            // Для множественного выбора работаем с массивом
-            const currentValues = formData[field.name] || [];
-            let newValues;
-            
-            if (checked) {
-                newValues = [...currentValues, value];
-            } else {
-                newValues = currentValues.filter(v => v !== value);
-            }
-            
             setFormData(prev => ({
                 ...prev,
-                [field.name]: newValues
+                [field.name]: checked
+                    ? [...currentSelection(prev), value]
+                    : currentSelection(prev).filter(v => v !== value)
             }));
         }
     };

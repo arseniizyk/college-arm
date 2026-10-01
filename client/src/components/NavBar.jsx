@@ -67,7 +67,7 @@ const NavBar = observer(() => {
         sessionStorage.clear()
         
         // Очищаем уведомления при выходе
-        data._entities.notifications = []
+        data.clear('notifications')
         
         navigate(MAIN_ROUTE)
     }

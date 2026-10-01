@@ -29,7 +29,8 @@ const DataManagement = ({
     handleSpecialtyFilterChange,
     specialties,
     handleCreate,
-    loadTableData
+    loadTableData,
+    itemsPerPage
 }) => {
     const getTableColumns = TABLE_COLUMNS[activeTab] || [];
 
@@ -63,6 +64,7 @@ const DataManagement = ({
                         totalPages={totalPages}
                         onPageChange={setCurrentPage}
                         totalItems={filteredData.length}
+                        itemsPerPage={itemsPerPage}
                         getNameById={getNameByIdWithData}
                         tableType="users"
                         selectedRoleFilter={selectedRoleFilter}
@@ -88,6 +90,7 @@ const DataManagement = ({
                         totalPages={totalPages}
                         onPageChange={setCurrentPage}
                         totalItems={filteredData.length}
+                        itemsPerPage={itemsPerPage}
                         getNameById={getNameByIdWithData}
                         tableType="students"
                         selectedGroupFilter={selectedGroupFilter}
@@ -114,6 +117,7 @@ const DataManagement = ({
                         totalPages={totalPages}
                         onPageChange={setCurrentPage}
                         totalItems={filteredData.length}
+                        itemsPerPage={itemsPerPage}
                         getNameById={getNameByIdWithData}
                         tableType="groups"
                         selectedSpecialtyFilter={selectedSpecialtyFilter}
@@ -140,6 +144,7 @@ const DataManagement = ({
                         totalPages={totalPages}
                         onPageChange={setCurrentPage}
                         totalItems={filteredData.length}
+                        itemsPerPage={itemsPerPage}
                         getNameById={getNameByIdWithData}
                         tableType="specialties"
                     />
@@ -163,6 +168,7 @@ const DataManagement = ({
                         totalPages={totalPages}
                         onPageChange={setCurrentPage}
                         totalItems={filteredData.length}
+                        itemsPerPage={itemsPerPage}
                         getNameById={getNameByIdWithData}
                         tableType="teachers"
                     />
@@ -186,6 +192,7 @@ const DataManagement = ({
                         totalPages={totalPages}
                         onPageChange={setCurrentPage}
                         totalItems={filteredData.length}
+                        itemsPerPage={itemsPerPage}
                         getNameById={getNameByIdWithData}
                         tableType="documents"
                     />
@@ -209,6 +216,7 @@ const DataManagement = ({
                         totalPages={totalPages}
                         onPageChange={setCurrentPage}
                         totalItems={filteredData.length}
+                        itemsPerPage={itemsPerPage}
                         getNameById={getNameByIdWithData}
                         tableType="requests"
                         selectedStatusFilter={selectedStatusFilter}

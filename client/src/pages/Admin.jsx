@@ -58,6 +58,7 @@ const Admin = observer(() => {
         selectedSpecialtyFilter,
         currentItems,
         totalPages,
+        itemsPerPage,
         filteredData,
         isLoading,
         tableError,
@@ -160,6 +161,7 @@ const Admin = observer(() => {
                             specialties={data.specialties || []}
                             handleCreate={handleCreate}
                             loadTableData={loadTableData}
+                            itemsPerPage={itemsPerPage}
                         />
                     </Tab>
 

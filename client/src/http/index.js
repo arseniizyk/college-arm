@@ -10,12 +10,22 @@ const $authHost = axios.create({
     baseURL: API_URL
 })
 
+const MAX_ERROR_LENGTH = 300
+
+const DOCX_MIME = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+const BINARY_MIME = 'application/octet-stream'
+
 const authInterceptor = (config) => {
     config.headers.authorization = `Bearer ${localStorage.getItem('token')}`
     return config
 }
 
 $authHost.interceptors.request.use(authInterceptor)
+
+const limit = (message) =>
+    typeof message === 'string' && message.length > MAX_ERROR_LENGTH
+        ? `${message.slice(0, MAX_ERROR_LENGTH)}…`
+        : message
 
 const extractErrorMessage = async (blob) => {
     if (!blob) return 'Ошибка запроса'
@@ -27,17 +37,17 @@ const extractErrorMessage = async (blob) => {
     }
     try {
         const parsed = JSON.parse(text)
-        if (parsed && parsed.message) return parsed.message
+        if (parsed && parsed.message) return limit(parsed.message)
     } catch {
         // не JSON — падаем на текст ниже
     }
     const trimmed = text.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
-    return trimmed || 'Ошибка запроса'
+    return limit(trimmed) || 'Ошибка запроса'
 }
 
 const errorMessage = (err, fallback = 'Ошибка запроса') => {
     const fromServer = err?.response?.data?.message
-    if (typeof fromServer === 'string' && fromServer) return fromServer
+    if (typeof fromServer === 'string' && fromServer) return limit(fromServer)
     return err?.message || fallback
 }
 
@@ -53,12 +63,16 @@ const saveBlob = (blob, fileName) => {
     setTimeout(() => window.URL.revokeObjectURL(url), 1000)
 }
 
-const downloadDoc = async (path, { method = 'POST', payload = null, fileName = 'документ', stamp = null } = {}) => {
+const downloadDoc = async (path, { method = 'POST', payload = null, params = null, fileName = 'документ', stamp = null } = {}) => {
     const suffix = stamp === null || stamp === undefined ? Date.now() : stamp
     const name = `${fileName}_${suffix}.docx`
 
     const config = { method, url: path, responseType: 'blob' }
-    if (method !== 'GET' && payload) config.data = payload
+    if (params) config.params = params
+    if (payload) {
+        if (method === 'GET') throw new Error('Тело запроса не поддерживается при GET — передайте params')
+        config.data = payload
+    }
 
     let response
     try {
@@ -66,6 +80,11 @@ const downloadDoc = async (path, { method = 'POST', payload = null, fileName = '
     } catch (err) {
         const message = await extractErrorMessage(err.response?.data)
         throw new Error(message, { cause: err })
+    }
+
+    const contentType = response.headers['content-type'] || ''
+    if (!contentType.includes(DOCX_MIME) && !contentType.includes(BINARY_MIME)) {
+        throw new Error(`Сервер вернул не документ (${contentType || 'без типа содержимого'})`)
     }
 
     saveBlob(response.data, name)

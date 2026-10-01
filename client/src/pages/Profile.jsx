@@ -7,6 +7,7 @@ import RequestCard from '../components/RequestCard';
 import { getNameById as getNameByIdForField } from '../utils/dataHelpers';
 import { $authHost, errorMessage } from '../http';
 import Pagination from '../components/Pagination';
+import { ITEMS_PER_PAGE } from '../utils/consts';
 import './Profile.css';
 
 const Profile = observer(() => {
@@ -20,7 +21,7 @@ const Profile = observer(() => {
     const [requestsTab, setRequestsTab] = useState('all'); // Подвкладка заявок
     const [settingsTab, setSettingsTab] = useState('password'); // Подвкладка настроек: password, email
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 10; // Количество заявок на странице
+    const itemsPerPage = ITEMS_PER_PAGE; // Количество заявок на странице
 
     // Состояния для формы смены пароля
     const [passwordForm, setPasswordForm] = useState({

@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken')
 const { User } = require('../models/models')
+const ApiError = require('../error/ApiError')
 
 module.exports = function (role) {
 
@@ -22,7 +23,7 @@ module.exports = function (role) {
                 return res.status(401).json({ message: 'Пользователь не авторизован' })
             }
             if (user.role !== role) {
-                return res.status(403).json({ message: 'Нет доступа' })
+                return next(ApiError.forbiddenRequest('Нет доступа'))
             }
 
             req.user = { id: user.id, email: user.email, role: user.role }

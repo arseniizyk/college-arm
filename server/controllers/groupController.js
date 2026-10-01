@@ -1,6 +1,5 @@
 const { Group, Supervisor, Specialty, Teacher } = require('../models/models')
 const ApiError = require('../error/ApiError')
-const { where } = require('sequelize')
 
 class GroupController {
     async create(req, res, next) {

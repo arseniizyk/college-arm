@@ -79,64 +79,7 @@ function declineFullNameAccusative(lastName, firstName, middleName) {
     }
 }
 
-/**
- * Склоняет фамилию в дательный падеж
- */
-function declineLastName(lastName, gender = 'male') {
-    try {
-        const result = petrovich({
-            last: lastName,
-            first: '',
-            middle: ''
-        }, 'dative', gender);
-        
-        return result.last;
-    } catch (error) {
-        console.error('Ошибка склонения фамилии:', error);
-        return lastName;
-    }
-}
-
-/**
- * Склоняет имя в дательный падеж
- */
-function declineFirstName(firstName, gender = 'male') {
-    try {
-        const result = petrovich({
-            last: '',
-            first: firstName,
-            middle: ''
-        }, 'dative', gender);
-        
-        return result.first;
-    } catch (error) {
-        console.error('Ошибка склонения имени:', error);
-        return firstName;
-    }
-}
-
-/**
- * Склоняет отчество в дательный падеж
- */
-function declineMiddleName(middleName, gender = 'male') {
-    try {
-        const result = petrovich({
-            last: '',
-            first: '',
-            middle: middleName
-        }, 'dative', gender);
-        
-        return result.middle;
-    } catch (error) {
-        console.error('Ошибка склонения отчества:', error);
-        return middleName;
-    }
-}
-
 module.exports = {
-    declineLastName,
-    declineFirstName,
-    declineMiddleName,
     detectGender,
     declineFullName,
     declineFullNameAccusative

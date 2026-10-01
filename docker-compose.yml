@@ -34,7 +34,8 @@ services:
     environment:
       NODE_ENV: ${NODE_ENV:-production}
       TZ: ${TZ:-Europe/Minsk}
-      PORT: ${SERVER_PORT:-7000}
+      # Внутри контейнера порт всегда 7000; SERVER_PORT — только публикация на хосте
+      PORT: 7000
       # Внутри compose БД доступна по имени сервиса
       DB_HOST: db
       DB_PORT: 5432

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { getTableData, filterData, prepareFormData, getNameById } from '../utils/dataHelpers';
 import { getDefaultFormData } from '../utils/tableConfig';
+import { ITEMS_PER_PAGE } from '../utils/consts';
 
 export const useAdminLogic = (data, user) => {
     const [activeTab, setActiveTab] = useState('users');
@@ -21,7 +22,7 @@ export const useAdminLogic = (data, user) => {
 
     // Пагинация и поиск
     const [currentPage, setCurrentPage] = useState(1);
-    const [itemsPerPage] = useState(10);
+    const itemsPerPage = ITEMS_PER_PAGE;
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedGroupFilter, setSelectedGroupFilter] = useState('');
     const [selectedRoleFilter, setSelectedRoleFilter] = useState('');
@@ -318,6 +319,7 @@ export const useAdminLogic = (data, user) => {
         currentItem,
         formData,
         currentPage,
+        itemsPerPage,
         searchTerm,
         selectedGroupFilter,
         selectedRoleFilter,

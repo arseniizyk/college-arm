@@ -70,7 +70,7 @@ docker compose exec server node seed.js --force
 
 ## Статистика проекта
 
-Подсчёт выполнен 30.09.2026. Считаются все строки файла, включая пустые.
+Подсчёт выполнен 01.10.2026. Считаются все строки файла, включая пустые.
 Исключены `node_modules/`, `.git/`, `.idea/`, `client/build/`, `server/backups/`
 (дампы с персональными данными), сгенерированные документы `docs/` и временные
 отладочные скрипты `server/_*.tmp.js` — это артефакты, а не исходный код.
@@ -79,52 +79,53 @@ docker compose exec server node seed.js --force
 
 | Категория | Файлов | Строк |
 |---|---:|---:|
-| Клиентский код (`client/src`, `.js` / `.jsx`) | 47 | 9 690 |
-| Шаблоны документов (`server/templates/*.js`) | 13 | 2 100 |
-| Серверный код (`server/**`, `.js`, кроме шаблонов) | 39 | 3 118 |
-| Стили (`.css`) | 7 | 2 155 |
-| Документация и служебное (`.md`, `.txt`, `.gitignore`, `.dockerignore`) | 9 | 719 |
-| Конфигурация (`.json`, `.env`, `.conf`, `.yml`, `.xml`, `.example`) | 11 | 266 |
-| `Dockerfile` | 2 | 50 |
-| HTML-шблон (`client/public/index.html`) | 1 | 16 |
-| **ВСЕГО** | **129** | **18 114** |
+| Клиентский код (`client/src`, `.js` / `.jsx`) | 45 | 10 492 |
+| Шаблоны документов (`server/templates/*.js`) | 13 | 2 309 |
+| Серверный код (`server/**`, `.js`, кроме шаблонов) | 39 | 3 431 |
+| Стили (`.css`) | 7 | 2 428 |
+| Документация и служебное (`.md`, `.txt`, `.gitignore`, `.dockerignore`) | 9 | 1 244 |
+| Конфигурация (`.json`, `.env`, `.conf`, `.yml`, `.xml`, `.example`) | 11 | 302 |
+| `Dockerfile` | 2 | 59 |
+| HTML-шблон (`client/public/index.html`) | 1 | 21 |
+| **ВСЕГО** | **127** | **20 286** |
 
-В серверный код входит `server/seed.js` (346 строк) — заполнение базы тестовыми
+В серверный код входит `server/seed.js` (382 строки) — заполнение базы тестовыми
 данными, см. раздел выше.
 
 Бинарных файлов — 4, строки не считались: `client/public/*.png`, `favicon.ico` и
-`.docx` с пояснительной запиской (~4.2 МБ). Всего файлов в проекте — 148, из них
-2 — `package-lock.json` (19 724 строки, ~726 КБ транзитивных пакетов) и ещё 5 —
-`docs/_README.txt` и четыре временных скрипта `server/_*.tmp.js`; они в подсчёт
-не входят.
+`.docx` с пояснительной запиской (~4.2 МБ). Всего файлов в проекте — 145, из них
+2 — `package-lock.json` (16 993 строки, ~726 КБ транзиветных пакетов), 9 — в
+`server/backups/` (дампы с ПИ, исключены из подсчёта) и 2 — служебные файлы
+`.idea/`. Каталог `docs/` пуст, временных скриптов `server/_*.tmp.js` в проекте
+нет — прежние цифры 148 и «ещё 5 файлов» к ним относились.
 
 ### По расширениям
 
 | Расширение | Файлов | Строк |
 |---|---:|---:|
-| `.jsx` | 31 | 8 142 |
-| `.js` | 68 | 6 766 |
-| `.css` | 7 | 2 155 |
-| `.md` (`README.md`, `issues.md`, `issues-solved.md`, `AGENTS.md`) | 4 | 644 |
+| `.jsx` | 31 | 8 796 |
+| `.js` | 66 | 7 436 |
+| `.css` | 7 | 2 428 |
+| `.md` (`README.md`, `issues.md`, `issues-solved.md`, `AGENTS.md`) | 4 | 1 159 |
 | `.json` (`package.json`, `tsconfig.json`, `manifest.json`, `jsconfig.json`) | 3 | 108 |
-| `.yml` (`docker-compose.yml`) | 1 | 63 |
-| `.gitignore` | 2 | 51 |
-| без расширения (`Dockerfile`) | 2 | 50 |
-| `.example` | 3 | 41 |
-| `.env` | 3 | 35 |
-| `.conf` | 1 | 19 |
-| `.html` | 1 | 16 |
+| `.yml` (`docker-compose.yml`) | 1 | 68 |
+| `.gitignore` | 2 | 61 |
+| без расширения (`Dockerfile`) | 2 | 59 |
+| `.example` | 3 | 53 |
+| `.env` | 3 | 50 |
+| `.conf` | 1 | 23 |
+| `.html` | 1 | 21 |
 | `.dockerignore` | 2 | 21 |
 | `.txt` | 1 | 3 |
-| **ВСЕГО** | **129** | **18 114** |
+| **ВСЕГО** | **127** | **20 286** |
 
 ### Самые крупные файлы
 
 | Файл | Строк |
 |---|---:|
-| `server/templates/practiceContractTemplate.js` | 1 013 |
-| `client/src/pages/Profile.jsx` | 781 |
-| `client/src/pages/Admin.css` | 673 |
-| `client/src/components/NavBar.jsx` | 439 |
-| `client/src/components/RequestCard.jsx` | 409 |
-| `client/src/components/PracticeContractModal.jsx` | 363 |
+| `server/templates/practiceContractTemplate.js` | 1 038 |
+| `client/src/pages/Profile.jsx` | 859 |
+| `client/src/pages/Admin.css` | 722 |
+| `client/src/components/NavBar.jsx` | 465 |
+| `client/src/components/RequestCard.jsx` | 439 |
+| `client/src/components/PracticeContractModal.jsx` | 389 |

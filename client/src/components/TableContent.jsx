@@ -4,6 +4,7 @@ import SearchAndFilters from './SearchAndFilters';
 import Pagination from './Pagination';
 import TableCell from './TableCell';
 import { formatFio } from '../utils/dataHelpers';
+import { ITEMS_PER_PAGE } from '../utils/consts';
 
 const TableContent = ({
     data,
@@ -28,7 +29,8 @@ const TableContent = ({
     onStatusFilterChange,
     selectedSpecialtyFilter,
     onSpecialtyFilterChange,
-    specialties
+    specialties,
+    itemsPerPage = ITEMS_PER_PAGE
 }) => {
     if (loading) {
         return (
@@ -86,7 +88,7 @@ const TableContent = ({
                     ) : (
                         safeData.map((item, index) => {
                             // Вычисляем порядковый номер с учетом пагинации
-                            const rowNumber = (currentPage - 1) * 10 + index + 1;
+                            const rowNumber = (currentPage - 1) * itemsPerPage + index + 1;
                             
                             return (
                                 <tr key={item.id}>

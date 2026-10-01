@@ -3,6 +3,7 @@ import { Form, InputGroup, Row, Col, Alert, Spinner } from 'react-bootstrap';
 import RequestCard from './RequestCard';
 import Pagination from './Pagination';
 import { formatFio } from '../utils/dataHelpers';
+import { ITEMS_PER_PAGE } from '../utils/consts';
 
 const RequestsManagement = ({ 
     requests, 
@@ -16,7 +17,7 @@ const RequestsManagement = ({
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
-    const itemsPerPage = 10; // Количество заявок на странице
+    const itemsPerPage = ITEMS_PER_PAGE; // Количество заявок на странице
 
     // Фильтрация заявок
     const filteredRequests = useMemo(() => {

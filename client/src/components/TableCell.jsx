@@ -54,8 +54,9 @@ const TableCell = ({ value, columnKey, item }) => {
         cellValue = value;
     }
 
-    // Форматирование даты
-    if (columnKey.toLowerCase().includes('date')) {
+    // Форматирование даты.
+    // 'createdat' не содержит подстроки 'date', поэтому createdAt пришлось бы добавить отдельно
+    if (columnKey.toLowerCase().includes('date') || columnKey === 'createdAt') {
         try {
             const date = new Date(cellValue);
             if (!isNaN(date.getTime())) {

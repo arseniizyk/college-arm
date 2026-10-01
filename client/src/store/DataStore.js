@@ -208,6 +208,13 @@ export default class DataStore {
     })
   }
 
+  // Очистка списка сущности без запроса к серверу (например, при выходе из аккаунта)
+  clear(entityType) {
+    runInAction(() => {
+      this._entities[entityType] = []
+    })
+  }
+
   // Удаление записи - ИСПРАВЛЕННАЯ ВЕРСИЯ
   async delete(entityType, id) {
     // Сохраняем текущее состояние для возможного отката
@@ -347,12 +354,6 @@ export default class DataStore {
       supervisors: this.supervisors.length,
       notifications: this.notifications.length
     }
-  }
-
-  // Загрузка всех данных
-  async loadAllData() {
-    const promises = ENTITY_TYPES.map(type => this.fetchAll(type))
-    return Promise.all(promises)
   }
 
   // Получение информации о пагинации
