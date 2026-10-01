@@ -6,8 +6,7 @@ export const REQUEST_STATUSES = {
     icon: 'fa-spinner',
     biIcon: 'bi-arrow-repeat',
     chartColor: '#0dcaf0',
-    isTerminal: false,
-    order: 1
+    isTerminal: false
   },
   completed: {
     label: 'Завершено',
@@ -17,8 +16,7 @@ export const REQUEST_STATUSES = {
     biIcon: 'bi-check-lg',
     chartColor: '#198754',
     terminalHint: 'Завершенную заявку нельзя изменить',
-    isTerminal: true,
-    order: 2
+    isTerminal: true
   },
   cancelled: {
     label: 'Отменено',
@@ -28,8 +26,7 @@ export const REQUEST_STATUSES = {
     biIcon: 'bi-x-lg',
     chartColor: '#dc3545',
     terminalHint: 'Отменённую заявку нельзя изменить',
-    isTerminal: true,
-    order: 3
+    isTerminal: true
   }
 }
 
@@ -52,10 +49,18 @@ const OPEN_STATUS_HINT = 'Вы можете завершить или отмен
 export const statusTerminalHint = (status) =>
   pick(status, 'terminalHint') ?? OPEN_STATUS_HINT
 
-export const statusPriority = (status) => pick(status, 'order') ?? STATUS_KEYS.length + 1
-
 export const statusOptions = () =>
   STATUS_KEYS.map(value => ({ value, label: statusLabel(value) }))
+
+export const matchesRequestFilter = (request, filter) =>
+  !filter || request?.status === filter
+
+// Только дата: любое другое свойство в компараторе переставляет карточку в
+// момент, когда администратор с ней работает (открыл, сменил статус).
+export const byRequestRelevance = (a, b) => {
+  const byDate = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  return byDate || (b.id ?? 0) - (a.id ?? 0)
+}
 
 export const countByStatus = (requests) => {
   const stats = {}

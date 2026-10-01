@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Card, Badge, Button, Collapse, ListGroup, Row, Col } from 'react-bootstrap';
+import React, { useState, useRef } from 'react';
+import { Card, Badge, Button, Collapse, ListGroup, Row, Col, Spinner } from 'react-bootstrap';
 import { calculateCourse, formatFio, MISSING_SPECIALTY_LABEL } from '../utils/dataHelpers';
 import { isTerminalStatus, isNewRequest, statusBadge, statusLabel, statusTerminalHint, REQUEST_STATUSES, STATUS_KEYS } from '../utils/requestStatus';
 import { $authHost, downloadDoc } from '../http';
@@ -154,6 +154,11 @@ const RequestCard = ({ request, onStatusChange, getNameById, onViewUpdate }) => 
     const [expanded, setExpanded] = useState(false);
     const [generating, setGenerating] = useState(false);
     const [isViewed, setIsViewed] = useState(request.isViewed || false);
+    // Собственный флаг запроса, а не проп: блокировка кнопок должна
+    // наступать в том же кадре, что и клик, иначе повторное нажатие
+    // успевает уйти до обновления состояния родителя.
+    const [saving, setSaving] = useState(false);
+    const savingRef = useRef(false);
 
     const formatDate = (dateString) => {
         if (!dateString) return '-';
@@ -186,9 +191,20 @@ const RequestCard = ({ request, onStatusChange, getNameById, onViewUpdate }) => 
         }
     };
 
-    const handleStatusChange = (newStatus) => {
-        if (onStatusChange) {
-            onStatusChange(request.id, newStatus);
+    const handleStatusChange = async (newStatus) => {
+        if (!onStatusChange || savingRef.current || newStatus === request.status) return;
+
+        savingRef.current = true;
+        setSaving(true);
+        try {
+            const ok = await onStatusChange(request.id, newStatus);
+            // Закрытая заявка больше нечего менять, поэтому карточка сворачивается
+            if (ok && isTerminalStatus(newStatus)) {
+                setExpanded(false);
+            }
+        } finally {
+            savingRef.current = false;
+            setSaving(false);
         }
     };
 
@@ -236,6 +252,11 @@ const RequestCard = ({ request, onStatusChange, getNameById, onViewUpdate }) => 
                                     <i className="bi-exclamation-circle me-1"></i>
                                     Новая
                                 </Badge>
+                            )}
+                            {saving && (
+                                <Spinner animation="border" size="sm" className="ms-2" role="status">
+                                    <span className="visually-hidden">Сохранение</span>
+                                </Spinner>
                             )}
                         </h5>
                         {request.document && (
@@ -389,7 +410,7 @@ const RequestCard = ({ request, onStatusChange, getNameById, onViewUpdate }) => 
                                             variant={isActive ? variant : `outline-${variant}`}
                                             className="request-status-btn"
                                             onClick={() => handleStatusChange(key)}
-                                            disabled={isTerminalStatus(request.status)}
+                                            disabled={isTerminalStatus(request.status) || saving}
                                         >
                                             <i className={`${REQUEST_STATUSES[key].biIcon} me-2`}></i>
                                             <span>{statusLabel(key)}</span>

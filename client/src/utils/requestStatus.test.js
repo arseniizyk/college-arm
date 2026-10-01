@@ -4,11 +4,12 @@ import {
   statusLabel,
   statusLabelPlural,
   statusBadge,
-  statusPriority,
   isTerminalStatus,
   statusTerminalHint,
   isNewRequest,
-  countByStatus
+  countByStatus,
+  matchesRequestFilter,
+  byRequestRelevance
 } from './requestStatus'
 
 test('в карте ровно три статуса заявки', () => {
@@ -81,7 +82,7 @@ test('в карте нет полей вне списка, а terminalHint ес�
   // terminalHint необязателен: у «в обработке» его нет, и подсказка
   // подставляется из OPEN_STATUS_HINT. Лишние поля — дубль другой формы
   // или того, что живёт в server/utils/requestStatus.js.
-  const required = ['label', 'labelPlural', 'badge', 'icon', 'biIcon', 'chartColor', 'isTerminal', 'order']
+  const required = ['label', 'labelPlural', 'badge', 'icon', 'biIcon', 'chartColor', 'isTerminal']
 
   for (const key of STATUS_KEYS) {
     const fields = Object.keys(REQUEST_STATUSES[key])
@@ -91,9 +92,59 @@ test('в карте нет полей вне списка, а terminalHint ес�
   }
 })
 
-test('статусы упорядочены: сначала в обработке, потом завершено, потом отменено', () => {
-  expect(statusPriority('pending')).toBeLessThan(statusPriority('completed'))
-  expect(statusPriority('completed')).toBeLessThan(statusPriority('cancelled'))
+test('в карте больше нет поля order', () => {
+  // Порядок статусов в списке задаёт не сортировка, а фильтр: сортировка
+  // по статусу уводила обработанную карточку с текущей страницы. Поле
+  // осталось бы в карте только как мёртвый след прежней сортировки.
+  for (const key of STATUS_KEYS) {
+    expect(REQUEST_STATUSES[key].order).toBeUndefined()
+  }
+})
+
+test('заявки идут от новых к старым независимо от флагов', () => {
+  const requests = [
+    { id: 1, status: 'pending', isViewed: true, createdAt: '2026-01-01T10:00:00Z' },
+    { id: 2, status: 'pending', isViewed: false, createdAt: '2026-03-01T10:00:00Z' },
+    { id: 3, status: 'completed', isViewed: false, createdAt: '2026-04-01T10:00:00Z' }
+  ]
+
+  expect([...requests].sort(byRequestRelevance).map(r => r.id)).toEqual([3, 2, 1])
+})
+
+test('открытие заявки не двигает её в списке', () => {
+  // Регрессия: отдельная группа «новых» переставляла карточку вниз ровно в
+  // момент, когда администратор её открывал, — список прыгал под руками.
+  const before = [
+    { id: 1, status: 'pending', isViewed: false, createdAt: '2026-03-01T10:00:00Z' },
+    { id: 2, status: 'pending', isViewed: false, createdAt: '2026-02-01T10:00:00Z' }
+  ]
+  const after = before.map(r => (r.id === 1 ? { ...r, isViewed: true } : r))
+
+  expect([...after].sort(byRequestRelevance).map(r => r.id)).toEqual([1, 2])
+})
+
+test('смена статуса не двигает карточку: статус в порядок не входит', () => {
+  const before = [
+    { id: 1, status: 'pending', isViewed: true, createdAt: '2026-02-01T10:00:00Z' },
+    { id: 2, status: 'pending', isViewed: true, createdAt: '2026-01-01T10:00:00Z' }
+  ]
+  const after = before.map(r => (r.id === 1 ? { ...r, status: 'completed' } : r))
+
+  expect([...after].sort(byRequestRelevance).map(r => r.id))
+    .toEqual([...before].sort(byRequestRelevance).map(r => r.id))
+})
+
+test('фильтр выбирает заявки только по статусу', () => {
+  const request = { status: 'pending', isViewed: false }
+
+  expect(matchesRequestFilter(request, '')).toBe(true)
+  expect(matchesRequestFilter(request, 'pending')).toBe(true)
+  expect(matchesRequestFilter(request, 'completed')).toBe(false)
+})
+
+test('фильтр не роняет рендер на запросе без статуса', () => {
+  expect(matchesRequestFilter({}, 'pending')).toBe(false)
+  expect(matchesRequestFilter(undefined, 'pending')).toBe(false)
 })
 
 test('счётчик по статусам считает все заявки ровно один раз', () => {

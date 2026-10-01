@@ -1,15 +1,22 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Form, InputGroup, Row, Col, Alert, Spinner } from 'react-bootstrap';
 import RequestCard from './RequestCard';
 import Pagination from './Pagination';
 import { formatFio } from '../utils/dataHelpers';
 import { ITEMS_PER_PAGE } from '../utils/consts';
-import { REQUEST_STATUSES, STATUS_KEYS, countByStatus, statusLabel, statusPriority } from '../utils/requestStatus';
+import {
+    REQUEST_STATUSES,
+    STATUS_KEYS,
+    byRequestRelevance,
+    countByStatus,
+    matchesRequestFilter,
+    statusLabel
+} from '../utils/requestStatus';
 
-const RequestsManagement = ({ 
-    requests, 
-    loading, 
-    onStatusChange, 
+const RequestsManagement = ({
+    requests,
+    loading,
+    onStatusChange,
     getNameById,
     error,
     success,
@@ -26,7 +33,7 @@ const RequestsManagement = ({
 
         // Фильтр по статусу
         if (statusFilter) {
-            filtered = filtered.filter(req => req.status === statusFilter);
+            filtered = filtered.filter(req => matchesRequestFilter(req, statusFilter));
         }
 
         // Поиск по описанию или ID
@@ -45,32 +52,21 @@ const RequestsManagement = ({
             });
         }
 
-        // Сортировка: заявки в обработке всегда сверху, затем завершенные, затем отменённые
-        filtered.sort((a, b) => {
-            // Определяем приоритет статуса (меньше = выше)
-            const aPriority = statusPriority(a.status);
-            const bPriority = statusPriority(b.status);
-            
-            // Сначала сортируем по приоритету
-            if (aPriority !== bPriority) {
-                return aPriority - bPriority;
-            }
-            
-            // Если приоритеты равны - сортируем по дате создания (новые сверху)
-            return new Date(b.createdAt) - new Date(a.createdAt);
-        });
-
-        return filtered;
+        // Порядок: новые сверху
+        return filtered.sort(byRequestRelevance);
     }, [requests, searchTerm, statusFilter]);
 
     // Пагинация
-    const totalPages = Math.ceil(filteredRequests.length / itemsPerPage);
-    const startIndex = (currentPage - 1) * itemsPerPage;
+    const totalPages = Math.max(1, Math.ceil(filteredRequests.length / itemsPerPage));
+    // Смена статусов и автообновление могут уменьшить число страниц — без
+    // клампа slice отдаёт пустой массив, и список выглядит пустым при полном.
+    const safePage = Math.min(currentPage, totalPages);
+    const startIndex = (safePage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
     const currentRequests = filteredRequests.slice(startIndex, endIndex);
 
     // Сброс на первую страницу при изменении фильтров
-    useMemo(() => {
+    useEffect(() => {
         setCurrentPage(1);
     }, [searchTerm, statusFilter]);
 
@@ -118,19 +114,21 @@ const RequestsManagement = ({
             </div>
 
             {/* Уведомления */}
-            {error && (
-                <Alert variant="danger" dismissible>
-                    <i className="bi-exclamation-circle me-2"></i>
-                    {error}
-                </Alert>
-            )}
+            <div className="requests-notices">
+                {error && (
+                    <Alert variant="danger" dismissible>
+                        <i className="bi-exclamation-circle me-2"></i>
+                        {error}
+                    </Alert>
+                )}
 
-            {success && (
-                <Alert variant="success" dismissible>
-                    <i className="bi-check-lg-circle me-2"></i>
-                    {success}
-                </Alert>
-            )}
+                {success && (
+                    <Alert variant="success" dismissible>
+                        <i className="bi-check-lg-circle me-2"></i>
+                        {success}
+                    </Alert>
+                )}
+            </div>
 
             {/* Фильтры и поиск */}
             <div className="mb-4">
@@ -176,7 +174,7 @@ const RequestsManagement = ({
                                 {filteredRequests.length !== statistics.total && ` (всего: ${statistics.total})`}
                             </small>
                             <small className="text-muted">
-                                Страница {currentPage} из {totalPages}
+                                Страница {safePage} из {totalPages}
                             </small>
                         </div>
                         {currentRequests.map(request => (
@@ -191,7 +189,7 @@ const RequestsManagement = ({
 
                         {/* Пагинация */}
                         <Pagination
-                            currentPage={currentPage}
+                            currentPage={safePage}
                             totalPages={totalPages}
                             onPageChange={setCurrentPage}
                         />

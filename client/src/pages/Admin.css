@@ -232,6 +232,25 @@
   padding-right: 0;
 }
 
+/* Сообщения о смене статуса показываются поверх содержимого: в потоке
+   документа они сдвигали список вниз при каждом действии админа */
+.admin-panel .requests-notices {
+  position: sticky;
+  top: 0.5rem;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.admin-panel .requests-notices:empty {
+  display: none;
+}
+
+.admin-panel .requests-notices .alert {
+  box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.15);
+}
+
 /* Form Validation */
 .form-control:focus {
   border-color: var(--mgkct-blue);

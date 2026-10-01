@@ -24,10 +24,9 @@ const Admin = observer(() => {
                 // Получаем просмотренные заявки из localStorage
                 const viewedRequestsStr = localStorage.getItem('viewedRequests');
                 const viewedRequestIds = viewedRequestsStr ? JSON.parse(viewedRequestsStr) : [];
-                
-                // Обновляем заявки
-                await data.fetchAll('requests');
-                
+
+                await data.fetchAll('requests', {}, { silent: true });
+
                 // Восстанавливаем статус просмотренных заявок
                 viewedRequestIds.forEach(id => {
                     data.updateLocal('requests', id, { isViewed: true });
@@ -181,7 +180,7 @@ const Admin = observer(() => {
                     >
                         <RequestsManagement
                             requests={data.requests || []}
-                            loading={isLoading}
+                            loading={data.isLoading('requests')}
                             onStatusChange={handleRequestStatusChange}
                             getNameById={getNameByIdWithData}
                             error={error}

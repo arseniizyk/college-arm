@@ -48,10 +48,12 @@ export default class DataStore {
   // ========== PRIVATE HELPERS ==========
 
   // Универсальный метод для выполнения запросов
-  async _makeRequest(entityType, requestFn) {
-    this._setLoading(entityType, true)
+  async _makeRequest(entityType, requestFn, { silent = false } = {}) {
+    if (!silent) {
+      this._setLoading(entityType, true)
+    }
     this._clearError(entityType)
-    
+
     try {
       const response = await requestFn()
       const data = response.data // Извлекаем данные из ответа
@@ -62,9 +64,11 @@ export default class DataStore {
       })
       throw error
     } finally {
-      runInAction(() => {
-        this._loading[entityType] = false
-      })
+      if (!silent) {
+        runInAction(() => {
+          this._loading[entityType] = false
+        })
+      }
     }
   }
 
@@ -80,7 +84,9 @@ export default class DataStore {
   // ========== PUBLIC CRUD METHODS ==========
 
   // Получение всех записей
-  async fetchAll(entityType, params = {}) {
+  // options.silent — не поднимать флаг загрузки: список должен обновиться
+  // на месте, не подменяясь в компоненте спиннером
+  async fetchAll(entityType, params = {}, { silent = false } = {}) {
     try {
       // Формируем URL с параметрами запроса
       const queryParams = new URLSearchParams();
@@ -96,7 +102,7 @@ export default class DataStore {
 
       const data = await this._makeRequest(entityType, () =>
         $authHost.get(url)
-      )
+      , { silent })
       
       // Обрабатываем ответ в зависимости от структуры
       let entities;
@@ -145,11 +151,12 @@ export default class DataStore {
       )
       
       runInAction(() => {
-        this._entities[entityType].push(createdData)
-        
+        // Новый массив, а не push: списки мемоизированы по ссылке
+        this._entities[entityType] = [...this._entities[entityType], createdData]
+
         // Обновляем _allStudents при создании студента
         if (entityType === 'students') {
-          this._allStudents.push(createdData)
+          this._allStudents = [...this._allStudents, createdData]
         }
       })
       
@@ -160,25 +167,14 @@ export default class DataStore {
   }
 
   // Обновление записи
-  async update(entityType, id, data) {
+  async update(entityType, id, data, { silent = false } = {}) {
     try {
       const updatedData = await this._makeRequest(entityType, () =>
         $authHost.put(`${ENDPOINTS[entityType]}/${id}`, data)
-      )
-      
+      , { silent })
+
       runInAction(() => {
-        const index = this._entities[entityType].findIndex(item => item.id === id)
-        if (index !== -1) {
-          this._entities[entityType][index] = { ...this._entities[entityType][index], ...updatedData }
-        }
-        
-        // Обновляем _allStudents при обновлении студента
-        if (entityType === 'students') {
-          const allIndex = this._allStudents.findIndex(item => item.id === id)
-          if (allIndex !== -1) {
-            this._allStudents[allIndex] = { ...this._allStudents[allIndex], ...updatedData }
-          }
-        }
+        this._replaceItem(entityType, id, updatedData)
       })
       
       return updatedData
@@ -187,21 +183,31 @@ export default class DataStore {
     }
   }
 
+  // Замена элемента с пересозданием массива: мутация по индексу оставляет
+  // ссылку прежней, и useMemo в списках возвращает устаревшие объекты
+  _replaceItem(entityType, id, updates) {
+    const list = this._entities[entityType]
+    const index = list.findIndex(item => item.id === id)
+    if (index === -1) return
+
+    this._entities[entityType] = [
+      ...list.slice(0, index),
+      { ...list[index], ...updates },
+      ...list.slice(index + 1)
+    ]
+
+    // Обновляем _allStudents при обновлении студента
+    if (entityType === 'students') {
+      this._allStudents = this._allStudents.map(
+        item => (item.id === id ? { ...item, ...updates } : item)
+      )
+    }
+  }
+
   // Обновление поля записи без запроса к серверу (для локального обновления)
   updateLocal(entityType, id, updates) {
     runInAction(() => {
-      const index = this._entities[entityType].findIndex(item => item.id === id)
-      if (index !== -1) {
-        this._entities[entityType][index] = { ...this._entities[entityType][index], ...updates }
-      }
-      
-      // Обновляем _allStudents при обновлении студента
-      if (entityType === 'students') {
-        const allIndex = this._allStudents.findIndex(item => item.id === id)
-        if (allIndex !== -1) {
-          this._allStudents[allIndex] = { ...this._allStudents[allIndex], ...updates }
-        }
-      }
+      this._replaceItem(entityType, id, updates)
     })
   }
 

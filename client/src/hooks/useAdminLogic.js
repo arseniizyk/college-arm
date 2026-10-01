@@ -3,6 +3,7 @@ import { getTableData, filterData, prepareFormData, getNameById } from '../utils
 import { getDefaultFormData } from '../utils/tableConfig';
 import { ITEMS_PER_PAGE } from '../utils/consts';
 import { statusLabel } from '../utils/requestStatus';
+import { errorMessage } from '../http';
 
 export const useAdminLogic = (data, user) => {
     const [activeTab, setActiveTab] = useState('users');
@@ -100,42 +101,39 @@ export const useAdminLogic = (data, user) => {
         setSelectedSpecialtyFilter(specialtyId);
     }, []);
 
-    // Функция для изменения статуса заявки
+    // Функция для изменения статуса заявки. Возвращает признак успеха:
+    // карточка по нему решает, стоит ли себя свернуть — при откате статуса
+    // заявка остаётся открытой, чтобы не прятать её от админа
     const handleRequestStatusChange = useCallback(async (requestId, newStatus) => {
-        setLoading(true);
         setError(null);
         setSuccess(null);
 
-        try {
-            const request = data.requests.find(r => r.id === requestId);
-            if (!request) {
-                setError('Заявка не найдена');
-                return;
-            }
+        const request = data.requests.find(r => r.id === requestId);
+        if (!request) {
+            setError('Заявка не найдена');
+            return false;
+        }
 
-            // Подготавливаем данные для обновления
-            const updateData = {
+        data.updateLocal('requests', requestId, { status: newStatus });
+
+        try {
+            await data.update('requests', requestId, {
                 documentId: request.documentId,
                 description: request.description,
                 studentIds: request.students.map(s => s.id),
                 status: newStatus
-            };
+            }, { silent: true });
 
-            await data.update('requests', requestId, updateData);
-            
-            // Перезагружаем заявки и уведомления после изменения статуса
-            await Promise.all([
-                data.fetchAll('requests'),
-                data.fetchAll('notifications')
-            ]);
-            
+            data.fetchAll('notifications').catch(() => {});
+
             setSuccess(`Статус заявки #${requestId} изменен на "${statusLabel(newStatus)}"`);
-            
+
             setTimeout(() => setSuccess(null), 3000);
+            return true;
         } catch (err) {
-            setError(err.response?.data?.message || 'Ошибка изменения статуса');
-        } finally {
-            setLoading(false);
+            data.updateLocal('requests', requestId, { status: request.status });
+            setError(errorMessage(err, 'Ошибка изменения статуса'));
+            return false;
         }
     }, [data]);
 
