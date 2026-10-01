@@ -2,6 +2,7 @@ import React, { useState, useContext, useEffect } from 'react';
 import { Modal, Form, Button, Row, Col, Spinner, Alert } from 'react-bootstrap';
 import { formatFio, formatFioShort } from '../utils/dataHelpers';
 import { downloadDoc } from '../http';
+import { orderUrl } from '../utils/consts';
 import { Context } from '../index';
 import { observer } from 'mobx-react-lite';
 
@@ -90,7 +91,7 @@ const HealthOrderModal = observer(({ show, onHide }) => {
 
         setLoading(true);
         try {
-            await downloadDoc('/api/generate/admin/health-order', {
+            await downloadDoc(orderUrl('health'), {
                 payload,
                 fileName: 'Приказ_оздоровление'
             });

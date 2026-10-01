@@ -2,6 +2,7 @@ import React, { useState, useContext, useEffect } from 'react';
 import { Modal, Form, Button, Row, Col, Spinner, Alert } from 'react-bootstrap';
 import { formatFio, formatFioShort } from '../utils/dataHelpers';
 import { downloadDoc } from '../http';
+import { orderUrl } from '../utils/consts';
 import { Context } from '../index';
 import { observer } from 'mobx-react-lite';
 
@@ -77,7 +78,7 @@ const DuplicateTicketOrderModal = observer(({ show, onHide }) => {
 
         setLoading(true);
         try {
-            await downloadDoc('/api/generate/admin/duplicate-ticket-order', {
+            await downloadDoc(orderUrl('duplicate-ticket'), {
                 payload,
                 fileName: 'Приказ_дубликат_билета'
             });

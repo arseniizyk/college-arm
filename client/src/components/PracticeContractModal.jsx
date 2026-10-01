@@ -2,6 +2,7 @@ import React, { useState, useContext, useEffect } from 'react';
 import { Modal, Form, Button, Row, Col, Spinner, Alert } from 'react-bootstrap';
 import { formatFio } from '../utils/dataHelpers';
 import { downloadDoc } from '../http';
+import { practiceContractUrl } from '../utils/consts';
 import { Context } from '../index';
 import { observer } from 'mobx-react-lite';
 
@@ -115,7 +116,7 @@ const PracticeContractModal = observer(({ show, onHide }) => {
 
         setLoading(true);
         try {
-            await downloadDoc('/api/generate/admin/practice-contract', {
+            await downloadDoc(practiceContractUrl(), {
                 payload,
                 fileName: 'Договор_практика',
                 stamp: form.contractNumber || Date.now()

@@ -2,6 +2,7 @@ import React, { useState, useContext, useEffect } from 'react';
 import { Modal, Form, Button, Row, Col, Spinner, Alert, Card } from 'react-bootstrap';
 import { formatFio, formatFioShort } from '../utils/dataHelpers';
 import { downloadDoc } from '../http';
+import { orderUrl } from '../utils/consts';
 import { Context } from '../index';
 import { observer } from 'mobx-react-lite';
 
@@ -107,7 +108,7 @@ const ReleaseOrderModal = observer(({ show, onHide }) => {
 
         setLoading(true);
         try {
-            await downloadDoc('/api/generate/admin/release-order', {
+            await downloadDoc(orderUrl('release'), {
                 payload,
                 fileName: 'Приказ_освобождение'
             });

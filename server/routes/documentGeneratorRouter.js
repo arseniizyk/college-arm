@@ -15,6 +15,9 @@ router.get(
 );
 
 // Генерация административных документов (только для администраторов)
+
+// Договор практики: две копии на каждого студента и свои отступы страницы,
+// поэтому общий обработчик приказов к нему неприменим.
 router.post(
     '/admin/practice-contract',
     authMiddleware,
@@ -22,51 +25,13 @@ router.post(
     adminDocumentController.generatePracticeContract
 );
 
+// Все приказы. Тип документа перечислен в templates/registry.js —
+// неизвестный сегмент даёт 404, а не падение в createTemplate(undefined).
 router.post(
-    '/admin/exam-admission-order',
+    '/admin/orders/:docType',
     authMiddleware,
     checkRoleMiddleware('ADMIN'),
-    adminDocumentController.generateExamAdmissionOrder
+    adminDocumentController.generateOrder
 );
-
-router.post(
-    '/admin/holidays-order',
-    authMiddleware,
-    checkRoleMiddleware('ADMIN'),
-    adminDocumentController.generateHolidaysOrder
-);
-
-router.post(
-    '/admin/stipend-order',
-    authMiddleware,
-    checkRoleMiddleware('ADMIN'),
-    adminDocumentController.generateStipendOrder
-);
-
-router.post(
-    '/admin/snow-cleaning-order',
-    authMiddleware,
-    checkRoleMiddleware('ADMIN'),
-    adminDocumentController.generateSnowCleaningOrder
-);
-
-router.post(
-    '/admin/student-direction-order',
-    authMiddleware,
-    checkRoleMiddleware('ADMIN'),
-    adminDocumentController.generateStudentDirectionOrder
-);
-
-router.post(
-    '/admin/health-order',
-    authMiddleware,
-    checkRoleMiddleware('ADMIN'),
-    adminDocumentController.generateHealthOrder
-);
-
-router.post('/admin/transfer-order', authMiddleware, checkRoleMiddleware('ADMIN'), adminDocumentController.generateTransferOrder);
-router.post('/admin/duplicate-ticket-order', authMiddleware, checkRoleMiddleware('ADMIN'), adminDocumentController.generateDuplicateTicketOrder);
-router.post('/admin/enrollment-order', authMiddleware, checkRoleMiddleware('ADMIN'), adminDocumentController.generateEnrollmentOrder);
-router.post('/admin/release-order', authMiddleware, checkRoleMiddleware('ADMIN'), adminDocumentController.generateReleaseOrder);
 
 module.exports = router;

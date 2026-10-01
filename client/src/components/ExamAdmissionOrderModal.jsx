@@ -4,6 +4,7 @@ import { Context } from '../index';
 import { observer } from 'mobx-react-lite';
 import { calculateCourse } from '../utils/dataHelpers';
 import { downloadDoc } from '../http';
+import { orderUrl } from '../utils/consts';
 import OrderStudentSelector from './OrderStudentSelector';
 
 const INITIAL_SUBJECT = { date: '', subject: '', teacher: '' };
@@ -123,7 +124,7 @@ const ExamAdmissionOrderModal = observer(({ show, onHide }) => {
 
         setLoading(true);
         try {
-            await downloadDoc('/api/generate/admin/exam-admission-order', {
+            await downloadDoc(orderUrl('exam-admission'), {
                 payload,
                 fileName: 'Приказ_допуск_экзамены',
                 stamp: form.orderNumber || Date.now()

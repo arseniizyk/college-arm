@@ -5,6 +5,7 @@ import { observer } from 'mobx-react-lite';
 import OrderStudentSelector from './OrderStudentSelector';
 import { calculateCourse, formatFio } from '../utils/dataHelpers';
 import { downloadDoc } from '../http';
+import { orderUrl } from '../utils/consts';
 
 const INITIAL = {
     groupId: '',
@@ -117,7 +118,7 @@ const TransferOrderModal = observer(({ show, onHide }) => {
 
         setLoading(true);
         try {
-            await downloadDoc('/api/generate/admin/transfer-order', {
+            await downloadDoc(orderUrl('transfer'), {
                 payload,
                 fileName: 'Приказ_перевод'
             });

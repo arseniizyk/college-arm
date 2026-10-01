@@ -11,3 +11,20 @@ const ROLES_WITH_MULTIPLE_STUDENTS = ['ADMIN', 'TEACHER']
 
 export const canSelectMultipleStudents = (userRole) =>
   ROLES_WITH_MULTIPLE_STUDENTS.includes(userRole)
+
+export const ORDER_DOC_TYPES = [
+  'exam-admission',
+  'holidays',
+  'stipend',
+  'snow-cleaning',
+  'student-direction',
+  'health',
+  'transfer',
+  'duplicate-ticket',
+  'enrollment',
+  'release',
+]
+
+export const orderUrl = (docType) => `/api/generate/admin/orders/${docType}`
+
+export const practiceContractUrl = () => '/api/generate/admin/practice-contract'

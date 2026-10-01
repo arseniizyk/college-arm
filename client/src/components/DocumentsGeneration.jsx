@@ -19,15 +19,16 @@ const DOCUMENT_CATEGORIES = [
         icon: 'bi-journal-text',
         color: 'primary',
         documents: [
-            { id: 'release_order', title: 'Приказ об освобождении от занятий', icon: 'bi-calendar-x', available: true },
-            { id: 'enrollment_order', title: 'Приказ о зачислении', icon: 'bi-person-plus', available: true },            { id: 'duplicate_order', title: 'Приказ о выдаче дубликата билета', icon: 'bi-card-text', available: true },
-            { id: 'transfer_order', title: 'Приказ о переводе на следующий курс', icon: 'bi-arrow-up-circle', available: true },
-            { id: 'health_order', title: 'Приказ об оздоровлении', icon: 'bi-heart-pulse', available: true },
-            { id: 'direction_order', title: 'Приказ о направлении учащихся колледжа', icon: 'bi-send', available: true },
-            { id: 'subbotnik_order', title: 'Приказ о субботнике/уборка снега', icon: 'bi-snow', available: true },
-            { id: 'stipend_order', title: 'Приказ о стипендии', icon: 'bi-cash-coin', available: true },
-            { id: 'exam_order', title: 'Приказ о допуске к экзаменам', icon: 'bi-pencil-square', available: true },
-            { id: 'holidays_order', title: 'Приказ об установлении каникул', icon: 'bi-calendar-heart', available: true },
+            { id: 'release', title: 'Приказ об освобождении от занятий', icon: 'bi-calendar-x', available: true },
+            { id: 'enrollment', title: 'Приказ о зачислении', icon: 'bi-person-plus', available: true },
+            { id: 'duplicate-ticket', title: 'Приказ о выдаче дубликата билета', icon: 'bi-card-text', available: true },
+            { id: 'transfer', title: 'Приказ о переводе на следующий курс', icon: 'bi-arrow-up-circle', available: true },
+            { id: 'health', title: 'Приказ о оздоровлении', icon: 'bi-heart-pulse', available: true },
+            { id: 'student-direction', title: 'Приказ о направлении учащихся колледжа', icon: 'bi-send', available: true },
+            { id: 'snow-cleaning', title: 'Приказ о субботнике/уборка снега', icon: 'bi-snow', available: true },
+            { id: 'stipend', title: 'Приказ о стипендии', icon: 'bi-cash-coin', available: true },
+            { id: 'exam-admission', title: 'Приказ о допуске к экзаменам', icon: 'bi-pencil-square', available: true },
+            { id: 'holidays', title: 'Приказ об установлении каникул', icon: 'bi-calendar-heart', available: true },
         ]
     },
     {
@@ -36,7 +37,7 @@ const DOCUMENT_CATEGORIES = [
         icon: 'bi-file-earmark-ruled',
         color: 'warning',
         documents: [
-            { id: 'practice_contract', title: 'Договор на учебную практику', icon: 'bi-briefcase', available: true },
+            { id: 'practice-contract', title: 'Договор на учебную практику', icon: 'bi-briefcase', available: true },
         ]
     },
 ];
@@ -89,17 +90,17 @@ const DocumentsGeneration = () => {
     const [showReleaseModal, setShowReleaseModal] = useState(false);
 
     const handleGenerate = (docId) => {
-        if (docId === 'practice_contract') setShowPracticeModal(true);
-        if (docId === 'exam_order') setShowExamModal(true);
-        if (docId === 'holidays_order') setShowHolidaysModal(true);
-        if (docId === 'stipend_order') setShowStipendModal(true);
-        if (docId === 'subbotnik_order') setShowSnowModal(true);
-        if (docId === 'direction_order') setShowDirectionModal(true);
-        if (docId === 'health_order') setShowHealthModal(true);
-        if (docId === 'transfer_order') setShowTransferModal(true);
-        if (docId === 'duplicate_order') setShowDuplicateModal(true);
-        if (docId === 'enrollment_order') setShowEnrollmentModal(true);
-        if (docId === 'release_order') setShowReleaseModal(true);
+        if (docId === 'practice-contract') setShowPracticeModal(true);
+        if (docId === 'exam-admission') setShowExamModal(true);
+        if (docId === 'holidays') setShowHolidaysModal(true);
+        if (docId === 'stipend') setShowStipendModal(true);
+        if (docId === 'snow-cleaning') setShowSnowModal(true);
+        if (docId === 'student-direction') setShowDirectionModal(true);
+        if (docId === 'health') setShowHealthModal(true);
+        if (docId === 'transfer') setShowTransferModal(true);
+        if (docId === 'duplicate-ticket') setShowDuplicateModal(true);
+        if (docId === 'enrollment') setShowEnrollmentModal(true);
+        if (docId === 'release') setShowReleaseModal(true);
     };
 
     const visibleCategories = activeCategory === 'all'

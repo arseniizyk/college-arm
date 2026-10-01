@@ -2,6 +2,7 @@ import React, { useState, useContext, useEffect } from 'react';
 import { Modal, Form, Button, Row, Col, Spinner, Alert } from 'react-bootstrap';
 import { formatFioShort } from '../utils/dataHelpers';
 import { downloadDoc } from '../http';
+import { orderUrl } from '../utils/consts';
 import { Context } from '../index';
 import { observer } from 'mobx-react-lite';
 import OrderStudentSelector from './OrderStudentSelector';
@@ -111,7 +112,7 @@ const StudentDirectionOrderModal = observer(({ show, onHide }) => {
 
         setLoading(true);
         try {
-            await downloadDoc('/api/generate/admin/student-direction-order', {
+            await downloadDoc(orderUrl('student-direction'), {
                 payload,
                 fileName: 'Приказ_направление'
             });

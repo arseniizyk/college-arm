@@ -1,6 +1,7 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { Modal, Form, Button, Row, Col, Spinner, Alert, Card } from 'react-bootstrap';
 import { downloadDoc } from '../http';
+import { orderUrl } from '../utils/consts';
 import { Context } from '../index';
 import { observer } from 'mobx-react-lite';
 import OrderStudentSelector from './OrderStudentSelector';
@@ -114,7 +115,7 @@ const SnowCleaningOrderModal = observer(({ show, onHide }) => {
 
         setLoading(true);
         try {
-            await downloadDoc('/api/generate/admin/snow-cleaning-order', {
+            await downloadDoc(orderUrl('snow-cleaning'), {
                 payload,
                 fileName: 'Приказ_уборка_снега'
             });

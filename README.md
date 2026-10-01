@@ -72,52 +72,55 @@ docker compose exec server node seed.js --force
 
 Подсчёт выполнен 01.10.2026. Считаются все строки файла, включая пустые.
 Исключены `node_modules/`, `.git/`, `.idea/`, `client/build/`, `server/backups/`
-(дампы с персональными данными), сгенерированные документы `docs/` и временные
-отладочные скрипты `server/_*.tmp.js` — это артефакты, а не исходный код.
+(дампы с персональными данными), сгенерированные документы `docs/`, служебные
+`.DS_Store` и временные отладочные скрипты `server/_*.tmp.js` — это артефакты,
+а не исходный код.
 
 ### По типам файлов
 
 | Категория | Файлов | Строк |
 |---|---:|---:|
-| Клиентский код (`client/src`, `.js` / `.jsx`) | 45 | 10 492 |
-| Шаблоны документов (`server/templates/*.js`) | 13 | 2 309 |
-| Серверный код (`server/**`, `.js`, кроме шаблонов) | 39 | 3 431 |
+| Клиентский код (`client/src`, `.js` / `.jsx`) | 48 | 10 604 |
+| Шаблоны документов (`server/templates/*.js`) | 15 | 2 456 |
+| Серверный код (`server/**`, `.js`, кроме шаблонов) | 45 | 3 458 |
 | Стили (`.css`) | 7 | 2 428 |
-| Документация и служебное (`.md`, `.txt`, `.gitignore`, `.dockerignore`) | 9 | 1 244 |
-| Конфигурация (`.json`, `.env`, `.conf`, `.yml`, `.xml`, `.example`) | 11 | 302 |
+| Документация и служебное (`.md`, `.txt`, `.gitignore`, `.dockerignore`) | 9 | 1 172 |
+| Конфигурация (`.json`, `.env`, `.conf`, `.yml`, `.example`) | 11 | 303 |
 | `Dockerfile` | 2 | 59 |
 | HTML-шблон (`client/public/index.html`) | 1 | 21 |
-| **ВСЕГО** | **127** | **20 286** |
+| **ВСЕГО** | **138** | **20 501** |
 
 В серверный код входит `server/seed.js` (382 строки) — заполнение базы тестовыми
-данными, см. раздел выше.
+данными, см. раздел выше. Тестов (`*.test.js`) — 8 файлов, 423 строки; они входят
+в клиентский и серверный код вместе с остальным.
 
-Бинарных файлов — 4, строки не считались: `client/public/*.png`, `favicon.ico` и
-`.docx` с пояснительной запиской (~4.2 МБ). Всего файлов в проекте — 145, из них
-2 — `package-lock.json` (16 993 строки, ~726 КБ транзиветных пакетов), 9 — в
-`server/backups/` (дампы с ПИ, исключены из подсчёта) и 2 — служебные файлы
-`.idea/`. Каталог `docs/` пуст, временных скриптов `server/_*.tmp.js` в проекте
-нет — прежние цифры 148 и «ещё 5 файлов» к ним относились.
+Бинарных файлов — 4, строки не считались: `client/public/logo192.png`,
+`logo512.png`, `favicon.ico` и `.docx` с пояснительной запиской (~4.2 МБ).
+Всего файлов в проекте — 169, из них 138 посчитано выше, 2 — `package-lock.json`
+(16 993 строки, ~443 КБ транзитивных пакетов), 9 — в `server/backups/` (дампы с
+ПИ, исключены из подсчёта), 12 — в `client/build/`, 1 — `docs/D12_приказ_об_освобождении.docx`,
+1 — `.DS_Store` и 2 служебных файла `.idea/`. Временных скриптов `server/_*.tmp.js`
+в проекте нет.
 
 ### По расширениям
 
 | Расширение | Файлов | Строк |
 |---|---:|---:|
-| `.jsx` | 31 | 8 796 |
-| `.js` | 66 | 7 436 |
+| `.jsx` | 31 | 8 809 |
+| `.js` | 77 | 7 709 |
 | `.css` | 7 | 2 428 |
-| `.md` (`README.md`, `issues.md`, `issues-solved.md`, `AGENTS.md`) | 4 | 1 159 |
-| `.json` (`package.json`, `tsconfig.json`, `manifest.json`, `jsconfig.json`) | 3 | 108 |
+| `.md` (`README.md`, `issues.md`, `issues-solved.md`, `AGENTS.md`) | 4 | 1 087 |
+| `.json` (`server/package.json`, `client/package.json`, `client/public/manifest.json`) | 3 | 109 |
 | `.yml` (`docker-compose.yml`) | 1 | 68 |
 | `.gitignore` | 2 | 61 |
 | без расширения (`Dockerfile`) | 2 | 59 |
 | `.example` | 3 | 53 |
 | `.env` | 3 | 50 |
-| `.conf` | 1 | 23 |
+| `.conf` (`client/nginx.conf`) | 1 | 23 |
 | `.html` | 1 | 21 |
 | `.dockerignore` | 2 | 21 |
-| `.txt` | 1 | 3 |
-| **ВСЕГО** | **127** | **20 286** |
+| `.txt` (`client/public/robots.txt`) | 1 | 3 |
+| **ВСЕГО** | **138** | **20 501** |
 
 ### Самые крупные файлы
 
@@ -128,4 +131,8 @@ docker compose exec server node seed.js --force
 | `client/src/pages/Admin.css` | 722 |
 | `client/src/components/NavBar.jsx` | 465 |
 | `client/src/components/RequestCard.jsx` | 439 |
-| `client/src/components/PracticeContractModal.jsx` | 389 |
+| `server/controllers/requestController.js` | 398 |
+| `client/src/components/PracticeContractModal.jsx` | 390 |
+
+`issues-solved.md` — 615 строк, но это журнал решений, а не код, поэтому в таблицу
+выше он не попал.

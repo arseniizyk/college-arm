@@ -22,7 +22,7 @@ cd client && npm install && npm start        # CRA dev server, MUST be localhost
 
 - `server`: the script is named `server`, not `start`. `npm run test-backup` references a `testBackup.js` that does not exist.
 - `client`: no lint / format / typecheck scripts. `npm test` is CRA's Jest runner; run it as `CI=true npm test` so it exits instead of watching. Only pure functions are tested — there is no jsdom-based component test, so a component change is verified by `npm run build` and by hand.
-- Tests exist for a few pure modules only: `server/utils/*.test.js` (`node --test`, run with `npm test` in `server/`) and `client/src/utils/*.test.js`. A new `*.test.js` sits next to its source in both apps.
+- Tests exist for a few pure modules only: `server/utils/*.test.js` and `server/templates/registry.test.js` (`node --test`, run with `npm test` in `server/`) plus `server/routes/*.test.js` (also `node --test`), and `client/src/utils/*.test.js`. A new `*.test.js` sits next to its source in both apps. Rendered `.docx` is not unit-tested; see "Verifying a change to document generation" above.
 - The only automated check available is CRA's ESLint on `npm start` / `npm run build`.
 - Bootstrap 5 and bootstrap-icons are loaded from **CDN links in `client/public/index.html`**, not imported in JS/CSS. Offline builds lose all styling.
 
@@ -33,6 +33,8 @@ cd client && npm install && npm start        # CRA dev server, MUST be localhost
 - All client HTTP goes through `client/src/http/index.js` (`$host` / `$authHost`). Use `downloadDoc(path, { method, payload, fileName, stamp })` for document downloads — it handles the blob save and error parsing. Note `errorMessage(err, fallback)` to show the server's message: axios throws on non-2xx, so `err.message` alone reads "Request failed with status code 400".
 - **No migrations.** `server/index.js` runs `sequelize.sync({ alter: true })` on every boot, so model changes mutate the live schema. Treat model edits as immediate production DDL. See B6 in `issues.md`.
 - Open problems live in `issues.md`; closed ones in `issues-solved.md`. New audit findings go to `issues.md` with a short entry: what, where, how to verify, how to fix.
+- **A closed issue must not stay in `issues.md` at all.** When you finish one, delete its whole section here and write the entry in `issues-solved.md` (what was done, what proves it, what was deliberately left out). Do not leave a `— закрыто` heading, a struck-through paragraph, or a "сделано:" summary behind: a reader scanning `issues.md` is looking for work that still needs doing, and a resolved item there is indistinguishable from a pending one at a glance. No item may exist in both files — `issues-solved.md` is the single place a closed issue is recorded. Update the counts in the preamble line and the "Рекомендуемый порядок работ" section of `issues.md` when you move one, so the totals stay true.
+- **Do not restate another file's content to justify a fix.** If the verification of a change lives in a test, `docs/`, or another issue entry, link to it from `issues-solved.md` rather than pasting the numbers in two places — duplicated facts drift, and this repository has already had a drifted line count in an audit write-up.
 - **No API path to create an `ADMIN`.** Registration hardcodes `role: 'USER'`, so you must `UPDATE "user" SET role='ADMIN'` directly in Postgres.
 - **`server/seed.js` (`npm run seed`) fills the DB with fake data** — the script creates the first ADMIN for you, so the manual UPDATE above is only needed if you never seed. It refuses to run on a non-empty DB unless given `--force` (wipe) or `--keep` (append).
 - All models live in one file: `server/models/models.js` (Sequelize `define` + associations). Table names are the model keys, snake_case, singular.
@@ -70,14 +72,27 @@ cd client && npm install && npm start        # CRA dev server, MUST be localhost
 
 ## Adding a document template
 
-Document generation is wired in four places; missing one leaves the feature dead:
+An order (приказ) is wired in three places; missing one leaves the feature dead:
 
 1. `server/templates/<name>Template.js` — returns `docx` paragraphs, no I/O.
-2. `server/controllers/adminDocumentController.js` — data prep + `Packer.toBuffer`.
-3. `server/routes/documentGeneratorRouter.js` — POST route with `authMiddleware` + `checkRoleMiddleware('ADMIN')`.
-4. `client/src/components/<Name>OrderModal.jsx` + a button in `components/DocumentsGeneration.jsx`.
+2. `server/templates/registry.js` — one `ORDER_REGISTRY` entry `{ createTemplate, filePrefix, errorsContext }`. The **key is the route segment**: `exam-admission` → `POST /api/generate/admin/orders/exam-admission`. Do not add a controller method or a route — `adminDocumentController.generateOrder` and the `/admin/orders/:docType` route are generic and cover every entry.
+3. `client/src/components/<Name>OrderModal.jsx` calling `orderUrl('<docType>')` from `utils/consts.js`, plus a card in `DocumentsGeneration.jsx` whose `id` is the same `docType`.
+
+`docType` also has to appear in `ORDER_DOC_TYPES` in `client/src/utils/consts.js` — that list is what `docRoutes.test.js` cross-checks against the registry, and it is why a mismatched card id fails a test instead of silently opening nothing.
+
+Two documents are deliberately **not** in the registry and have their own routes: the practice contract (`generatePracticeContract` — two copies per student via `pageBreakBefore`, different page margins) and the study certificate (`documentGeneratorController.generateStudyCertificate` — `GET /study-certificate/:requestId`, reads the DB). Do not fold them into the parameterized route.
 
 Conventions worth matching: `server/utils/declension.js` handles Russian name declension via `petrovich`; `server/utils/orderParser.js` parses `student.order_number` into number/date — do not hand-roll regexes for either.
+
+### Verifying a change to document generation
+
+There is no test for rendered `.docx`, so `docs/` holds a byte-level harness:
+
+```
+node docs/snapshot.js docs/new && node docs/compare.js docs/old docs/new
+```
+
+It compares SHA-256 of `word/document.xml`, **not** of the whole archive: a `.docx` embeds its build date, so archive bytes differ between runs even when the content is identical (verified). `docs/fixtures.js` holds payloads assembled from what the modals actually send, covering both genders for declension, multi-group payloads, and the conditional-transfer branch. Snapshots run **through the controller**, not the templates directly, so page margins and response headers end up in the comparison.
 
 ## Docker
 

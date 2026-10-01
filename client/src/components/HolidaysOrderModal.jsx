@@ -4,6 +4,7 @@ import { Context } from '../index';
 import { observer } from 'mobx-react-lite';
 import { calculateCourse } from '../utils/dataHelpers';
 import { downloadDoc } from '../http';
+import { orderUrl } from '../utils/consts';
 import OrderStudentSelector from './OrderStudentSelector';
 
 const INITIAL = {
@@ -92,7 +93,7 @@ const HolidaysOrderModal = observer(({ show, onHide }) => {
 
         setLoading(true);
         try {
-            await downloadDoc('/api/generate/admin/holidays-order', {
+            await downloadDoc(orderUrl('holidays'), {
                 payload,
                 fileName: 'Приказ_каникулы'
             });

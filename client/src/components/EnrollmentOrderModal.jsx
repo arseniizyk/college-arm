@@ -1,6 +1,7 @@
 import React, { useState, useContext, useEffect } from 'react';
 import { Modal, Form, Button, Row, Col, Spinner, Alert, Card } from 'react-bootstrap';
 import { downloadDoc } from '../http';
+import { orderUrl } from '../utils/consts';
 import { Context } from '../index';
 import { observer } from 'mobx-react-lite';
 import OrderStudentSelector from './OrderStudentSelector';
@@ -150,7 +151,7 @@ const EnrollmentOrderModal = observer(({ show, onHide }) => {
 
         setLoading(true);
         try {
-            await downloadDoc('/api/generate/admin/enrollment-order', {
+            await downloadDoc(orderUrl('enrollment'), {
                 payload,
                 fileName: 'Приказ_зачисление'
             });

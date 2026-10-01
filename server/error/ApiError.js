@@ -9,6 +9,10 @@ class ApiError extends Error{
         return new ApiError(400, message)
     }
 
+    static notFound(message) {
+        return new ApiError(404, message)
+    }
+
     static internalRequest(message) {
         return new ApiError(500, message)
     }
