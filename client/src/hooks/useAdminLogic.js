@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { getTableData, filterData, prepareFormData, getNameById } from '../utils/dataHelpers';
 import { getDefaultFormData } from '../utils/tableConfig';
 import { ITEMS_PER_PAGE } from '../utils/consts';
@@ -246,52 +246,45 @@ export const useAdminLogic = (data, user) => {
     // Получение данных таблицы
     const tableData = getTableData(activeTab, data);
 
-    // Фильтрация и сортировка данных
-    const filteredData = useMemo(() => {
-        const filtered = filterData(
-            tableData, 
-            searchTerm, 
-            activeTab, 
-            selectedGroupFilter,
-            selectedRoleFilter,
-            selectedStatusFilter,
-            selectedSpecialtyFilter
-        );
+    // Фильтрация и сортировка данных.
+    const filteredData = [...filterData(
+        tableData,
+        searchTerm,
+        activeTab,
+        selectedGroupFilter,
+        selectedRoleFilter,
+        selectedStatusFilter,
+        selectedSpecialtyFilter
+    )].sort((a, b) => {
+        switch (activeTab) {
+            case 'students':
+            case 'teachers':
+                // Сортировка по фамилии
+                return (a.last_name || '').localeCompare(b.last_name || '', 'ru');
 
-        // Сортировка по алфавиту в зависимости от типа таблицы
-        const sorted = [...filtered].sort((a, b) => {
-            switch (activeTab) {
-                case 'students':
-                case 'teachers':
-                    // Сортировка по фамилии
-                    return (a.last_name || '').localeCompare(b.last_name || '', 'ru');
-                
-                case 'users':
-                    // Сортировка по email
-                    return (a.email || '').localeCompare(b.email || '', 'ru');
-                
-                case 'groups':
-                    // Сортировка по номеру группы
-                    return (a.group_number || '').localeCompare(b.group_number || '', 'ru');
-                
-                case 'specialties':
-                case 'documents':
-                    // Сортировка по названию
-                    const nameA = a.name || a.document_name || '';
-                    const nameB = b.name || b.document_name || '';
-                    return nameA.localeCompare(nameB, 'ru');
-                
-                case 'requests':
-                    // Сортировка по дате создания (новые сверху)
-                    return new Date(b.createdAt) - new Date(a.createdAt);
-                
-                default:
-                    return 0;
-            }
-        });
+            case 'users':
+                // Сортировка по email
+                return (a.email || '').localeCompare(b.email || '', 'ru');
 
-        return sorted;
-    }, [tableData, searchTerm, activeTab, selectedGroupFilter, selectedRoleFilter, selectedStatusFilter, selectedSpecialtyFilter]);
+            case 'groups':
+                // Сортировка по номеру группы
+                return (a.group_number || '').localeCompare(b.group_number || '', 'ru');
+
+            case 'specialties':
+            case 'documents':
+                // Сортировка по названию
+                const nameA = a.name || a.document_name || '';
+                const nameB = b.name || b.document_name || '';
+                return nameA.localeCompare(nameB, 'ru');
+
+            case 'requests':
+                // Сортировка по дате создания (новые сверху)
+                return new Date(b.createdAt) - new Date(a.createdAt);
+
+            default:
+                return 0;
+        }
+    });
 
     // Пагинация
     const indexOfLastItem = currentPage * itemsPerPage;

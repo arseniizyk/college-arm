@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext, useMemo } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Container, Card, Spinner, Alert, Badge, Tabs, Tab, Form, Button, Modal } from 'react-bootstrap';
 import { Context } from '../index';
 import { observer } from 'mobx-react-lite';
@@ -108,24 +108,19 @@ const Profile = observer(() => {
     const userRequests = data.requests;
 
     // Группируем заявки по статусам
-    const requestsByStatus = useMemo(() => ({
+    const requestsByStatus = {
         all: userRequests,
         in_progress: userRequests.filter(req => req.status === 'in_progress'),
         completed: userRequests.filter(req => req.status === 'completed'),
         rejected: userRequests.filter(req => req.status === 'rejected')
-    }), [userRequests]);
+    };
 
     // Пагинация для текущей вкладки
-    const currentRequests = useMemo(() => {
-        const requests = requestsByStatus[requestsTab] || [];
-        const startIndex = (currentPage - 1) * itemsPerPage;
-        const endIndex = startIndex + itemsPerPage;
-        return requests.slice(startIndex, endIndex);
-    }, [requestsByStatus, requestsTab, currentPage, itemsPerPage]);
-
-    const totalPages = Math.ceil((requestsByStatus[requestsTab]?.length || 0) / itemsPerPage);
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
+    const currentRequests = (requestsByStatus[requestsTab] || []).slice(startIndex, endIndex);
+
+    const totalPages = Math.ceil((requestsByStatus[requestsTab]?.length || 0) / itemsPerPage);
 
     // Сброс на первую страницу при смене вкладки
     useEffect(() => {
