@@ -79,43 +79,51 @@
     margin-top: 0.5rem !important;
 }
 
-.notifications-dropdown-menu .dropdown-header {
+/* Шапка списка уведомлений: desktop-меню и мобильный Offcanvas */
+.notification-header {
     padding: 1rem 1.25rem;
     background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border-radius: 8px 8px 0 0;
     border-bottom: 1px solid #dee2e6;
 }
 
-.notifications-list {
+.notification-divider {
+    margin: 0;
+    border-top: 1px solid #dee2e6;
+}
+
+.notification-list {
     max-height: 400px;
     overflow-y: auto;
     padding: 0.25rem 0;
 }
 
-.notifications-list::-webkit-scrollbar {
+.notification-list::-webkit-scrollbar {
     width: 6px;
 }
 
-.notifications-list::-webkit-scrollbar-track {
+.notification-list::-webkit-scrollbar-track {
     background: #f1f1f1;
 }
 
-.notifications-list::-webkit-scrollbar-thumb {
+.notification-list::-webkit-scrollbar-thumb {
     background: #888;
     border-radius: 3px;
 }
 
-.notifications-list::-webkit-scrollbar-thumb:hover {
+.notification-list::-webkit-scrollbar-thumb:hover {
     background: #555;
 }
 
 .notification-item {
+    display: block;
+    width: 100%;
     padding: 1rem 1.25rem !important;
     border-left: 3px solid transparent;
     transition: all 0.2s ease;
     white-space: normal !important;
     word-wrap: break-word;
     cursor: pointer;
+    background-color: transparent;
     border-bottom: 1px solid #f0f0f0;
 }
 
@@ -233,68 +241,6 @@
     padding: 1rem;
 }
 
-.notifications-mobile-list {
-    max-height: 300px;
-    overflow-y: auto;
-    margin-top: 0.5rem;
-}
-
-.notifications-mobile-list::-webkit-scrollbar {
-    width: 4px;
-}
-
-.notifications-mobile-list::-webkit-scrollbar-track {
-    background: #e9ecef;
-    border-radius: 2px;
-}
-
-.notifications-mobile-list::-webkit-scrollbar-thumb {
-    background: #adb5bd;
-    border-radius: 2px;
-}
-
-.notification-mobile-item {
-    background-color: white;
-    border-radius: 8px;
-    padding: 0.75rem;
-    margin-bottom: 0.5rem;
-    border-left: 3px solid transparent;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.notification-mobile-item:hover {
-    background-color: #f1f3f5;
-    transform: translateX(2px);
-}
-
-.notification-mobile-item.unread {
-    background-color: #e7f3ff;
-    border-left-color: #0d6efd;
-}
-
-.notification-mobile-item.unread:hover {
-    background-color: #d0e7ff;
-}
-
-.notification-mobile-item .notification-title {
-    font-weight: 600;
-    color: #212529;
-    margin-bottom: 0.25rem;
-    font-size: 0.9rem;
-}
-
-.notification-mobile-item .notification-body {
-    font-size: 0.8rem;
-    margin-bottom: 0.25rem;
-    color: #6c757d;
-}
-
-.notification-mobile-item .notification-time {
-    font-size: 0.7rem;
-    color: #6c757d;
-}
-
 /* Адаптивность */
 @media (max-width: 768px) {
     .profile-dropdown-menu {
@@ -319,7 +265,7 @@
         max-width: 90vw;
     }
     
-    .notifications-list {
+    .notification-list {
         max-height: 300px;
     }
 }
@@ -332,8 +278,4 @@
     .mobile-menu-offcanvas .offcanvas-body {
         padding: 1rem;
     }
-    
-    .notifications-mobile-list {
-        max-height: 250px;
     }
-}

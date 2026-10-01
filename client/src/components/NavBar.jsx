@@ -5,6 +5,7 @@ import { observer } from 'mobx-react-lite';
 import { Container, Button, Navbar, Nav, Dropdown, Badge, Offcanvas } from 'react-bootstrap'
 import { NavLink, useNavigate } from 'react-router-dom';
 import { markNotificationAsRead, markAllNotificationsAsRead } from '../http/notificationAPI';
+import NotificationList from './NotificationList';
 import { $authHost, errorMessage } from '../http';
 import Alert from 'react-bootstrap/Alert';
 import './NavBar.css';
@@ -20,15 +21,6 @@ const NavBar = observer(() => {
     // Получаем информацию о текущем пользователе
     const currentUser = user.getUser()
     const userRole = currentUser?.role || 'USER'
-
-    // Загружаем уведомления при монтировании
-    useEffect(() => {
-        if (user.getIsAuth()) {
-            data.fetchAll('notifications').catch(err => {
-                console.error('Ошибка загрузки уведомлений:', err);
-            });
-        }
-    }, [user, data]);
 
     // Автоматическое обновление уведомлений каждую минуту
     useEffect(() => {
@@ -74,37 +66,18 @@ const NavBar = observer(() => {
         navigate(MAIN_ROUTE)
     }
 
-    const formatNotificationDate = (dateString) => {
-        const date = new Date(dateString);
-        const now = new Date();
-        const diffMs = now - date;
-        const diffMins = Math.floor(diffMs / 60000);
-        const diffHours = Math.floor(diffMs / 3600000);
-        const diffDays = Math.floor(diffMs / 86400000);
-
-        if (diffMins < 1) return 'только что';
-        if (diffMins < 60) return `${diffMins} мин. назад`;
-        if (diffHours < 24) return `${diffHours} ч. назад`;
-        if (diffDays < 7) return `${diffDays} дн. назад`;
-        return date.toLocaleDateString('ru-RU');
-    };
-
-    const markAsRead = async (notificationId, e) => {
-        e.stopPropagation(); // Предотвращаем закрытие меню
+    const markAsRead = async (notificationId) => {
         try {
             await markNotificationAsRead(notificationId);
-            // Обновляем список уведомлений
-            await data.fetchAll('notifications');
+            data.updateLocal('notifications', notificationId, { isRead: true });
         } catch (error) {
             console.error('Ошибка при пометке уведомления как прочитанного:', error);
         }
     };
 
-    const markAllAsRead = async (e) => {
-        e.stopPropagation(); // Предотвращаем закрытие меню
+    const markAllAsRead = async () => {
         try {
             await markAllNotificationsAsRead();
-            // Обновляем список уведомлений
             await data.fetchAll('notifications');
         } catch (error) {
             console.error('Ошибка при пометке всех уведомлений как прочитанных:', error);
@@ -117,7 +90,7 @@ const NavBar = observer(() => {
         if (notification && !notification.isRead) {
             try {
                 await markNotificationAsRead(notificationId);
-                await data.fetchAll('notifications');
+                data.updateLocal('notifications', notificationId, { isRead: true });
             } catch (error) {
                 console.error('Ошибка при пометке уведомления:', error);
             }
@@ -200,80 +173,14 @@ const NavBar = observer(() => {
                                     </Dropdown.Toggle>
 
                                     <Dropdown.Menu className="notifications-dropdown-menu">
-                                        <div className="dropdown-header d-flex justify-content-between align-items-center">
-                                            <div className="d-flex align-items-center">
-                                                <i className="bi bi-bell-fill me-2 text-primary"></i>
-                                                <span className="fw-bold">Уведомления</span>
-                                            </div>
-                                            <div className="d-flex align-items-center gap-2">
-                                                {unreadNotifications.length > 0 && (
-                                                    <>
-                                                        <Badge bg="danger" pill>{unreadNotifications.length}</Badge>
-                                                        <Button
-                                                            variant="outline-primary"
-                                                            size="sm"
-                                                            onClick={markAllAsRead}
-                                                            title="Пометить все как прочитанные"
-                                                            style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
-                                                        >
-                                                            <i className="bi bi-check-all me-1"></i>
-                                                            Прочитать все
-                                                        </Button>
-                                                    </>
-                                                )}
-                                            </div>
-                                        </div>
-                                        <Dropdown.Divider />
-                                    
-                                        {recentNotifications.length > 0 ? (
-                                            <>
-                                                <div className="notifications-list">
-                                                    {recentNotifications.map(notification => (
-                                                        <Dropdown.Item 
-                                                            key={notification.id}
-                                                            onClick={() => handleNotificationClick(notification.id)}
-                                                            className={`notification-item ${!notification.isRead ? 'unread' : ''}`}
-                                                        >
-                                                            <div className="d-flex align-items-start w-100">
-                                                                <i className={`bi ${!notification.isRead ? 'bi-bell-fill text-primary' : 'bi-bell text-muted'} me-2 flex-shrink-0`} style={{ fontSize: '1.1rem', marginTop: '2px' }}></i>
-                                                                <div className="flex-grow-1 overflow-hidden">
-                                                                    <div className="notification-title">{notification.title}</div>
-                                                                    {notification.body && (
-                                                                        <div className="notification-body text-muted">{notification.body}</div>
-                                                                    )}
-                                                                    <div className="notification-time text-muted">
-                                                                        <i className="bi bi-clock me-1"></i>
-                                                                        {formatNotificationDate(notification.createdAt)}
-                                                                    </div>
-                                                                </div>
-                                                                <div className="d-flex flex-column align-items-end ms-2 flex-shrink-0">
-                                                                    {!notification.isRead && (
-                                                                        <>
-                                                                            <Badge bg="primary" className="mb-2" style={{ fontSize: '0.65rem' }}>
-                                                                                Новое
-                                                                            </Badge>
-                                                                            <button
-                                                                                className="btn btn-sm btn-outline-primary"
-                                                                                style={{ fontSize: '0.8rem', padding: '0.25rem 0.5rem' }}
-                                                                                onClick={(e) => markAsRead(notification.id, e)}
-                                                                                title="Пометить как прочитанное"
-                                                                            >
-                                                                                <i className="bi bi-check2"></i>
-                                                                            </button>
-                                                                        </>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        </Dropdown.Item>
-                                                    ))}
-                                                </div>
-                                            </>
-                                        ) : (
-                                            <div className="text-center text-muted py-3">
-                                                <i className="bi bi-bell-slash fs-3 d-block mb-2"></i>
-                                                <small>Нет уведомлений</small>
-                                            </div>
-                                        )}
+                                        <NotificationList
+                                            notifications={recentNotifications}
+                                            unreadCount={unreadNotifications.length}
+                                            as={Dropdown.Item}
+                                            onOpen={handleNotificationClick}
+                                            onRead={markAsRead}
+                                            onReadAll={markAllAsRead}
+                                        />
                                     </Dropdown.Menu>
                                 </Dropdown>
 
@@ -358,71 +265,16 @@ const NavBar = observer(() => {
 
                                         {/* Уведомления в мобильном меню */}
                                         <div className="mobile-notifications">
-                                            <div className="d-flex justify-content-between align-items-center mb-3">
-                                                <h6 className="mb-0">
-                                                    <i className="bi bi-bell-fill me-2 text-primary"></i>
-                                                    Уведомления
-                                                </h6>
-                                                <div className="d-flex align-items-center gap-2">
-                                                    {unreadNotifications.length > 0 && (
-                                                        <>
-                                                            <Badge bg="danger" pill>{unreadNotifications.length}</Badge>
-                                                            <Button
-                                                                variant="outline-primary"
-                                                                size="sm"
-                                                                onClick={markAllAsRead}
-                                                                title="Пометить все как прочитанные"
-                                                                style={{ fontSize: '0.75rem', padding: '0.25rem 0.5rem' }}
-                                                            >
-                                                                <i className="bi bi-check-all"></i>
-                                                            </Button>
-                                                        </>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        
-                                            {recentNotifications.length > 0 ? (
-                                                <div className="notifications-mobile-list">
-                                                    {recentNotifications.map(notification => (
-                                                        <div 
-                                                            key={notification.id}
-                                                            onClick={() => {
-                                                                handleNotificationClick(notification.id);
-                                                                setShowMobileMenu(false);
-                                                            }}
-                                                            className={`notification-mobile-item ${!notification.isRead ? 'unread' : ''}`}
-                                                        >
-                                                            <div className="d-flex align-items-start">
-                                                                <i className={`bi ${!notification.isRead ? 'bi-bell-fill text-primary' : 'bi-bell text-muted'} me-2 flex-shrink-0`}></i>
-                                                                <div className="flex-grow-1">
-                                                                    <div className="notification-title">{notification.title}</div>
-                                                                    {notification.body && (
-                                                                        <div className="notification-body text-muted">{notification.body}</div>
-                                                                    )}
-                                                                    <div className="notification-time text-muted">
-                                                                        <i className="bi bi-clock me-1"></i>
-                                                                        {formatNotificationDate(notification.createdAt)}
-                                                                    </div>
-                                                                </div>
-                                                                {!notification.isRead && (
-                                                                    <button
-                                                                        className="btn btn-sm btn-outline-primary ms-2"
-                                                                        onClick={(e) => markAsRead(notification.id, e)}
-                                                                        title="Пометить как прочитанное"
-                                                                    >
-                                                                        <i className="bi bi-check2"></i>
-                                                                    </button>
-                                                                )}
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            ) : (
-                                                <div className="text-center text-muted py-3">
-                                                    <i className="bi bi-bell-slash fs-3 d-block mb-2"></i>
-                                                    <small>Нет уведомлений</small>
-                                                </div>
-                                            )}
+                                            <NotificationList
+                                                notifications={recentNotifications}
+                                                unreadCount={unreadNotifications.length}
+                                                onOpen={(id) => {
+                                                    handleNotificationClick(id);
+                                                    setShowMobileMenu(false);
+                                                }}
+                                                onRead={markAsRead}
+                                                onReadAll={markAllAsRead}
+                                            />
                                         </div>
 
                                         <hr />
