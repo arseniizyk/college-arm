@@ -1,4 +1,5 @@
 const { Group, Supervisor, Specialty, Teacher } = require('../models/models')
+const { validatePaymentType } = require('../utils/paymentType')
 const ApiError = require('../error/ApiError')
 
 class GroupController {
@@ -23,13 +24,21 @@ class GroupController {
                 return next(ApiError.badRequest('Указанный преподаватель не существует'));
             }
 
+            const paymentTypeError = validatePaymentType(payment_type);
+            if (paymentTypeError) {
+                return next(paymentTypeError);
+            }
+
             // Создание группы
-            const group = await Group.create({
+            const groupData = {
                 group_number,
                 enroll_date: new Date(enroll_date),
-                specialtyId,
-                payment_type: payment_type || 'бесплатной'
-            });
+                specialtyId
+            };
+            if (payment_type) {
+                groupData.payment_type = payment_type;
+            }
+            const group = await Group.create(groupData);
 
             // Создание записи куратора
             await Supervisor.create({
@@ -122,7 +131,13 @@ class GroupController {
                 }
                 updateData.specialtyId = specialtyId;
             }
-            if (payment_type) updateData.payment_type = payment_type;
+            if (payment_type) {
+                const paymentTypeError = validatePaymentType(payment_type);
+                if (paymentTypeError) {
+                    return next(paymentTypeError);
+                }
+                updateData.payment_type = payment_type;
+            }
             
             await group.update(updateData);
             

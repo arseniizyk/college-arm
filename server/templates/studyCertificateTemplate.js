@@ -184,7 +184,7 @@ const createStudyCertificateTemplate = (data) => {
                     font: 'Times New Roman'
                 }),
                 new TextRun({
-                    text: `дневная, на ${group.payment_type || 'бесплатной'} основе`,
+                    text: `дневная, на ${group.payment_type} основе`,
                     size: 24,
                     font: 'Times New Roman',
                     italics: true,
