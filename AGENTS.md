@@ -48,11 +48,18 @@ cd client && npm install && npm start        # CRA dev server, MUST be localhost
 - Cron `BACKUP_SCHEDULE` (default `0 3 * * *`) is hardcoded to timezone `Europe/Minsk`.
 - Only the newest 7 dumps are kept; the rest are deleted automatically.
 - `POST /api/backup/restore` is destructive and re-runs `psql -f` against the live DB.
-- `pg_dump` writes straight into `backups/` — no temp dir, no rename. An interrupted dump leaves a `.sql` that `cleanOldBackups` counts as valid and that can evict a good one from the 7-file rotation.
+- `pg_dump` writes to `backups/*.sql.tmp` and is renamed to `.sql` only after exit code 0, so an interrupted dump is never mistaken for a finished one. A failed or orphaned `.tmp` is deleted, and `cleanOldBackups` only ever counts strict `backup_ГГГГ-ММ-ДД.sql` names.
+- `isValidBackupFileName` in `server/utils/backup.js` is the one place a backup filename is validated — `backupController.download` / `.restore` import it rather than repeating the regex.
 
 ## Shutdown
 
-⚠️ **Не описано в коде.** `server/index.js` обрабатывает только `unhandledRejection`; обработчика `SIGTERM`/`SIGINT` нет, `waitForIdle` и `SHUTDOWN_TIMEOUT_MS` не существуют, `stop_grace_period` в `docker-compose.yml` не задан. По факту `docker compose stop` просто убивает процесс, а `utils/backupScheduler.js` останавливается вместе с ним — хотя `stopBackupScheduler` экспортируется и не импортируется нигде. Актуальная формулировка и план исправления — в M5 в `issues.md`; здесь она появится вместе с кодом.
+`installGracefulShutdown` (`server/utils/gracefulShutdown.js`) is wired in `server/index.js` and disposes in order: HTTP server → backup scheduler → `sequelize.close()`. Order matters — closing the DB first would break requests still in flight.
+
+- Handled signals are `SIGINT`, `SIGTERM` and `SIGUSR2`. `SIGUSR2` is nodemon's restart signal: after disposing, the process re-sends it to itself instead of calling `process.exit`, so nodemon completes the restart cycle and unmounts the old copy. The listeners are uninstalled **before** that re-send — with a listener still attached the signal is swallowed as a repeat and the process stays alive holding the port.
+- Repeated signals are ignored after the first one. A failure in one disposer is logged and does not skip the rest.
+- A 10s force-exit timer is armed when shutdown starts, not when the handler is installed — arming it at install time would kill a healthy server that simply outlived the timeout. It is `.unref()`ed, so it never holds the process open, and cleared once every disposer resolves; on expiry the process exits with code 1. `stop_grace_period: 30s` in `docker-compose.yml` leaves headroom above it.
+- `uncaughtException` is still unhandled: a synchronous throw kills the process without disposing anything. Accepted for now — see M5 in `issues-solved.md`.
+- `POST /api/backup/restore` is **not** made transactional. Killing the server mid-`psql -f` leaves the DB partially restored; nothing waits for that child process. Accepted for dev.
 
 ## Auth
 

@@ -1,4 +1,4 @@
-const { createBackup, restoreBackup, listBackups } = require('../utils/backup');
+const { createBackup, restoreBackup, listBackups, isValidBackupFileName } = require('../utils/backup');
 const ApiError = require('../error/ApiError');
 const path = require('path');
 const fs = require('fs');
@@ -49,7 +49,7 @@ class BackupController {
 
             // Имя файла приходит из параметра маршрута, поэтому проверяем его строго:
             // без проверки итогового пути можно выйти за пределы каталога backups через ".."
-            if (!fileName || !/^backup_\d{4}-\d{2}-\d{2}\.sql$/.test(fileName)) {
+            if (!isValidBackupFileName(fileName)) {
                 return next(ApiError.badRequest('Неверное имя файла'));
             }
 
@@ -81,7 +81,7 @@ class BackupController {
         try {
             const { fileName } = req.body;
 
-            if (!fileName || !/^backup_\d{4}-\d{2}-\d{2}\.sql$/.test(fileName)) {
+            if (!isValidBackupFileName(fileName)) {
                 return next(ApiError.badRequest('Неверное имя файла'));
             }
 

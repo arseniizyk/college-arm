@@ -10,9 +10,25 @@ if (!fs.existsSync(backupDir)) {
 
 // Имя файла бэкапа: строго backup_ГГГГ-ММ-ДД.sql
 const BACKUP_FILE_NAME_REGEX = /^backup_\d{4}-\d{2}-\d{2}\.sql$/;
+// Незавершённый дамп пишется с этим суффиксом и виден в каталоге как мусор
+const TMP_SUFFIX = '.tmp';
+
+const isValidBackupFileName = (fileName) => {
+    if (typeof fileName !== 'string') {
+        return false;
+    }
+
+    const match = fileName.match(BACKUP_FILE_NAME_REGEX);
+    return match !== null && match[0].length === fileName.length;
+};
+
+const isStaleTmpFileName = (fileName) =>
+    typeof fileName === 'string'
+    && fileName.endsWith(TMP_SUFFIX)
+    && isValidBackupFileName(fileName.slice(0, -TMP_SUFFIX.length));
 
 const resolveBackupPath = (backupFileName) => {
-    if (typeof backupFileName !== 'string' || !BACKUP_FILE_NAME_REGEX.test(backupFileName)) {
+    if (!isValidBackupFileName(backupFileName)) {
         throw new Error('Неверное имя файла бэкапа');
     }
 
@@ -22,6 +38,23 @@ const resolveBackupPath = (backupFileName) => {
     }
 
     return backupPath;
+};
+
+const listBackupFileNames = () =>
+    fs.readdirSync(backupDir).filter(name => isValidBackupFileName(name));
+
+const cleanStaleTmpFiles = () => {
+    try {
+        const stale = fs.readdirSync(backupDir).filter(isStaleTmpFileName);
+        stale.forEach(name => {
+            fs.unlinkSync(path.join(backupDir, name));
+            console.log(`[BACKUP] Удален незавершенный дамп: ${name}`);
+        });
+        return stale;
+    } catch (error) {
+        console.error(`[BACKUP] Ошибка при очистке незавершенных дампов: ${error.message}`);
+        return [];
+    }
 };
 
 const getDbArgs = () => ({
@@ -57,22 +90,35 @@ const createBackup = async () => {
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T')[0];
         const backupFileName = `backup_${timestamp}.sql`;
         const backupPath = path.join(backupDir, backupFileName);
+        const tmpPath = backupPath + TMP_SUFFIX;
 
         // Получаем параметры подключения из переменных окружения
         const { dbHost, dbPort, dbName, dbUser, dbPassword } = getDbArgs();
 
         // Аргументы команды: запуск без шелла, чтобы исключить инъекцию
-        const args = ['-h', dbHost, '-p', dbPort, '-U', dbUser, '-d', dbName, '-F', 'p', '-f', backupPath];
+        const args = ['-h', dbHost, '-p', dbPort, '-U', dbUser, '-d', dbName, '-F', 'p', '-f', tmpPath];
 
-        // Устанавливаем переменную окружения для пароля
+        // Устанавливаем переменные окружения для пароля
         const env = { ...process.env, PGPASSWORD: dbPassword };
 
         console.log(`[BACKUP] Начало создания бэкапа: ${backupFileName}`);
 
         execFile('pg_dump', args, { env }, (error, stdout, stderr) => {
             if (error) {
-                console.error(`[BACKUP] Ошибка создания бэкапа: ${error.message}`);
-                return reject(error);
+                fs.rm(tmpPath, { force: true }, () => {
+                    console.error(`[BACKUP] Ошибка создания бэкапа: ${error.message}`);
+                    reject(error);
+                });
+                return;
+            }
+
+            try {
+                fs.renameSync(tmpPath, backupPath);
+            } catch (renameError) {
+                fs.rm(tmpPath, { force: true }, () => {});
+                console.error(`[BACKUP] Ошибка переименования бэкапа: ${renameError.message}`);
+                reject(renameError);
+                return;
             }
 
             if (stderr && !stderr.includes('WARNING')) {
@@ -94,12 +140,11 @@ const createBackup = async () => {
  */
 const cleanOldBackups = (keepCount = 7) => {
     try {
-        const files = fs.readdirSync(backupDir)
-            .filter(file => file.startsWith('backup_') && file.endsWith('.sql'))
-            .map(file => ({
-                name: file,
-                path: path.join(backupDir, file),
-                time: fs.statSync(path.join(backupDir, file)).mtime.getTime()
+        const files = listBackupFileNames()
+            .map(name => ({
+                name: name,
+                path: path.join(backupDir, name),
+                time: fs.statSync(path.join(backupDir, name)).mtime.getTime()
             }))
             .sort((a, b) => b.time - a.time);
 
@@ -161,15 +206,15 @@ const restoreBackup = (backupFileName) => {
  */
 const listBackups = () => {
     try {
-        const files = fs.readdirSync(backupDir)
-            .filter(file => file.startsWith('backup_') && file.endsWith('.sql'))
-            .map(file => {
-                const stats = fs.statSync(path.join(backupDir, file));
+        const files = listBackupFileNames()
+            .map(name => {
+                const backupPath = path.join(backupDir, name);
+                const stats = fs.statSync(backupPath);
                 return {
-                    name: file,
+                    name: name,
                     size: stats.size,
                     created: stats.mtime,
-                    path: path.join(backupDir, file)
+                    path: backupPath
                 };
             })
             .sort((a, b) => b.created - a.created);
@@ -186,5 +231,7 @@ module.exports = {
     restoreBackup,
     listBackups,
     cleanOldBackups,
-    checkPgDumpAvailable
+    cleanStaleTmpFiles,
+    checkPgDumpAvailable,
+    isValidBackupFileName
 };

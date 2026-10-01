@@ -1,11 +1,13 @@
 const cron = require('node-cron');
-const { createBackup, checkPgDumpAvailable } = require('./backup');
+const { createBackup, checkPgDumpAvailable, cleanStaleTmpFiles } = require('./backup');
 
 /**
  * Запускает планировщик автоматических бэкапов
  * По умолчанию создает бэкап каждый день в 3:00 ночи
  */
 const startBackupScheduler = async () => {
+    cleanStaleTmpFiles();
+
     // Проверяем наличие pg_dump
     const isPgDumpAvailable = await checkPgDumpAvailable();
     
