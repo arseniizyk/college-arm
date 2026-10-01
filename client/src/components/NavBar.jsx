@@ -2,10 +2,10 @@ import React, { useContext, useState, useEffect } from 'react';
 import { Context } from '../index';
 import { ADMIN_ROUTE, LOGIN_ROUTE, MAIN_ROUTE, REQUEST_ROUTE, PROFILE_ROUTE } from '../utils/consts';
 import { observer } from 'mobx-react-lite';
-import { Container, Button, Navbar, Nav, Dropdown, Badge, Offcanvas } from 'react-bootstrap'
+import { Container, Button, Navbar, Nav, Dropdown, Offcanvas } from 'react-bootstrap'
 import { NavLink, useNavigate } from 'react-router-dom';
 import { markNotificationAsRead, markAllNotificationsAsRead } from '../http/notificationAPI';
-import NotificationList from './NotificationList';
+import NotificationList, { UnreadBadge } from './NotificationList';
 import { $authHost, errorMessage } from '../http';
 import Alert from 'react-bootstrap/Alert';
 import './NavBar.css';
@@ -161,15 +161,7 @@ const NavBar = observer(() => {
                                         className="profile-dropdown-btn position-relative"
                                     >
                                         <i className="bi bi-bell"></i>
-                                        {unreadNotifications.length > 0 && (
-                                            <Badge 
-                                                bg="danger" 
-                                                className="position-absolute top-0 start-100 translate-middle rounded-pill"
-                                                style={{ fontSize: '0.6rem', padding: '0.25rem 0.4rem' }}
-                                            >
-                                                {unreadNotifications.length}
-                                            </Badge>
-                                        )}
+                                        <UnreadBadge count={unreadNotifications.length} />
                                     </Dropdown.Toggle>
 
                                     <Dropdown.Menu className="notifications-dropdown-menu">
@@ -215,12 +207,13 @@ const NavBar = observer(() => {
                             </Nav>
 
                             {/* Mobile Hamburger Button */}
-                            <Button 
+                            <Button
                                 variant='outline-light' 
-                                className='d-lg-none ms-auto hamburger-btn'
+                                className='d-lg-none ms-auto hamburger-btn position-relative'
                                 onClick={() => setShowMobileMenu(true)}
                             >
                                 <i className="bi bi-list" style={{ fontSize: '1.5rem' }}></i>
+                                <UnreadBadge count={unreadNotifications.length} />
                             </Button>
 
                             {/* Mobile Menu Offcanvas */}

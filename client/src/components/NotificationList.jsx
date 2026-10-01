@@ -2,6 +2,20 @@ import React from 'react';
 import { Badge, Button } from 'react-bootstrap';
 import NotificationItem from './NotificationItem';
 
+export const UnreadBadge = ({ count }) => {
+    if (count === 0) return null;
+
+    return (
+        <Badge
+            bg="danger"
+            className="position-absolute top-0 start-100 translate-middle rounded-pill"
+            style={{ fontSize: '0.6rem', padding: '0.25rem 0.4rem' }}
+        >
+            {count}
+        </Badge>
+    );
+};
+
 const NotificationList = ({ notifications, unreadCount, as = 'div', onOpen, onRead, onReadAll }) => {
     return (
         <>
