@@ -1,6 +1,6 @@
 import React, { useContext, useState } from 'react';
 import { Container, Button, Card, Form, Alert } from 'react-bootstrap';
-import { LOGIN_ROUTE, MAIN_ROUTE, REGISTRSTION_ROUTE, PRIVACY_ROUTE } from "../utils/consts"
+import { LOGIN_ROUTE, MAIN_ROUTE, REGISTRSTION_ROUTE, PRIVACY_ROUTE, MIN_PASSWORD_LENGTH } from "../utils/consts"
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { registration, login } from '../http/userAPI';
 import { observer } from 'mobx-react-lite';
@@ -27,7 +27,7 @@ const Auth = () => {
 
     // Валидация пароля
     const validatePassword = (password) => {
-        return password.length >= 4;
+        return password.length >= MIN_PASSWORD_LENGTH;
     }
 
     // Валидация формы
@@ -43,7 +43,7 @@ const Auth = () => {
         if (!password) {
             newErrors.password = 'Пароль обязателен для заполнения';
         } else if (!validatePassword(password)) {
-            newErrors.password = 'Пароль должен содержать минимум 4 символов';
+            newErrors.password = `Пароль должен содержать минимум ${MIN_PASSWORD_LENGTH} символов`;
         }
 
         if (!isLogin && !isChecked) {
@@ -164,7 +164,7 @@ const Auth = () => {
                         </Form.Control.Feedback>
                         {!isLogin && !errors.password && (
                             <Form.Text className="text-muted">
-                                Минимум 4 символа
+                                {`Минимум ${MIN_PASSWORD_LENGTH} символа`}
                             </Form.Text>
                         )}
                     </Form.Group>

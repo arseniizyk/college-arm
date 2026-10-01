@@ -1,4 +1,4 @@
-import { canSelectMultipleStudents } from './consts'
+import { canSelectMultipleStudents, MIN_PASSWORD_LENGTH } from './consts'
 import { statusOptions } from './requestStatus'
 
 // Конфигурация колонок для таблиц
@@ -111,8 +111,9 @@ export const getDefaultFormData = (table, userRole) => {
 export const getFieldsConfig = (userRole, getDropdownOptions, modalType = 'create') => ({
     users: [
         { name: 'email', label: 'Email', type: 'email', required: true, placeholder: 'user@example.com' },
-        { name: 'password', label: 'Пароль', type: 'password', required: modalType === 'create', 
-          placeholder: modalType === 'create' ? 'Введите пароль' : 'Оставьте пустым, если не меняете' },
+        { name: 'password', label: 'Пароль', type: 'password', required: modalType === 'create',
+          placeholder: modalType === 'create' ? 'Введите пароль' : 'Оставьте пустым, если не меняете',
+          helpText: `Минимум ${MIN_PASSWORD_LENGTH} символа` },
         { name: 'role', label: 'Роль', type: 'select', options: ['USER', 'ADMIN', 'TEACHER'] }
     ],
     documents: [

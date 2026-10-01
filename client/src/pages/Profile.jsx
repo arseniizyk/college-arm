@@ -7,7 +7,7 @@ import RequestCard from '../components/RequestCard';
 import { getNameById as getNameByIdForField } from '../utils/dataHelpers';
 import { $authHost, errorMessage } from '../http';
 import Pagination from '../components/Pagination';
-import { ITEMS_PER_PAGE } from '../utils/consts';
+import { ITEMS_PER_PAGE, MIN_PASSWORD_LENGTH } from '../utils/consts';
 import { REQUEST_STATUSES, STATUS_KEYS, statusLabelPlural } from '../utils/requestStatus';
 import './Profile.css';
 
@@ -186,8 +186,8 @@ const Profile = observer(() => {
             return;
         }
 
-        if (passwordForm.newPassword.length < 4) {
-            setPasswordError('Новый пароль должен содержать минимум 4 символа');
+        if (passwordForm.newPassword.length < MIN_PASSWORD_LENGTH) {
+            setPasswordError(`Новый пароль должен содержать минимум ${MIN_PASSWORD_LENGTH} символа`);
             return;
         }
 
@@ -518,13 +518,13 @@ const Profile = observer(() => {
                                                                 name="newPassword"
                                                                 value={passwordForm.newPassword}
                                                                 onChange={handlePasswordChange}
-                                                                placeholder="Введите новый пароль (минимум 4 символа)"
+                                                                placeholder={`Введите новый пароль (минимум ${MIN_PASSWORD_LENGTH} символа)`}
                                                                 disabled={passwordLoading}
                                                                 required
-                                                                minLength={4}
+                                                                minLength={MIN_PASSWORD_LENGTH}
                                                             />
                                                             <Form.Text className="text-muted">
-                                                                Пароль должен содержать минимум 4 символа
+                                                                {`Пароль должен содержать минимум ${MIN_PASSWORD_LENGTH} символа`}
                                                             </Form.Text>
                                                         </Form.Group>
 

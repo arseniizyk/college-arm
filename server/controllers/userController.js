@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const { User, USER_WITH_PASSWORD } = require('../models/models')
 const { findSupervisorGroupId } = require('../utils/supervisorGroup')
+const { validatePassword } = require('../utils/passwordPolicy')
 
 const generateJwt = (id, email, role) => {
     return jwt.sign(
@@ -18,6 +19,10 @@ class UserController {
             const { email, password } = req.body
             if (!password || !email) {
                 return next(ApiError.badRequest('Некорректный email или пароль'))
+            }
+            const { error: passwordError } = validatePassword(password)
+            if (passwordError) {
+                return next(passwordError)
             }
             const candidate = await User.findOne({ where: { email } })
             if (candidate) {
@@ -111,6 +116,11 @@ class UserController {
             if (!email || !password) {
                 return next(ApiError.badRequest('Не все обязательные поля заполнены'));
             }
+
+            const { error: passwordError } = validatePassword(password)
+            if (passwordError) {
+                return next(passwordError)
+            }
             
             const candidate = await User.findOne({ where: { email } })
             if (candidate) {
@@ -153,6 +163,10 @@ class UserController {
             if (email) updateData.email = email;
             if (role) updateData.role = role;
             if (password) {
+                const { error: passwordError } = validatePassword(password)
+                if (passwordError) {
+                    return next(passwordError)
+                }
                 updateData.password = await bcrypt.hash(password, 5);
             }
             
@@ -201,8 +215,9 @@ class UserController {
                 return next(ApiError.badRequest('Не все поля заполнены'));
             }
 
-            if (newPassword.length < 4) {
-                return next(ApiError.badRequest('Новый пароль должен содержать минимум 4 символа'));
+            const { error: passwordError } = validatePassword(newPassword)
+            if (passwordError) {
+                return next(passwordError)
             }
 
             // Находим пользователя (нужен хеш пароля для проверки)

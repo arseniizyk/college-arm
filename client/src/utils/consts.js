@@ -7,6 +7,7 @@ export const PROFILE_ROUTE = '/profile'
 export const PRIVACY_ROUTE = '/privacy'
 
 export const ITEMS_PER_PAGE = 10
+export const MIN_PASSWORD_LENGTH = 4
 const ROLES_WITH_MULTIPLE_STUDENTS = ['ADMIN', 'TEACHER']
 
 export const canSelectMultipleStudents = (userRole) =>

@@ -62,6 +62,7 @@ cd client && npm install && npm start        # CRA dev server, MUST be localhost
 - `authMiddleware` and `checkRoleMiddleware` both `next()` on `OPTIONS` but forget to `return`, so preflight requests also fall through into the handler. CORS origin comes from `CLIENT_ORIGIN` in `server/index.js` (comma-separated, default `http://localhost:3000`). Every client request shares the axios `baseURL` (`REACT_APP_API_URL`), so a mismatched `CLIENT_ORIGIN` blocks the whole app.
 - Client-side route gating (`AppRouter` + `routes.js`) is cosmetic; the server is the only real enforcement. Don't trust it as an authorization check.
 - The rule "how many students a role may put into a request" lives in exactly two places: `server/utils/studentIds.js` (`resolveStudentIds` — the server-side source of truth, called from `requestController.create` and `.update`) and `canSelectMultipleStudents` in `client/src/utils/consts.js` (which only picks `select` vs `multiselect` in the UI). `ADMIN` and `TEACHER` may pass any number, everyone else exactly one. Don't add a third copy.
+- The minimum password length is `server/utils/passwordPolicy.js` (`validatePassword` — the source of truth, called from `userController.registration`, `.create`, `.update` and `.changePassword`) and `MIN_PASSWORD_LENGTH` in `client/src/utils/consts.js` (form hints only). `login` deliberately does not check length — it compares the hash. Existing short passwords keep working until changed.
 
 ## Client architecture
 
