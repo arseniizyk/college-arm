@@ -22,8 +22,18 @@ docker compose up -d --build
 | API | http://localhost:7000, health — `/api/health` |
 | PostgreSQL | `localhost:1111` |
 
-Клиент ждёт `HEALTHCHECK` сервера, сервер — готовности БД, так что порядок старта
-разбираться не должен. `CLIENT_ORIGIN` в compose уже совпадает с портом клиента.
+Порядок старта задаёт сам compose: БД должна пройти `pg_isready`, затем
+отрабатывает одноразовый сервис `migrate` (применяет миграции и завершается),
+и только после его успешного выхода поднимается сервер. Если миграция падает,
+сервер не стартует вовсе, а `docker compose up` возвращает ненулевой код.
+Клиент ждёт `HEALTHCHECK` сервера. `CLIENT_ORIGIN` в compose уже совпадает с
+портом клиента.
+
+Посмотреть, что накатила миграция:
+
+```bash
+docker compose logs migrate
+```
 
 Остановить и удалить контейнеры, оставив данные в томе:
 
@@ -65,62 +75,78 @@ docker compose exec server node seed.js --force
 `password123`: `admin@test.ru` (ADMIN), `teacher1@test.ru` (TEACHER),
 `user1@test.ru` (USER).
 
-Схему создаёт сам сервер при старте (`sequelize.sync({ alter: true })`), миграций нет —
-правка моделей это немедленный DDL на боевой базе. Подробности — в [issues.md](issues.md).
+## Миграции
+
+Схемой управляют миграции из `server/migrations/`, а не `sequelize.sync()`: сервер
+при старте только проверяет подключение. Правка модели без новой миграции на схему
+не влияет — это осознанное расхождение, а не ошибка.
+
+```bash
+docker compose run --rm migrate      # применить в контейнере
+cd server && npm run migrate         # то же самое локально
+```
+
+На пустой базе применяются все миграции. На базе, созданной до миграций, нужен
+`npm run migrate:baseline` — он помечает снимок `001` выполненным, не трогая
+существующие таблицы, и применяет только корректирующие миграции `002`–`007`.
+
+Подробности — в [issues.md](issues.md) и [issues-solved.md](issues-solved.md).
 
 ## Статистика проекта
 
-Подсчёт выполнен 01.10.2026. Считаются все строки файла, включая пустые.
+Подсчёт выполнен 01.10.2026. Считаются все строки файла, включая пустые,
+по правилам `wc -l` (77 файлов в проекте не заканчиваются переводом строки —
+если считать их последнюю строку целиком, число разойдётся на единицы).
 Исключены `node_modules/`, `.git/`, `.idea/`, `client/build/`, `server/backups/`
-(дампы с персональными данными), сгенерированные документы `docs/`, служебные
-`.DS_Store` и временные отладочные скрипты `server/_*.tmp.js` — это артефакты,
+(дампы с персональными данными) и служебный `.DS_Store` — это артефакты,
 а не исходный код.
 
 ### По типам файлов
 
 | Категория | Файлов | Строк |
 |---|---:|---:|
-| Клиентский код (`client/src`, `.js` / `.jsx`) | 48 | 10 604 |
-| Шаблоны документов (`server/templates/*.js`) | 15 | 2 456 |
-| Серверный код (`server/**`, `.js`, кроме шаблонов) | 45 | 3 458 |
-| Стили (`.css`) | 7 | 2 428 |
-| Документация и служебное (`.md`, `.txt`, `.gitignore`, `.dockerignore`) | 9 | 1 172 |
-| Конфигурация (`.json`, `.env`, `.conf`, `.yml`, `.example`) | 11 | 303 |
+| Клиентский код (`client/src`, `.js` / `.jsx`) | 56 | 11 014 |
+| Шаблоны документов (`server/templates/*.js`) | 15 | 2 454 |
+| Серверный код (`server/**`, `.js`, кроме шаблонов) | 65 | 4 746 |
+| Стили (`.css`) | 7 | 2 389 |
+| Документация и служебное (`.md`, `.txt`, `.gitignore`, `.dockerignore`) | 9 | 1 302 |
+| Конфигурация (`.json`, `.env`, `.conf`, `.yml`, `.example`) | 11 | 338 |
 | `Dockerfile` | 2 | 59 |
-| HTML-шблон (`client/public/index.html`) | 1 | 21 |
-| **ВСЕГО** | **138** | **20 501** |
+| HTML-шаблон (`client/public/index.html`) | 1 | 20 |
+| **ВСЕГО** | **166** | **22 322** |
 
-В серверный код входит `server/seed.js` (382 строки) — заполнение базы тестовыми
-данными, см. раздел выше. Тестов (`*.test.js`) — 8 файлов, 423 строки; они входят
+В серверный код входят `server/seed.js` (395 строк) — заполнение базы тестовыми
+данными, см. раздел выше, и подсистема миграций: `server/migrations/*.js` плюс
+раннер `server/scripts/migrate.js`, всего 8 файлов и 454 строк. Тестов
+(`*.test.js`) — 20 файлов, 1 435 строк; они входят
 в клиентский и серверный код вместе с остальным.
 
 Бинарных файлов — 4, строки не считались: `client/public/logo192.png`,
 `logo512.png`, `favicon.ico` и `.docx` с пояснительной запиской (~4.2 МБ).
-Всего файлов в проекте — 169, из них 138 посчитано выше, 2 — `package-lock.json`
-(16 993 строки, ~443 КБ транзитивных пакетов), 9 — в `server/backups/` (дампы с
-ПИ, исключены из подсчёта), 12 — в `client/build/`, 1 — `docs/D12_приказ_об_освобождении.docx`,
-1 — `.DS_Store` и 2 служебных файла `.idea/`. Временных скриптов `server/_*.tmp.js`
-в проекте нет.
+Всего файлов в проекте — 196, из них 166 посчитано выше, 2 — `package-lock.json`
+(17 378 строк, ~443 КБ транзитивных пакетов), 4 — бинарные, 1 — `.DS_Store`,
+9 — в `server/backups/` (дампы с ПИ, исключены из подсчёта), 12 — в `client/build/`
+и 2 служебных файла `.idea/`.
 
 ### По расширениям
 
 | Расширение | Файлов | Строк |
 |---|---:|---:|
-| `.jsx` | 31 | 8 809 |
-| `.js` | 77 | 7 709 |
-| `.css` | 7 | 2 428 |
-| `.md` (`README.md`, `issues.md`, `issues-solved.md`, `AGENTS.md`) | 4 | 1 087 |
-| `.json` (`server/package.json`, `client/package.json`, `client/public/manifest.json`) | 3 | 109 |
-| `.yml` (`docker-compose.yml`) | 1 | 68 |
+| `.jsx` | 32 | 8 492 |
+| `.js` | 104 | 9 722 |
+| `.css` | 7 | 2 389 |
+| `.md` (`README.md`, `issues.md`, `issues-solved.md`, `AGENTS.md`) | 4 | 1 219 |
+| `.json` (`server/package.json`, `client/package.json`, `client/public/manifest.json`) | 3 | 111 |
+| `.yml` (`docker-compose.yml`) | 1 | 102 |
 | `.gitignore` | 2 | 61 |
 | без расширения (`Dockerfile`) | 2 | 59 |
 | `.example` | 3 | 53 |
-| `.env` | 3 | 50 |
+| `.env` | 3 | 49 |
 | `.conf` (`client/nginx.conf`) | 1 | 23 |
-| `.html` | 1 | 21 |
-| `.dockerignore` | 2 | 21 |
+| `.html` | 1 | 20 |
+| `.dockerignore` | 2 | 19 |
 | `.txt` (`client/public/robots.txt`) | 1 | 3 |
-| **ВСЕГО** | **138** | **20 501** |
+| **ВСЕГО** | **166** | **22 322** |
 
 ### Самые крупные файлы
 
@@ -128,11 +154,11 @@ docker compose exec server node seed.js --force
 |---|---:|
 | `server/templates/practiceContractTemplate.js` | 1 038 |
 | `client/src/pages/Profile.jsx` | 859 |
-| `client/src/pages/Admin.css` | 722 |
-| `client/src/components/NavBar.jsx` | 465 |
-| `client/src/components/RequestCard.jsx` | 439 |
-| `server/controllers/requestController.js` | 398 |
+| `client/src/pages/Admin.css` | 741 |
+| `client/src/components/RequestCard.jsx` | 433 |
+| `server/controllers/requestController.js` | 401 |
+| `server/seed.js` | 395 |
 | `client/src/components/PracticeContractModal.jsx` | 390 |
 
-`issues-solved.md` — 615 строк, но это журнал решений, а не код, поэтому в таблицу
+`issues-solved.md` — 920 строк, но это журнал решений, а не код, поэтому в таблицу
 выше он не попал.
