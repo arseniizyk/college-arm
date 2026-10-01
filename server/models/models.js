@@ -50,10 +50,11 @@ const Teacher = sequelize.define('teacher', {
 
 const Request = sequelize.define('request', {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-    status: { 
-        type: DataTypes.ENUM, 
-        values: ['pending', 'completed', 'cancelled'], 
-        defaultValue: 'pending' 
+    status: {
+        type: DataTypes.ENUM,
+        values: ['pending', 'completed', 'cancelled'],
+        defaultValue: 'pending',
+        allowNull: false
     },
     description: { type: DataTypes.STRING },
     isViewed: { type: DataTypes.BOOLEAN, defaultValue: false }
@@ -74,7 +75,12 @@ const User = sequelize.define('user', {
     password: { type: DataTypes.STRING, allowNull: false },
     role: { type: DataTypes.STRING, defaultValue: "USER", allowNull: false }
 }, {
-    defaultScope: { attributes: { exclude: ['password'] } }
+    defaultScope: { attributes: { exclude: ['password'] } },
+    // Логин нечувствителен к регистру, поэтому уникальность функциональная.
+    // Реальный индекс создаёт миграция 005 — sync() в проекте больше нет.
+    indexes: [
+        { name: 'users_email_lower_key', unique: true, fields: [sequelize.fn('lower', sequelize.col('email'))] }
+    ]
 })
 
 const USER_WITH_PASSWORD = 'withPassword'
@@ -86,7 +92,14 @@ const Notification = sequelize.define('notification', {
     body: { type: DataTypes.STRING },
     requestId: { type: DataTypes.INTEGER },
     isRead: { type: DataTypes.BOOLEAN, defaultValue: false }
-}) 
+}, {
+    indexes: [{ name: 'notifications_requestId_idx', fields: ['requestId'] }]
+})
+
+// Уведомление ссылается на заявку, но без ассоциации колонка оставалась
+// просто INTEGER — без внешнего ключа и без индекса. FK создаёт миграция 007.
+Request.hasMany(Notification)
+Notification.belongsTo(Request) 
 
 
 Specialty.hasMany(Group)

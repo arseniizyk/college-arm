@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken')
 const { User, USER_WITH_PASSWORD } = require('../models/models')
 const { findSupervisorGroupId } = require('../utils/supervisorGroup')
 const { validatePassword } = require('../utils/passwordPolicy')
+const { buildEmailWhere, findByEmail, isSameEmail } = require('../utils/userEmail')
 
 const generateJwt = (id, email, role) => {
     return jwt.sign(
@@ -24,7 +25,7 @@ class UserController {
             if (passwordError) {
                 return next(passwordError)
             }
-            const candidate = await User.findOne({ where: { email } })
+            const candidate = await findByEmail(email)
             if (candidate) {
                 return next(ApiError.badRequest("Пользователь с таким email уже существует"))
             }
@@ -43,7 +44,9 @@ class UserController {
             if (!email || !password) {
                 return next(ApiError.badRequest('Некорректный email или пароль'))
             }
-            const user = await User.scope(USER_WITH_PASSWORD).findOne({ where: { email } })
+            const user = await User.scope(USER_WITH_PASSWORD).findOne({
+                where: buildEmailWhere(email)
+            })
             if (!user) {
                 return next(ApiError.internalRequest("Пользователь не найден"))
             }
@@ -122,11 +125,11 @@ class UserController {
                 return next(passwordError)
             }
             
-            const candidate = await User.findOne({ where: { email } })
+            const candidate = await findByEmail(email)
             if (candidate) {
                 return next(ApiError.badRequest("Пользователь с таким email уже существует"))
             }
-            
+
             const hashPassword = await bcrypt.hash(password, 5)
             const user = await User.create({ email, role: role || 'USER', password: hashPassword })
             const safeUser = { ...user.get({ plain: true }) };
@@ -151,9 +154,10 @@ class UserController {
                 return next(ApiError.badRequest('Пользователь не найден'));
             }
             
-            // Проверяем, не занят ли email другим пользователем
-            if (email && email !== user.email) {
-                const candidate = await User.findOne({ where: { email } });
+            // Проверяем, не занят ли email другим пользователем. Смена одного
+            // только регистра исключается: это тот же самый аккаунт.
+            if (email && !isSameEmail(email, user.email)) {
+                const candidate = await findByEmail(email, user.id);
                 if (candidate) {
                     return next(ApiError.badRequest("Пользователь с таким email уже существует"));
                 }
@@ -276,12 +280,12 @@ class UserController {
             }
 
             // Проверяем, что новый email отличается от текущего
-            if (user.email === newEmail) {
+            if (isSameEmail(user.email, newEmail)) {
                 return next(ApiError.badRequest('Новый email совпадает с текущим'));
             }
 
             // Проверяем, не занят ли email другим пользователем
-            const existingUser = await User.findOne({ where: { email: newEmail } });
+            const existingUser = await findByEmail(newEmail, user.id);
             if (existingUser) {
                 return next(ApiError.badRequest('Пользователь с таким email уже существует'));
             }

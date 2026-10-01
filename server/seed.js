@@ -7,6 +7,7 @@ const {
     Request, Notification, StudentRequest
 } = require('./models/models')
 const { statusLabelFeminine } = require('./utils/requestStatus')
+const { isSameEmail } = require('./utils/userEmail')
 
 // Количество сущностей можно переопределить аргументами:
 //   node seed.js --students=120 --requests=40
@@ -95,18 +96,32 @@ async function wipe() {
 async function countRows() {
     const counts = await Promise.all([
         User.count(), Student.count(), Teacher.count(), Group.count(),
-        Specialty.count(), Document.count(), Request.count(), Notification.count()
+        Specialty.count(), Document.count(), Request.count(), Notification.count(),
+        Supervisor.count(), StudentRequest.count()
     ])
-    return { User: counts[0], Student: counts[1], Teacher: counts[2], Group: counts[3], Specialty: counts[4], Document: counts[5], Request: counts[6], Notification: counts[7] }
+    return {
+        User: counts[0], Student: counts[1], Teacher: counts[2], Group: counts[3],
+        Specialty: counts[4], Document: counts[5], Request: counts[6],
+        Notification: counts[7], Supervisor: counts[8], StudentRequest: counts[9]
+    }
 }
 
 async function main() {
     await sequelize.authenticate()
     console.log(`Подключение к ${process.env.DB_NAME} @ ${process.env.DB_HOST}:${process.env.DB_PORT} — ок`)
 
-    // sync() без alter: таблиц может ещё не быть (сервер их создаёт при старте),
-    // но менять структуру живой базы скрипту данных не нужно.
-    await sequelize.sync()
+    // Схему создаёт `npm run migrate`, а не скрипт данных: sync() здесь был бы
+    // вторым источником правды о структуре и маскировал бы неприменённые миграции.
+    // Имя SequelizeMeta в to_regclass требует кавычек: без них литерал
+    // приводится к нижнему регистру и таблица не находится.
+    const [schema] = await sequelize.query(
+        `SELECT to_regclass('public.specialties') AS specialties,
+                to_regclass('public."SequelizeMeta"') AS meta`
+    )
+    if (!schema[0].specialties || !schema[0].meta) {
+        console.error('В базе нет схемы — сначала выполните: npm run migrate')
+        process.exit(1)
+    }
 
     const existing = await countRows()
     const hasData = Object.values(existing).some(v => v > 0)
@@ -133,10 +148,10 @@ async function main() {
     const passwordHash = await bcrypt.hash('password123', 5)
 
     // --- Пользователи ---
-    // email уникален, поэтому при повторном запуске (--keep) берём уже
-    // существующий аккаунт вместо дублирующего INSERT.
+    // email уникален без учёта регистра (функциональный индекс, миграция 005),
+    // поэтому и поиск здесь тоже регистронезависимый.
     const existingUsers = await User.findAll({ attributes: ['id', 'email', 'role'] })
-    const findUser = (email) => existingUsers.find(u => u.email === email)
+    const findUser = (email) => existingUsers.find(u => isSameEmail(u.email, email))
 
     const ensureUser = async (email, role) => {
         const found = findUser(email)

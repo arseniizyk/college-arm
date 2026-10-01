@@ -19,6 +19,36 @@ services:
       timeout: 5s
       retries: 10
 
+  # Разовый контейнер: применяет миграции и обязан завершиться с кодом 0.
+  # restart: "no" — иначе падение миграции превратилось бы в бесконечный
+  # цикл перезапусков вместо одного внятного ошибки. server стартует только
+  # после service_completed_successfully, то есть на уже актуальной схеме.
+  migrate:
+    build:
+      context: ./server
+    image: college-arm-server
+    container_name: college-arm-migrate
+    restart: "no"
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - ./server/.env
+    user: "${SERVER_UID:-1000}:${SERVER_GID:-1000}"
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      TZ: ${TZ:-Europe/Minsk}
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB}
+      DB_USER: ${POSTGRES_USER}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+    command: ["node", "scripts/migrate.js"]
+    # HEALTHCHECK из Dockerfile рассчитан на работающий сервер; здесь процесса
+    # на 7000 нет, и статус «unhealthy» был бы шумом при штатном выходе.
+    healthcheck:
+      disable: true
+
   server:
     build:
       context: ./server
@@ -30,6 +60,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     env_file:
       - ./server/.env
     user: "${SERVER_UID:-1000}:${SERVER_GID:-1000}"

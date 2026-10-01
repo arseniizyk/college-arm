@@ -42,7 +42,6 @@ process.on('unhandledRejection', (reason) => {
 const start = async () => {
     try {
         await sequelize.authenticate()
-        await sequelize.sync({ alter: true }) // Добавляем alter: true для обновления структуры таблиц
 
         // Запускаем планировщик автоматических бэкапов
         const backupTask = await startBackupScheduler()
