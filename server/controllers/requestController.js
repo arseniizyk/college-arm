@@ -165,7 +165,8 @@ class RequestController {
                         admins.map(admin => ({
                             userId: admin.id,
                             title: notificationTitle,
-                            body: notificationBody
+                            body: notificationBody,
+                            requestId: request.id
                         })),
                         { transaction: t }
                     );
@@ -293,7 +294,8 @@ class RequestController {
                     await Notification.create({
                         userId: request.userId,
                         title: notificationTitle,
-                        body: notificationBody
+                        body: notificationBody,
+                        requestId: request.id
                     }, { transaction: t });
                 }
 
@@ -355,14 +357,18 @@ class RequestController {
     async markAsViewed(req, res, next) {
         try {
             const { id } = req.params;
-            
+
             if (!id) {
                 return next(ApiError.badRequest('Не указан ID заявки'));
             }
-            
+
             const request = await Request.findByPk(id);
             if (!request) {
                 return next(ApiError.badRequest('Заявка не найдена'));
+            }
+
+            if (req.user.role !== 'ADMIN' && request.userId !== req.user.id) {
+                return next(ApiError.forbiddenRequest('Недостаточно прав для изменения заявки'));
             }
             
             // Помечаем заявку как просмотренную

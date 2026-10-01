@@ -80,6 +80,7 @@ const Notification = sequelize.define('notification', {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     title: { type: DataTypes.STRING, allowNull: false },
     body: { type: DataTypes.STRING },
+    requestId: { type: DataTypes.INTEGER },
     isRead: { type: DataTypes.BOOLEAN, defaultValue: false }
 }) 
 
