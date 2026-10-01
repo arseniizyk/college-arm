@@ -1,119 +1,24 @@
 import React from 'react';
 import { Badge } from 'react-bootstrap';
 import { toJS } from 'mobx';
-import { calculateCourse, formatDuration, MISSING_SPECIALTY_LABEL } from '../utils/dataHelpers';
-import { statusBadge, statusLabel } from '../utils/requestStatus';
+import { resolveCellContent } from '../utils/tableCells';
 
-const TableCell = ({ value, columnKey, item }) => {
-    // Специальные случаи обрабатываем ДО проверки на null
-    // Вычисление курса для групп
-    if (columnKey === 'course') {
-        if (!item.enroll_date) {
-            return <span className="text-muted">-</span>;
-        }
-        
-        // Получаем данные специальности из вложенного объекта
-        const specialty = item.specialty;
-        // Без специальности срок обучения неизвестен. Раньше фолбэк 4 года давал
-        // правдоподобный, но выдуманный курс — в том числе «Выпускник» не по сроку.
-        if (!specialty) {
-            return <span className="text-muted" title={MISSING_SPECIALTY_LABEL}>-</span>;
-        }
-        const durationYears = specialty.duration_years || 4;
-        const durationMonths = specialty.duration_months || 0;
-        
-        const course = calculateCourse(item.enroll_date, durationYears, durationMonths);
-        
-        if (course === 'Выпускник') {
-            return <Badge bg="secondary">{course}</Badge>;
-        }
-        return <Badge bg="primary">{course} курс</Badge>;
-    }
+const TableCell = ({ column, item, context }) => {
+    const content = resolveCellContent(column, toJS(item), context);
 
-    // Форматирование длительности обучения для специальностей
-    if (columnKey === 'duration') {
-        if (item.duration_years !== undefined) {
-            const formatted = formatDuration(item.duration_years, item.duration_months || 0);
-            return formatted;
-        }
-        return <span className="text-muted">-</span>;
-    }
-    
-    // Теперь проверяем на null/undefined для остальных случаев
-    if (value === null || value === undefined || value === '') {
+    if (!content) {
         return <span className="text-muted">-</span>;
     }
 
-    let cellValue;
-    try {
-        if (typeof value === 'object' && value !== null) {
-            cellValue = toJS(value);
-        } else {
-            cellValue = value;
-        }
-    } catch {
-        cellValue = value;
-    }
+    const { text, variant, muted, title } = content;
 
-    // Форматирование даты.
-    // 'createdat' не содержит подстроки 'date', поэтому createdAt пришлось бы добавить отдельно
-    if (columnKey.toLowerCase().includes('date') || columnKey === 'createdAt') {
-        try {
-            const date = new Date(cellValue);
-            if (!isNaN(date.getTime())) {
-                return date.toLocaleDateString('ru-RU');
-            }
-        } catch {
-            // Не форматируем, если не дата
-        }
+    if (variant) {
+        return <Badge bg={variant} title={title}>{text}</Badge>;
     }
-
-    // Статусы заявок
-    if (columnKey === 'status') {
-        return (
-            <Badge bg={statusBadge(cellValue)}>
-                {statusLabel(cellValue)}
-            </Badge>
-        );
+    if (muted || title) {
+        return <span className={muted ? 'text-muted' : undefined} title={title}>{text}</span>;
     }
-
-    // Роли пользователей
-    if (columnKey === 'role') {
-        const roleTranslations = {
-            ADMIN: 'Администратор',
-            USER: 'Пользователь',
-            TEACHER: 'Преподаватель'
-        };
-        const roleColors = {
-            ADMIN: 'danger',
-            USER: 'primary',
-            TEACHER: 'success'
-        };
-        return (
-            <Badge bg={roleColors[cellValue] || 'secondary'}>
-                {roleTranslations[cellValue] || cellValue}
-            </Badge>
-        );
-    }
-
-    // Для отображения чисел
-    if (typeof cellValue === 'number') {
-        return cellValue.toString();
-    }
-
-    // Для отображения строк
-    const strValue = String(cellValue);
-    
-    // Ограничение длинных текстов
-    if (strValue.length > 50) {
-        return (
-            <span title={strValue}>
-                {strValue.substring(0, 50)}...
-            </span>
-        );
-    }
-
-    return strValue;
+    return text;
 };
 
 export default TableCell;

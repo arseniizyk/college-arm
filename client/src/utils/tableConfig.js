@@ -1,59 +1,59 @@
 import { canSelectMultipleStudents, MIN_PASSWORD_LENGTH } from './consts'
 import { statusOptions } from './requestStatus'
 
-// Конфигурация колонок для таблиц
+// Конфигурация колонок для таблиц.
 export const TABLE_COLUMNS = {
     users: [
-        { key: 'id', label: '№' },
+        { key: 'id', label: '№', render: 'rowNumber' },
         { key: 'email', label: 'Email' },
-        { key: 'role', label: 'Роль' },
+        { key: 'role', label: 'Роль', render: 'role' },
         { key: 'createdAt', label: 'Создан' }
     ],
     documents: [
-        { key: 'id', label: '№' },
+        { key: 'id', label: '№', render: 'rowNumber' },
         { key: 'document_name', label: 'Название' },
         { key: 'createdAt', label: 'Создан' }
     ],
     requests: [
-        { key: 'id', label: '№' },
-        { key: 'documentId', label: 'Документ' },
+        { key: 'id', label: '№', render: 'rowNumber' },
+        { key: 'documentId', label: 'Документ', render: 'reference' },
         { key: 'description', label: 'Описание' },
-        { key: 'students', label: 'Студенты' },
-        { key: 'status', label: 'Статус' },
+        { key: 'students', label: 'Студенты', render: 'students' },
+        { key: 'status', label: 'Статус', render: 'status' },
         { key: 'createdAt', label: 'Создана' }
     ],
     students: [
-        { key: 'id', label: '№' },
+        { key: 'id', label: '№', render: 'rowNumber' },
         { key: 'last_name', label: 'Фамилия' },
         { key: 'name', label: 'Имя' },
         { key: 'father_name', label: 'Отчество' },
         { key: 'order_number', label: 'Приказ' },
         { key: 'enroll_date', label: 'Зачислен' },
         { key: 'expell_date', label: 'Отчислен' },
-        { key: 'groupId', label: 'Группа' },
-        { key: 'userId', label: 'Аккаунт' }
+        { key: 'groupId', label: 'Группа', render: 'reference' },
+        { key: 'userId', label: 'Аккаунт', render: 'reference' }
     ],
     groups: [
-        { key: 'id', label: '№' },
+        { key: 'id', label: '№', render: 'rowNumber' },
         { key: 'group_number', label: 'Номер группы' },
-        { key: 'specialtyId', label: 'Специальность' },
-        { key: 'supervisor', label: 'Куратор' },
+        { key: 'specialtyId', label: 'Специальность', render: 'reference' },
+        { key: 'supervisor', label: 'Куратор', render: 'supervisor' },
         { key: 'enroll_date', label: 'Дата зачисления' },
         { key: 'payment_type', label: 'Основа обучения' },
-        { key: 'course', label: 'Курс' }
+        { key: 'course', label: 'Курс', render: 'course' }
     ],
     specialties: [
-        { key: 'id', label: '№' },
+        { key: 'id', label: '№', render: 'rowNumber' },
         { key: 'name', label: 'Название' },
         { key: 'qualification', label: 'Квалификация' },
-        { key: 'duration', label: 'Длительность обучения' }
+        { key: 'duration', label: 'Длительность обучения', render: 'duration' }
     ],
     teachers: [
-        { key: 'id', label: '№' },
+        { key: 'id', label: '№', render: 'rowNumber' },
         { key: 'last_name', label: 'Фамилия' },
         { key: 'name', label: 'Имя' },
         { key: 'father_name', label: 'Отчество' },
-        { key: 'userId', label: 'Аккаунт' }
+        { key: 'userId', label: 'Аккаунт', render: 'reference' }
     ]
 };
 

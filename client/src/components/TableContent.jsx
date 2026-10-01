@@ -3,7 +3,6 @@ import { Table, Button, Spinner } from 'react-bootstrap';
 import SearchAndFilters from './SearchAndFilters';
 import Pagination from './Pagination';
 import TableCell from './TableCell';
-import { formatFio } from '../utils/dataHelpers';
 import { ITEMS_PER_PAGE } from '../utils/consts';
 
 const TableContent = ({
@@ -89,95 +88,21 @@ const TableContent = ({
                         safeData.map((item, index) => {
                             // Вычисляем порядковый номер с учетом пагинации
                             const rowNumber = (currentPage - 1) * itemsPerPage + index + 1;
-                            
+                            // То, что не берётся из строки: номер для колонки «№»
+                            // и подстановка названий вместо чужих id.
+                            const context = { rowNumber, names: getNameById };
+
                             return (
                                 <tr key={item.id}>
-                                    {columns.map(col => {
-                                        // Для колонки ID показываем порядковый номер
-                                        if (col.key === 'id') {
-                                            return (
-                                                <td key={col.key}>
-                                                    <span className="text-muted">{rowNumber}</span>
-                                                </td>
-                                            );
-                                        }
-                                        
-                                        // Специальная обработка для длительности обучения
-                                        if (col.key === 'duration') {
-                                            return (
-                                                <td key={col.key}>
-                                                    <TableCell 
-                                                        value={null} 
-                                                        columnKey={col.key} 
-                                                        item={item} 
-                                                    />
-                                                </td>
-                                            );
-                                        }
-                                        
-                                        // Специальная обработка для курса
-                                        if (col.key === 'course') {
-                                            return (
-                                                <td key={col.key}>
-                                                    <TableCell 
-                                                        value={null} 
-                                                        columnKey={col.key} 
-                                                        item={item} 
-                                                    />
-                                                </td>
-                                            );
-                                        }
-                                        
-                                        // Специальная обработка для куратора
-                                        if (col.key === 'supervisor') {
-                                            const supervisor = item.supervisor;
-                                            if (supervisor && supervisor.teacher) {
-                                                const teacher = supervisor.teacher;
-                                                return (
-                                                    <td key={col.key}>
-                                                        {formatFio(teacher)}
-                                                    </td>
-                                                );
-                                            }
-                                            return <td key={col.key}>-</td>;
-                                        }
-                                        
-                                        // Специальная обработка для студентов в заявках
-                                        if (col.key === 'students') {
-                                            const students = item.students;
-                                            if (students && Array.isArray(students) && students.length > 0) {
-                                                const studentNames = students.map(student =>
-                                                    formatFio(student)
-                                                ).join(', ');
-                                                return (
-                                                    <td key={col.key} title={studentNames}>
-                                                        {studentNames.length > 50 ? studentNames.substring(0, 50) + '...' : studentNames}
-                                                    </td>
-                                                );
-                                            }
-                                            return <td key={col.key}>-</td>;
-                                        }
-                                        
-                                        // Для полей с ID показываем названия/ФИО
-                                        if (col.key === 'groupId' || col.key === 'specialtyId' || 
-                                            col.key === 'teacherId' || col.key === 'userId' || 
-                                            col.key === 'documentId') {
-                                            return (
-                                                <td key={col.key}>
-                                                    {getNameById(col.key, item[col.key])}
-                                                </td>
-                                            );
-                                        }
-                                        return (
-                                            <td key={col.key}>
-                                                <TableCell 
-                                                    value={item[col.key]} 
-                                                    columnKey={col.key} 
-                                                    item={item} 
-                                                />
-                                            </td>
-                                        );
-                                    })}
+                                    {columns.map(col => (
+                                        <td key={col.key}>
+                                            <TableCell
+                                                column={col}
+                                                item={item}
+                                                context={context}
+                                            />
+                                        </td>
+                                    ))}
                                     <td>
                                         <div className="d-flex">
                                             <Button

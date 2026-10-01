@@ -76,6 +76,7 @@ cd client && npm install && npm start        # CRA dev server, MUST be localhost
 - `DataStore` is the single generic CRUD layer keyed by string entity types (`'users'`, `'students'`, …). Adding an entity means adding it to both `ENTITY_TYPES` and `ENDPOINTS` in `src/store/DataStore.js`. Note `'supervisors' -> /api/supervisor`, which has **no server route** yet — it is a placeholder for S1, and nothing fetches it, so no request and no 404.
 - Two axios instances in `src/http/index.js`: `$host` (public) and `$authHost` (adds `Bearer` from localStorage). Path style is inconsistent — `userAPI.js` uses relative `'api/user/login'` while `DataStore` uses absolute `'/api/user'`. Keep whichever the file you're editing already uses.
 - Admin UI is prop-drilled, not context-based: `pages/Admin.jsx` → `hooks/useAdminLogic.js` → presentational components. Adding an admin tab means touching the tabs in `Admin.jsx`, the state block in `useAdminLogic`, and `utils/tableConfig.js`.
+- An admin table column is described only in `TABLE_COLUMNS` (`utils/tableConfig.js`). When the value isn't `item[key]`, the column names a formatter from `RENDERERS` in `utils/tableCells.js` via `render` — `resolveCellContent` returns `{ text, variant?, muted?, title? }` or `null`, and `TableCell` is the only place that turns that into JSX. **Never branch on a column name in `TableContent.jsx` or `TableCell.jsx`**; a new computed column is a new formatter plus one config line. Formatters are pure and tested in `tableCells.test.js`, so keep them free of JSX.
 
 ## Adding a document template
 
