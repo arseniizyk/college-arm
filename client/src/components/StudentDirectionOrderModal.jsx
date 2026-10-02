@@ -56,6 +56,9 @@ const StudentDirectionOrderModal = observer(({ show, onHide }) => {
     const handleChange = (e) => {
         const { name, value } = e.target;
         setForm(prev => ({ ...prev, [name]: value }));
+        if (name === 'groupId') {
+            setSelectedStudentIds([]);
+        }
         setError(null);
     };
 

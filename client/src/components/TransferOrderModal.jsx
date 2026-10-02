@@ -43,17 +43,16 @@ const TransferOrderModal = observer(({ show, onHide }) => {
     const selectedGroup = data.groups.find(g => g.id === parseInt(form.groupId));
     const selectedSpecialty = data.specialties.find(s => s.id === selectedGroup?.specialtyId);
 
-    // Текущий курс → следующий курс автоматически
-    const currentCourse = selectedGroup
-        ? calculateCourse(selectedGroup.enroll_date, selectedSpecialty?.duration_years || 4, selectedSpecialty?.duration_months || 0)
-        : null;
-    const autoNextCourse = currentCourse && currentCourse !== 'Выпускник'
-        ? String(parseInt(currentCourse) + 1)
-        : '';
-
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setForm(prev => ({ ...prev, [name]: value }));
+        setForm(prev => ({
+            ...prev,
+            [name]: value,
+            ...(name === 'groupId' ? { conditionalStudentId: '' } : {})
+        }));
+        if (name === 'groupId') {
+            setSelectedStudentIds([]);
+        }
         setError(null);
     };
 
@@ -65,7 +64,7 @@ const TransferOrderModal = observer(({ show, onHide }) => {
             ? calculateCourse(group.enroll_date, specialty?.duration_years || 4, specialty?.duration_months || 0)
             : null;
         const nextCourse = course && course !== 'Выпускник' ? String(parseInt(course) + 1) : '';
-        setForm(prev => ({ ...prev, groupId, nextCourse }));
+        setForm(prev => ({ ...prev, groupId, nextCourse, conditionalStudentId: '' }));
         setSelectedStudentIds([]);
         setError(null);
     };

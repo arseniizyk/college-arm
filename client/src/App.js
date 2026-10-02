@@ -13,6 +13,15 @@ const App = () => {
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
+        const handleAuthLogout = () => {
+            user.setUser({})
+            user.setIsAuth(false)
+        }
+        window.addEventListener('auth:logout', handleAuthLogout)
+        return () => window.removeEventListener('auth:logout', handleAuthLogout)
+    }, [user])
+
+    useEffect(() => {
         const checkAuth = async () => {
             try {
                 const token = localStorage.getItem('token')
@@ -25,8 +34,13 @@ const App = () => {
                     } catch (err) {
                         console.error('Ошибка загрузки уведомлений:', err)
                     }
+                } else {
+                    user.setUser({})
+                    user.setIsAuth(false)
                 }
             } catch (e) {
+                user.setUser({})
+                user.setIsAuth(false)
                 localStorage.removeItem('token')
             } finally {
                 setLoading(false)

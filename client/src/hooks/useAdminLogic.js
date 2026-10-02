@@ -79,26 +79,31 @@ export const useAdminLogic = (data, user) => {
     // Функция для обновления поискового термина (клиентская фильтрация)
     const handleStudentSearch = useCallback((searchValue) => {
         setSearchTerm(searchValue);
+        setCurrentPage(1);
     }, []);
 
     // Функция для обновления фильтра группы (клиентская фильтрация)
     const handleGroupFilterChange = useCallback((groupId) => {
         setSelectedGroupFilter(groupId);
+        setCurrentPage(1);
     }, []);
 
     // Функция для обновления фильтра роли (клиентская фильтрация)
     const handleRoleFilterChange = useCallback((role) => {
         setSelectedRoleFilter(role);
+        setCurrentPage(1);
     }, []);
 
     // Функция для обновления фильтра статуса (клиентская фильтрация)
     const handleStatusFilterChange = useCallback((status) => {
         setSelectedStatusFilter(status);
+        setCurrentPage(1);
     }, []);
 
     // Функция для обновления фильтра специальности (клиентская фильтрация)
     const handleSpecialtyFilterChange = useCallback((specialtyId) => {
         setSelectedSpecialtyFilter(specialtyId);
+        setCurrentPage(1);
     }, []);
 
     // Функция для изменения статуса заявки. Возвращает признак успеха:
@@ -281,10 +286,11 @@ export const useAdminLogic = (data, user) => {
     });
 
     // Пагинация
-    const indexOfLastItem = currentPage * itemsPerPage;
+    const totalPages = Math.max(1, Math.ceil(filteredData.length / itemsPerPage));
+    const safePage = Math.max(1, Math.min(currentPage, totalPages || 1));
+    const indexOfLastItem = safePage * itemsPerPage;
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
-    const totalPages = Math.max(1, Math.ceil(filteredData.length / itemsPerPage));
 
     const isLoading = data.isLoading(activeTab) || loading;
     const tableError = data.getError(activeTab);
@@ -305,7 +311,7 @@ export const useAdminLogic = (data, user) => {
         modalType,
         currentItem,
         formData,
-        currentPage,
+        currentPage: safePage,
         itemsPerPage,
         searchTerm,
         selectedGroupFilter,

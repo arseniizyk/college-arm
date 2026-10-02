@@ -95,7 +95,7 @@ const Profile = observer(() => {
                 
                 // Восстанавливаем статус просмотренных заявок
                 viewedRequestIds.forEach(id => {
-                    data.updateLocal('requests', id, { isViewed: true });
+                    data.updateLocal('myRequests', id, { isViewed: true });
                 });
             } catch (err) {
                 console.error('Ошибка автообновления заявок:', err);
@@ -106,7 +106,7 @@ const Profile = observer(() => {
     }, [data]);
 
     // Заявки приходят с сервера уже отфильтрованными по текущему пользователю
-    const userRequests = data.requests;
+    const userRequests = data.getMyRequests();
 
     // Группируем заявки по статусам
     const requestsByStatus = {
@@ -411,7 +411,7 @@ const Profile = observer(() => {
                                                                         getNameById={getNameById}
                                                                         onStatusChange={null}
                                                                         onViewUpdate={(requestId) => {
-                                                                            data.updateLocal('requests', requestId, { isViewed: true });
+                                                                            data.updateLocal('myRequests', requestId, { isViewed: true });
                                                                             // Сохраняем в localStorage
                                                                             const viewedRequestsStr = localStorage.getItem('viewedRequests');
                                                                             const viewedRequestIds = viewedRequestsStr ? JSON.parse(viewedRequestsStr) : [];

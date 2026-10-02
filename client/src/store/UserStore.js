@@ -19,6 +19,12 @@ export default class UserStore {
         this._isAuth = true
     }
 
+    logout() {
+        this._user = {}
+        this._isAuth = false
+        localStorage.removeItem('token')
+    }
+
     setIsAuth(bool) {
         this._isAuth = bool
     }

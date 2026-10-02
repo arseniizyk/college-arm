@@ -344,15 +344,17 @@ export const prepareFormData = (formData, activeTab) => {
     let submitData = { ...formData };
     
     // Специальная обработка для заявок
-    if (activeTab === 'requests' && submitData.studentIds) {
-        submitData.studentIds = (Array.isArray(submitData.studentIds)
-            ? submitData.studentIds
-            : [submitData.studentIds]
-        ).map(id => parseInt(id, 10));
+    if (activeTab === 'requests') {
+        if (submitData.studentIds) {
+            submitData.studentIds = (Array.isArray(submitData.studentIds)
+                ? submitData.studentIds
+                : [submitData.studentIds]
+            ).map(id => parseInt(id, 10));
+        }
 
-        // Преобразуем documentId в число, если он есть
-        if (submitData.documentId) {
-            submitData.documentId = parseInt(submitData.documentId, 10);
+        // Преобразуем documentId в число, если он есть, или null если пустая строка/не задан
+        if ('documentId' in submitData) {
+            submitData.documentId = submitData.documentId ? parseInt(submitData.documentId, 10) : null;
         }
     }
 
@@ -377,3 +379,5 @@ export const toGroupFormData = (group) => ({
     ...group,
     teacherId: group?.supervisor?.teacher?.id ?? ''
 });
+
+export const prepareRequestFormData = (formData) => prepareFormData(formData, 'requests');

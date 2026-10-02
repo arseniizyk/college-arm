@@ -21,10 +21,11 @@ const NavBar = observer(() => {
     // Получаем информацию о текущем пользователе
     const currentUser = user.getUser()
     const userRole = currentUser?.role || 'USER'
+    const isAuth = user.getIsAuth()
 
     // Автоматическое обновление уведомлений каждую минуту
     useEffect(() => {
-        if (!user.getIsAuth()) return;
+        if (!isAuth) return;
 
         const intervalId = setInterval(() => {
             data.fetchAll('notifications').catch(err => {
@@ -33,7 +34,7 @@ const NavBar = observer(() => {
         }, 60000); // 60000 мс = 1 минута
 
         return () => clearInterval(intervalId);
-    }, [user, data]);
+    }, [isAuth, data]);
 
     // Блокируем прокрутку фона при открытии мобильного меню
     useEffect(() => {

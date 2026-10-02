@@ -51,12 +51,16 @@ const ExamAdmissionOrderModal = observer(({ show, onHide }) => {
 
     const handleGroupChange = (e) => {
         setForm(prev => ({ ...prev, groupId: e.target.value }));
+        setSelectedStudentIds([]);
         setError(null);
     };
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setForm(prev => ({ ...prev, [name]: value }));
+        if (name === 'groupId') {
+            setSelectedStudentIds([]);
+        }
         setError(null);
     };
 

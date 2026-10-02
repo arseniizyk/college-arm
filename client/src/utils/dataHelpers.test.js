@@ -16,6 +16,11 @@ test('documentId приводится к числу', () => {
   expect(prepareFormData({ studentIds: ['7'], documentId: '3' }, 'requests').documentId).toBe(3)
 })
 
+test('пустой documentId превращается в null', () => {
+  expect(prepareFormData({ studentIds: ['7'], documentId: '' }, 'requests').documentId).toBeNull()
+  expect(prepareFormData({ studentIds: ['7'], documentId: null }, 'requests').documentId).toBeNull()
+})
+
 test('для остальных вкладок studentIds не трогается', () => {
   expect(prepareFormData({ studentIds: '7' }, 'students').studentIds).toBe('7')
 })

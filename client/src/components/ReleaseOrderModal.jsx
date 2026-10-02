@@ -49,7 +49,11 @@ const ReleaseOrderModal = observer(({ show, onHide }) => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setForm(prev => ({ ...prev, [name]: value }));
+        setForm(prev => ({
+            ...prev,
+            [name]: value,
+            ...(name === 'groupId' ? { studentId: '' } : {})
+        }));
         setError(null);
     };
 
