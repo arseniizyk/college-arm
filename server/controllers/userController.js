@@ -48,11 +48,11 @@ class UserController {
                 where: buildEmailWhere(email)
             })
             if (!user) {
-                return next(ApiError.internalRequest("Пользователь не найден"))
+                return next(ApiError.badRequest('Неверный email или пароль'))
             }
-            const comparePassword = bcrypt.compareSync(password, user.password)
+            const comparePassword = await bcrypt.compare(password, user.password)
             if (!comparePassword) {
-                return next(ApiError.badRequest('Неверный пароль'))
+                return next(ApiError.badRequest('Неверный email или пароль'))
             }
             const token = generateJwt(user.id, user.email, user.role)
             return res.json({ token })
@@ -231,13 +231,13 @@ class UserController {
             }
 
             // Проверяем текущий пароль
-            const isPasswordValid = bcrypt.compareSync(currentPassword, user.password);
+            const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
             if (!isPasswordValid) {
                 return next(ApiError.badRequest('Неверный текущий пароль'));
             }
 
             // Проверяем, что новый пароль отличается от текущего
-            const isSamePassword = bcrypt.compareSync(newPassword, user.password);
+            const isSamePassword = await bcrypt.compare(newPassword, user.password);
             if (isSamePassword) {
                 return next(ApiError.badRequest('Новый пароль должен отличаться от текущего'));
             }
@@ -274,7 +274,7 @@ class UserController {
             }
 
             // Проверяем пароль
-            const isPasswordValid = bcrypt.compareSync(password, user.password);
+            const isPasswordValid = await bcrypt.compare(password, user.password);
             if (!isPasswordValid) {
                 return next(ApiError.badRequest('Неверный пароль'));
             }
@@ -321,7 +321,7 @@ class UserController {
             }
 
             // Проверяем пароль
-            const isPasswordValid = bcrypt.compareSync(password, user.password);
+            const isPasswordValid = await bcrypt.compare(password, user.password);
             if (!isPasswordValid) {
                 return next(ApiError.badRequest('Неверный пароль'));
             }

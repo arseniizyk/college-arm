@@ -1,4 +1,5 @@
 const { Group, Supervisor, Specialty, Teacher } = require('../models/models')
+const sequelize = require('../db')
 const { validatePaymentType } = require('../utils/paymentType')
 const { parseSupervisorAssignment } = require('../utils/supervisorGroup')
 const ApiError = require('../error/ApiError')
@@ -39,16 +40,20 @@ class GroupController {
             if (payment_type) {
                 groupData.payment_type = payment_type;
             }
-            const group = await Group.create(groupData);
+            let createdGroupId;
+            await sequelize.transaction(async (t) => {
+                const group = await Group.create(groupData, { transaction: t });
+                createdGroupId = group.id;
 
-            // Создание записи куратора
-            await Supervisor.create({
-                groupId: group.id,
-                teacherId
+                // Создание записи куратора
+                await Supervisor.create({
+                    groupId: group.id,
+                    teacherId
+                }, { transaction: t });
             });
 
             // Возвращаем созданную группу с связанными данными
-            const createdGroup = await Group.findByPk(group.id, {
+            const createdGroup = await Group.findByPk(createdGroupId, {
                 include: [
                     {
                         model: Specialty,
@@ -140,16 +145,10 @@ class GroupController {
                 updateData.payment_type = payment_type;
             }
             
-            await group.update(updateData);
-            
             // Связь «куратор группы» меняется только если поле прислано: пустое — снять.
             const assignment = parseSupervisorAssignment(teacherId);
             if (assignment.action === 'error') {
                 return next(ApiError.badRequest(assignment.error));
-            }
-
-            if (assignment.action === 'clear') {
-                await Supervisor.destroy({ where: { groupId: id } });
             }
 
             if (assignment.action === 'assign') {
@@ -157,18 +156,31 @@ class GroupController {
                 if (!teacher) {
                     return next(ApiError.badRequest('Указанный преподаватель не существует'));
                 }
-
-                // Обновляем или создаем запись куратора
-                const [supervisor] = await Supervisor.findOrCreate({
-                    where: { groupId: id },
-                    defaults: { teacherId: assignment.teacherId }
-                });
-
-                // teacherId приходит из формы числом, иначе сравнение всегда истинно
-                if (Number(supervisor.teacherId) !== assignment.teacherId) {
-                    await supervisor.update({ teacherId: assignment.teacherId });
-                }
             }
+
+            await sequelize.transaction(async (t) => {
+                if (Object.keys(updateData).length > 0) {
+                    await group.update(updateData, { transaction: t });
+                }
+
+                if (assignment.action === 'clear') {
+                    await Supervisor.destroy({ where: { groupId: id }, transaction: t });
+                }
+
+                if (assignment.action === 'assign') {
+                    // Обновляем или создаем запись куратора
+                    const [supervisor] = await Supervisor.findOrCreate({
+                        where: { groupId: id },
+                        defaults: { teacherId: assignment.teacherId },
+                        transaction: t
+                    });
+
+                    // teacherId приходит из формы числом, иначе сравнение всегда истинно
+                    if (Number(supervisor.teacherId) !== assignment.teacherId) {
+                        await supervisor.update({ teacherId: assignment.teacherId }, { transaction: t });
+                    }
+                }
+            });
             
             // Возвращаем обновленную группу с связанными данными
             const updatedGroup = await Group.findByPk(id, {

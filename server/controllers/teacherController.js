@@ -91,7 +91,7 @@ class TeacherController {
             // Записи с groupId = null — сироты от удалённых групп: они не
             // блокируют удаление, но и группы за собой не имеют.
             const groupNumbers = supervisedGroups
-                .map(s => s.Group && s.Group.group_number)
+                .map(s => (s.group && s.group.group_number) || (s.Group && s.Group.group_number))
                 .filter(Boolean);
             if (groupNumbers.length) {
                 return next(ApiError.badRequest(formatCuratorBlockMessage(groupNumbers)));
