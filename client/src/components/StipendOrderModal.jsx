@@ -1,14 +1,15 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { Modal, Form, Button, Row, Col, Spinner, Alert } from 'react-bootstrap';
+import { Form, Row, Col } from 'react-bootstrap';
 import { Context } from '../index';
 import { observer } from 'mobx-react-lite';
 import { calculateCourse } from '../utils/dataHelpers';
 import { downloadDoc } from '../http';
 import { orderUrl } from '../utils/consts';
-
 import OrderStudentSelector from './OrderStudentSelector';
+import BaseOrderModal from './BaseOrderModal';
+import OrderSignaturesSection from './OrderSignaturesSection';
 
-const SEMESTERS = ['первый','второй','третий','четвертый','пятый','шестой','седьмой','восьмой'];
+const SEMESTERS = ['1 семестр', '2 семестр'];
 
 const INITIAL = {
     groupId: '',
@@ -20,8 +21,8 @@ const INITIAL = {
     dateTo: '',
     controlPerson: '',
     basis: '',
-    chiefAccountant: '',
     headOfDepartment: '',
+    chiefAccountant: '',
     legalCounsel: '',
 };
 
@@ -47,7 +48,11 @@ const StipendOrderModal = observer(({ show, onHide }) => {
     const selectedGroup = data.groups.find(g => g.id === parseInt(form.groupId));
     const selectedSpecialty = data.specialties.find(s => s.id === selectedGroup?.specialtyId);
     const computedCourse = selectedGroup
-        ? calculateCourse(selectedGroup.enroll_date, selectedSpecialty?.duration_years || 4, selectedSpecialty?.duration_months || 0)
+        ? calculateCourse(
+            selectedGroup.enroll_date,
+            selectedSpecialty?.duration_years || 4,
+            selectedSpecialty?.duration_months || 0
+          )
         : '';
 
     const handleChange = (e) => {
@@ -59,13 +64,19 @@ const StipendOrderModal = observer(({ show, onHide }) => {
         setError(null);
     };
 
+    const handleGroupChange = (e) => {
+        setForm(prev => ({ ...prev, groupId: e.target.value }));
+        setSelectedStudentIds([]);
+        setError(null);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError(null);
 
         if (!form.groupId || !form.semesterFrom || !form.academicYearFrom ||
-            !form.semesterTo || !form.academicYearTo ||
-            !form.dateFrom || !form.dateTo || !form.controlPerson || !form.basis) {
+            !form.semesterTo || !form.academicYearTo || !form.dateFrom || !form.dateTo ||
+            !form.controlPerson || !form.basis) {
             setError('Заполните все обязательные поля');
             return;
         }
@@ -83,10 +94,11 @@ const StipendOrderModal = observer(({ show, onHide }) => {
             academicYearFrom: form.academicYearFrom,
             semesterTo: form.semesterTo,
             academicYearTo: form.academicYearTo,
-            groupNumber: selectedGroup?.group_number || '',
-            specialtyName: selectedSpecialty?.name || '',
             dateFrom: form.dateFrom,
             dateTo: form.dateTo,
+            specialtyName: selectedSpecialty?.name || '',
+            course: computedCourse,
+            groupNumber: selectedGroup?.group_number || '',
             fullGroup,
             students: selectedStudents.map(s => ({
                 lastName: s.last_name,
@@ -95,8 +107,8 @@ const StipendOrderModal = observer(({ show, onHide }) => {
             })),
             controlPerson: form.controlPerson,
             basis: form.basis,
-            chiefAccountant: form.chiefAccountant,
             headOfDepartment: form.headOfDepartment,
+            chiefAccountant: form.chiefAccountant,
             legalCounsel: form.legalCounsel,
         };
 
@@ -116,187 +128,158 @@ const StipendOrderModal = observer(({ show, onHide }) => {
         }
     };
 
-    const handleClose = () => { setForm(INITIAL); setSelectedStudentIds([]); setError(null); onHide(); };
+    const handleClose = () => {
+        setForm(INITIAL);
+        setSelectedStudentIds([]);
+        setError(null);
+        onHide();
+    };
 
     return (
-        <Modal show={show} onHide={handleClose} size="lg" centered>
-            <Modal.Header closeButton>
-                <Modal.Title>
-                    <i className="bi bi-cash-coin me-2"></i>
-                    Приказ о назначении стипендии
-                </Modal.Title>
-            </Modal.Header>
-
-            <Form onSubmit={handleSubmit}>
-                <Modal.Body>
-                    {error && (
-                        <Alert variant="danger" dismissible onClose={() => setError(null)}>
-                            <i className="bi bi-exclamation-circle me-2"></i>{error}
-                        </Alert>
-                    )}
-
-                    {/* Группа */}
-                    <h6 className="text-muted mb-3 border-bottom pb-2">
-                        <i className="bi bi-mortarboard me-2"></i>Группа
-                    </h6>
-                    <Row className="mb-3">
-                        <Col md={6}>
-                            <Form.Group>
-                                <Form.Label>Группа <span className="text-danger">*</span></Form.Label>
-                                <Form.Select name="groupId" value={form.groupId} onChange={handleChange} required>
-                                    <option value="">— Выберите —</option>
-                                    {data.groups.map(g => (
-                                        <option key={g.id} value={g.id}>{g.group_number}</option>
-                                    ))}
-                                </Form.Select>
-                            </Form.Group>
-                        </Col>
-                        {form.groupId && (
-                            <Col md={6}>
-                                <div className="p-2 bg-light rounded h-100 d-flex flex-column justify-content-center">
-                                    <small className="text-muted d-block">
-                                        <i className="bi bi-mortarboard me-1"></i>
-                                        Специальность: <strong>{selectedSpecialty?.name || '—'}</strong>
-                                    </small>
-                                    <small className="text-muted d-block mt-1">
-                                        <i className="bi bi-arrow-up-circle me-1"></i>
-                                        Курс: <strong>{computedCourse}</strong>
-                                    </small>
-                                    <small className="text-muted d-block mt-1">
-                                        <i className="bi bi-people me-1"></i>
-                                        Студентов: <strong>{groupStudents.length}</strong>
-                                    </small>
-                                </div>
-                            </Col>
-                        )}
-                    </Row>
-
-                    {/* Студенты */}
-                    {form.groupId && (
-                        <div className="mb-3">
-                            <Form.Label>Студенты <span className="text-danger">*</span></Form.Label>
-                            <OrderStudentSelector
-                                students={groupStudents}
-                                selectedIds={selectedStudentIds}
-                                onChange={setSelectedStudentIds}
-                            />
+        <BaseOrderModal
+            show={show}
+            onHide={handleClose}
+            title="Приказ о стипендии"
+            icon="bi bi-cash-coin"
+            error={error}
+            onErrorClose={() => setError(null)}
+            onSubmit={handleSubmit}
+            loading={loading}
+        >
+            {/* Группа */}
+            <h6 className="text-muted mb-3 border-bottom pb-2 mt-4">
+                <i className="bi bi-mortarboard me-2"></i>Группа
+            </h6>
+            <Row className="mb-3">
+                <Col md={6}>
+                    <Form.Group>
+                        <Form.Label>Группа <span className="text-danger">*</span></Form.Label>
+                        <Form.Select name="groupId" value={form.groupId} onChange={handleGroupChange} required>
+                            <option value="">— Выберите —</option>
+                            {data.groups.map(g => (
+                                <option key={g.id} value={g.id}>{g.group_number}</option>
+                            ))}
+                        </Form.Select>
+                    </Form.Group>
+                </Col>
+                {form.groupId && (
+                    <Col md={6}>
+                        <div className="p-2 bg-light rounded h-100 d-flex flex-column justify-content-center">
+                            <small className="text-muted d-block">
+                                <i className="bi bi-mortarboard me-1"></i>
+                                Специальность: <strong>{selectedSpecialty?.name || '—'}</strong>
+                            </small>
+                            <small className="text-muted d-block mt-1">
+                                <i className="bi bi-arrow-up-circle me-1"></i>
+                                Курс: <strong>{computedCourse}</strong>
+                            </small>
+                            <small className="text-muted d-block mt-1">
+                                <i className="bi bi-people me-1"></i>
+                                Студентов: <strong>{groupStudents.length}</strong>
+                            </small>
                         </div>
-                    )}
+                    </Col>
+                )}
+            </Row>
 
-                    {/* Семестры */}
-                    <h6 className="text-muted mb-3 border-bottom pb-2 mt-4">
-                        <i className="bi bi-journal-text me-2"></i>Семестры
-                    </h6>
-                    <Row className="mb-3">
-                        <Col md={6}>
-                            <Form.Label className="fw-semibold">За результаты <span className="text-danger">*</span></Form.Label>
-                            <Row className="g-2">
-                                <Col>
-                                    <Form.Select name="semesterFrom" value={form.semesterFrom} onChange={handleChange} required style={{ height: '38px', padding: '0.25rem 0.5rem' }}>
-                                        <option value="">— Семестр —</option>
-                                        {SEMESTERS.map(s => <option key={s} value={s}>{s}</option>)}
-                                    </Form.Select>
-                                </Col>
-                                <Col>
-                                    <Form.Control
-                                        type="text"
-                                        name="academicYearFrom"
-                                        value={form.academicYearFrom}
-                                        onChange={handleChange}
-                                        placeholder="2025/2026"
-                                        required
-                                    />
-                                </Col>
-                            </Row>
+            {/* Студенты */}
+            {form.groupId && (
+                <div className="mb-3">
+                    <Form.Label>Студенты <span className="text-danger">*</span></Form.Label>
+                    <OrderStudentSelector
+                        students={groupStudents}
+                        selectedIds={selectedStudentIds}
+                        onChange={setSelectedStudentIds}
+                    />
+                </div>
+            )}
+
+            {/* Семестры */}
+            <h6 className="text-muted mb-3 border-bottom pb-2 mt-4">
+                <i className="bi bi-journal-text me-2"></i>Семестры
+            </h6>
+            <Row className="mb-3">
+                <Col md={6}>
+                    <Form.Label className="fw-semibold">За результаты <span className="text-danger">*</span></Form.Label>
+                    <Row className="g-2">
+                        <Col>
+                            <Form.Select name="semesterFrom" value={form.semesterFrom} onChange={handleChange} required style={{ height: '38px', padding: '0.25rem 0.5rem' }}>
+                                <option value="">— Семестр —</option>
+                                {SEMESTERS.map(s => <option key={s} value={s}>{s}</option>)}
+                            </Form.Select>
                         </Col>
-                        <Col md={6}>
-                            <Form.Label className="fw-semibold">На семестр <span className="text-danger">*</span></Form.Label>
-                            <Row className="g-2">
-                                <Col>
-                                    <Form.Select name="semesterTo" value={form.semesterTo} onChange={handleChange} required style={{ height: '38px', padding: '0.25rem 0.5rem' }}>
-                                        <option value="">— Семестр —</option>
-                                        {SEMESTERS.map(s => <option key={s} value={s}>{s}</option>)}
-                                    </Form.Select>
-                                </Col>
-                                <Col>
-                                    <Form.Control
-                                        type="text"
-                                        name="academicYearTo"
-                                        value={form.academicYearTo}
-                                        onChange={handleChange}
-                                        placeholder="2025/2026"
-                                        required
-                                    />
-                                </Col>
-                            </Row>
+                        <Col>
+                            <Form.Control
+                                type="text"
+                                name="academicYearFrom"
+                                value={form.academicYearFrom}
+                                onChange={handleChange}
+                                placeholder="2025/2026"
+                                required
+                            />
                         </Col>
                     </Row>
-
-                    {/* Период */}
-                    <h6 className="text-muted mb-3 border-bottom pb-2 mt-4">
-                        <i className="bi bi-calendar-range me-2"></i>Период назначения
-                    </h6>
-                    <Row className="mb-3">
-                        <Col md={6}>
-                            <Form.Group>
-                                <Form.Label>С <span className="text-danger">*</span></Form.Label>
-                                <Form.Control type="text" name="dateFrom" value={form.dateFrom} onChange={handleChange} placeholder="01.02.2026" required />
-                            </Form.Group>
+                </Col>
+                <Col md={6}>
+                    <Form.Label className="fw-semibold">На семестр <span className="text-danger">*</span></Form.Label>
+                    <Row className="g-2">
+                        <Col>
+                            <Form.Select name="semesterTo" value={form.semesterTo} onChange={handleChange} required style={{ height: '38px', padding: '0.25rem 0.5rem' }}>
+                                <option value="">— Семестр —</option>
+                                {SEMESTERS.map(s => <option key={s} value={s}>{s}</option>)}
+                            </Form.Select>
                         </Col>
-                        <Col md={6}>
-                            <Form.Group>
-                                <Form.Label>По <span className="text-danger">*</span></Form.Label>
-                                <Form.Control type="text" name="dateTo" value={form.dateTo} onChange={handleChange} placeholder="31.07.2026" required />
-                            </Form.Group>
+                        <Col>
+                            <Form.Control
+                                type="text"
+                                name="academicYearTo"
+                                value={form.academicYearTo}
+                                onChange={handleChange}
+                                placeholder="2025/2026"
+                                required
+                            />
                         </Col>
                     </Row>
+                </Col>
+            </Row>
 
-                    {/* Подписи и основание */}
-                    <h6 className="text-muted mb-3 border-bottom pb-2 mt-4">
-                        <i className="bi bi-person-lines-fill me-2"></i>Подписи и основание
-                    </h6>
-                    <Form.Group className="mb-3">
-                        <Form.Label>Контроль за исполнением возложить на <span className="text-danger">*</span></Form.Label>
-                        <Form.Control type="text" name="controlPerson" value={form.controlPerson} onChange={handleChange} placeholder="главного бухгалтера Метта М.В., заведующего отделением Макаренко Е.В." required />
+            {/* Период */}
+            <h6 className="text-muted mb-3 border-bottom pb-2 mt-4">
+                <i className="bi bi-calendar-range me-2"></i>Период назначения
+            </h6>
+            <Row className="mb-3">
+                <Col md={6}>
+                    <Form.Group>
+                        <Form.Label>С <span className="text-danger">*</span></Form.Label>
+                        <Form.Control type="text" name="dateFrom" value={form.dateFrom} onChange={handleChange} placeholder="01.02.2026" required />
                     </Form.Group>
-                    <Form.Group className="mb-3">
-                        <Form.Label>Основание <span className="text-danger">*</span></Form.Label>
-                        <Form.Control as="textarea" rows={2} name="basis" value={form.basis} onChange={handleChange} placeholder="докладная записка заведующего отделением Макаренко Е.В. от 08.01.2026" required />
+                </Col>
+                <Col md={6}>
+                    <Form.Group>
+                        <Form.Label>По <span className="text-danger">*</span></Form.Label>
+                        <Form.Control type="text" name="dateTo" value={form.dateTo} onChange={handleChange} placeholder="31.07.2026" required />
                     </Form.Group>
-                    <Row className="mb-3">
-                        <Col md={4}>
-                            <Form.Group>
-                                <Form.Label>Главный бухгалтер</Form.Label>
-                                <Form.Control type="text" name="chiefAccountant" value={form.chiefAccountant} onChange={handleChange} placeholder="М.В.Метта" />
-                            </Form.Group>
-                        </Col>
-                        <Col md={4}>
-                            <Form.Group>
-                                <Form.Label>Заведующий отделением</Form.Label>
-                                <Form.Control type="text" name="headOfDepartment" value={form.headOfDepartment} onChange={handleChange} placeholder="Е.В.Макаренко" />
-                            </Form.Group>
-                        </Col>
-                        <Col md={4}>
-                            <Form.Group>
-                                <Form.Label>Юрисконсульт</Form.Label>
-                                <Form.Control type="text" name="legalCounsel" value={form.legalCounsel} onChange={handleChange} placeholder="Н.В.Демьянович" />
-                            </Form.Group>
-                        </Col>
-                    </Row>
-                </Modal.Body>
+                </Col>
+            </Row>
 
-                <Modal.Footer>
-                    <Button variant="secondary" onClick={handleClose} disabled={loading}>Отмена</Button>
-                    <Button variant="primary" type="submit" disabled={loading}>
-                        {loading ? (
-                            <><Spinner animation="border" size="sm" className="me-2" />Генерация...</>
-                        ) : (
-                            <><i className="bi bi-download me-2"></i>Создать и скачать</>
-                        )}
-                    </Button>
-                </Modal.Footer>
-            </Form>
-        </Modal>
+            {/* Подписи и основание */}
+            <OrderSignaturesSection
+                formData={form}
+                handleChange={handleChange}
+                fields={['controlPerson', 'chiefAccountant', 'headOfDepartment', 'legalCounsel']}
+                placeholders={{
+                    controlPerson: 'главного бухгалтера Метта М.В., заведующего отделением Макаренко Е.В.',
+                    chiefAccountant: 'М.В.Метта',
+                    headOfDepartment: 'Е.В.Макаренко',
+                    legalCounsel: 'Н.В.Демьянович',
+                }}
+            >
+                <Form.Group className="mb-3">
+                    <Form.Label>Основание <span className="text-danger">*</span></Form.Label>
+                    <Form.Control as="textarea" rows={2} name="basis" value={form.basis} onChange={handleChange} placeholder="докладная записка заведующего отделением Макаренко Е.В. от 08.01.2026" required />
+                </Form.Group>
+            </OrderSignaturesSection>
+        </BaseOrderModal>
     );
 });
 

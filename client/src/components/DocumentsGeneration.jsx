@@ -42,6 +42,20 @@ const DOCUMENT_CATEGORIES = [
     },
 ];
 
+const MODAL_MAP = {
+    'practice-contract': PracticeContractModal,
+    'exam-admission': ExamAdmissionOrderModal,
+    'holidays': HolidaysOrderModal,
+    'stipend': StipendOrderModal,
+    'snow-cleaning': SnowCleaningOrderModal,
+    'student-direction': StudentDirectionOrderModal,
+    'health': HealthOrderModal,
+    'transfer': TransferOrderModal,
+    'duplicate-ticket': DuplicateTicketOrderModal,
+    'enrollment': EnrollmentOrderModal,
+    'release': ReleaseOrderModal,
+};
+
 const DocumentCard = ({ doc, onGenerate }) => (
     <Card
         className="h-100 border-0 shadow-sm"
@@ -77,30 +91,20 @@ const DocumentCard = ({ doc, onGenerate }) => (
 
 const DocumentsGeneration = () => {
     const [activeCategory, setActiveCategory] = useState('all');
-    const [showPracticeModal, setShowPracticeModal] = useState(false);
-    const [showExamModal, setShowExamModal] = useState(false);
-    const [showHolidaysModal, setShowHolidaysModal] = useState(false);
-    const [showStipendModal, setShowStipendModal] = useState(false);
-    const [showSnowModal, setShowSnowModal] = useState(false);
-    const [showDirectionModal, setShowDirectionModal] = useState(false);
-    const [showHealthModal, setShowHealthModal] = useState(false);
-    const [showTransferModal, setShowTransferModal] = useState(false);
-    const [showDuplicateModal, setShowDuplicateModal] = useState(false);
-    const [showEnrollmentModal, setShowEnrollmentModal] = useState(false);
-    const [showReleaseModal, setShowReleaseModal] = useState(false);
+    const [activeDocType, setActiveDocType] = useState(null);
 
     const handleGenerate = (docId) => {
-        if (docId === 'practice-contract') setShowPracticeModal(true);
-        if (docId === 'exam-admission') setShowExamModal(true);
-        if (docId === 'holidays') setShowHolidaysModal(true);
-        if (docId === 'stipend') setShowStipendModal(true);
-        if (docId === 'snow-cleaning') setShowSnowModal(true);
-        if (docId === 'student-direction') setShowDirectionModal(true);
-        if (docId === 'health') setShowHealthModal(true);
-        if (docId === 'transfer') setShowTransferModal(true);
-        if (docId === 'duplicate-ticket') setShowDuplicateModal(true);
-        if (docId === 'enrollment') setShowEnrollmentModal(true);
-        if (docId === 'release') setShowReleaseModal(true);
+        if (docId === 'practice-contract') setActiveDocType(docId);
+        if (docId === 'exam-admission') setActiveDocType(docId);
+        if (docId === 'holidays') setActiveDocType(docId);
+        if (docId === 'stipend') setActiveDocType(docId);
+        if (docId === 'snow-cleaning') setActiveDocType(docId);
+        if (docId === 'student-direction') setActiveDocType(docId);
+        if (docId === 'health') setActiveDocType(docId);
+        if (docId === 'transfer') setActiveDocType(docId);
+        if (docId === 'duplicate-ticket') setActiveDocType(docId);
+        if (docId === 'enrollment') setActiveDocType(docId);
+        if (docId === 'release') setActiveDocType(docId);
     };
 
     const visibleCategories = activeCategory === 'all'
@@ -109,6 +113,8 @@ const DocumentsGeneration = () => {
 
     const totalDocs = DOCUMENT_CATEGORIES.reduce((sum, c) => sum + c.documents.length, 0);
     const availableDocs = DOCUMENT_CATEGORIES.reduce((sum, c) => sum + c.documents.filter(d => d.available).length, 0);
+
+    const ActiveModal = MODAL_MAP[activeDocType];
 
     return (
         <div className="documents-generation">
@@ -164,51 +170,13 @@ const DocumentsGeneration = () => {
                 </div>
             ))}
 
-            {/* Модальные окна */}
-            <PracticeContractModal
-                show={showPracticeModal}
-                onHide={() => setShowPracticeModal(false)}
-            />
-            <ExamAdmissionOrderModal
-                show={showExamModal}
-                onHide={() => setShowExamModal(false)}
-            />
-            <HolidaysOrderModal
-                show={showHolidaysModal}
-                onHide={() => setShowHolidaysModal(false)}
-            />
-            <StipendOrderModal
-                show={showStipendModal}
-                onHide={() => setShowStipendModal(false)}
-            />
-            <SnowCleaningOrderModal
-                show={showSnowModal}
-                onHide={() => setShowSnowModal(false)}
-            />
-            <StudentDirectionOrderModal
-                show={showDirectionModal}
-                onHide={() => setShowDirectionModal(false)}
-            />
-            <HealthOrderModal
-                show={showHealthModal}
-                onHide={() => setShowHealthModal(false)}
-            />
-            <TransferOrderModal
-                show={showTransferModal}
-                onHide={() => setShowTransferModal(false)}
-            />
-            <DuplicateTicketOrderModal
-                show={showDuplicateModal}
-                onHide={() => setShowDuplicateModal(false)}
-            />
-            <EnrollmentOrderModal
-                show={showEnrollmentModal}
-                onHide={() => setShowEnrollmentModal(false)}
-            />
-            <ReleaseOrderModal
-                show={showReleaseModal}
-                onHide={() => setShowReleaseModal(false)}
-            />
+            {/* Активное модальное окно */}
+            {ActiveModal && (
+                <ActiveModal
+                    show={Boolean(activeDocType)}
+                    onHide={() => setActiveDocType(null)}
+                />
+            )}
         </div>
     );
 };

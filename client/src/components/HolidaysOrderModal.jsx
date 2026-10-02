@@ -1,11 +1,13 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { Modal, Form, Button, Row, Col, Spinner, Alert } from 'react-bootstrap';
+import { Form, Row, Col } from 'react-bootstrap';
 import { Context } from '../index';
 import { observer } from 'mobx-react-lite';
 import { calculateCourse } from '../utils/dataHelpers';
 import { downloadDoc } from '../http';
 import { orderUrl } from '../utils/consts';
 import OrderStudentSelector from './OrderStudentSelector';
+import BaseOrderModal from './BaseOrderModal';
+import OrderSignaturesSection from './OrderSignaturesSection';
 
 const INITIAL = {
     groupId: '',
@@ -118,198 +120,136 @@ const HolidaysOrderModal = observer(({ show, onHide }) => {
     };
 
     return (
-        <Modal show={show} onHide={handleClose} size="lg" centered>
-            <Modal.Header closeButton>
-                <Modal.Title>
-                    <i className="bi bi-calendar-heart me-2"></i>
-                    Приказ об установлении каникул
-                </Modal.Title>
-            </Modal.Header>
-
-            <Form onSubmit={handleSubmit}>
-                <Modal.Body>
-                    {error && (
-                        <Alert variant="danger" dismissible onClose={() => setError(null)}>
-                            <i className="bi bi-exclamation-circle me-2"></i>
-                            {error}
-                        </Alert>
-                    )}
-
-                    {/* Группа */}
-                    <h6 className="text-muted mb-3 border-bottom pb-2">
-                        <i className="bi bi-mortarboard me-2"></i>Группа
-                    </h6>
-                    <Row className="mb-3">
-                        <Col md={6}>
-                            <Form.Group>
-                                <Form.Label>Группа <span className="text-danger">*</span></Form.Label>
-                                <Form.Select name="groupId" value={form.groupId} onChange={handleChange} required>
-                                    <option value="">— Выберите —</option>
-                                    {data.groups.map(g => (
-                                        <option key={g.id} value={g.id}>{g.group_number}</option>
-                                    ))}
-                                </Form.Select>
-                            </Form.Group>
-                        </Col>
-                        {form.groupId && (
-                            <Col md={6}>
-                                <div className="p-2 bg-light rounded h-100 d-flex flex-column justify-content-center">
-                                    <small className="text-muted d-block">
-                                        <i className="bi bi-mortarboard me-1"></i>
-                                        Специальность: <strong>{selectedSpecialty?.name || '—'}</strong>
-                                    </small>
-                                    <small className="text-muted d-block mt-1">
-                                        <i className="bi bi-arrow-up-circle me-1"></i>
-                                        Курс: <strong>{computedCourse}</strong>
-                                    </small>
-                                    <small className="text-muted d-block mt-1">
-                                        <i className="bi bi-people me-1"></i>
-                                        Студентов: <strong>{groupStudents.length}</strong>
-                                    </small>
-                                </div>
-                            </Col>
-                        )}
-                    </Row>
-
-                    {/* Студенты */}
-                    {form.groupId && (
-                        <div className="mb-3">
-                            <Form.Label>Студенты <span className="text-danger">*</span></Form.Label>
-                            <OrderStudentSelector
-                                students={groupStudents}
-                                selectedIds={selectedStudentIds}
-                                onChange={setSelectedStudentIds}
-                            />
+        <BaseOrderModal
+            show={show}
+            onHide={handleClose}
+            title="Приказ об установлении каникул"
+            icon="bi bi-calendar-heart"
+            error={error}
+            onErrorClose={() => setError(null)}
+            onSubmit={handleSubmit}
+            loading={loading}
+        >
+            {/* Группа */}
+            <h6 className="text-muted mb-3 border-bottom pb-2 mt-4">
+                <i className="bi bi-mortarboard me-2"></i>Группа
+            </h6>
+            <Row className="mb-3">
+                <Col md={6}>
+                    <Form.Group>
+                        <Form.Label>Группа <span className="text-danger">*</span></Form.Label>
+                        <Form.Select name="groupId" value={form.groupId} onChange={handleChange} required>
+                            <option value="">— Выберите —</option>
+                            {data.groups.map(g => (
+                                <option key={g.id} value={g.id}>{g.group_number}</option>
+                            ))}
+                        </Form.Select>
+                    </Form.Group>
+                </Col>
+                {form.groupId && (
+                    <Col md={6}>
+                        <div className="p-2 bg-light rounded h-100 d-flex flex-column justify-content-center">
+                            <small className="text-muted d-block">
+                                <i className="bi bi-mortarboard me-1"></i>
+                                Специальность: <strong>{selectedSpecialty?.name || '—'}</strong>
+                            </small>
+                            <small className="text-muted d-block mt-1">
+                                <i className="bi bi-arrow-up-circle me-1"></i>
+                                Курс: <strong>{computedCourse}</strong>
+                            </small>
+                            <small className="text-muted d-block mt-1">
+                                <i className="bi bi-people me-1"></i>
+                                Студентов: <strong>{groupStudents.length}</strong>
+                            </small>
                         </div>
-                    )}
+                    </Col>
+                )}
+            </Row>
 
-                    {/* Период каникул */}
-                    <h6 className="text-muted mb-3 border-bottom pb-2 mt-4">
-                        <i className="bi bi-calendar-range me-2"></i>Период каникул
-                    </h6>
-                    <Row className="mb-3">
-                        <Col md={4}>
-                            <Form.Group>
-                                <Form.Label>Учебный год <span className="text-danger">*</span></Form.Label>
-                                <Form.Control
-                                    type="text"
-                                    name="academicYear"
-                                    value={form.academicYear}
-                                    onChange={handleChange}
-                                    placeholder="напр. 2025/2026"
-                                    required
-                                />
-                            </Form.Group>
-                        </Col>
-                        <Col md={4}>
-                            <Form.Group>
-                                <Form.Label>С <span className="text-danger">*</span></Form.Label>
-                                <Form.Control
-                                    type="text"
-                                    name="dateFrom"
-                                    value={form.dateFrom}
-                                    onChange={handleChange}
-                                    placeholder="напр. 29.01.2026"
-                                    required
-                                />
-                            </Form.Group>
-                        </Col>
-                        <Col md={4}>
-                            <Form.Group>
-                                <Form.Label>По <span className="text-danger">*</span></Form.Label>
-                                <Form.Control
-                                    type="text"
-                                    name="dateTo"
-                                    value={form.dateTo}
-                                    onChange={handleChange}
-                                    placeholder="напр. 11.02.2026"
-                                    required
-                                />
-                            </Form.Group>
-                        </Col>
-                    </Row>
+            {/* Студенты */}
+            {form.groupId && (
+                <div className="mb-3">
+                    <Form.Label>Студенты <span className="text-danger">*</span></Form.Label>
+                    <OrderStudentSelector
+                        students={groupStudents}
+                        selectedIds={selectedStudentIds}
+                        onChange={setSelectedStudentIds}
+                    />
+                </div>
+            )}
 
-                    {/* Подписи и основание */}
-                    <h6 className="text-muted mb-3 border-bottom pb-2 mt-4">
-                        <i className="bi bi-person-lines-fill me-2"></i>Подписи и основание
-                    </h6>
-                    <Form.Group className="mb-3">
-                        <Form.Label>Контроль за исполнением возложить на <span className="text-danger">*</span></Form.Label>
+            {/* Период каникул */}
+            <h6 className="text-muted mb-3 border-bottom pb-2 mt-4">
+                <i className="bi bi-calendar-range me-2"></i>Период каникул
+            </h6>
+            <Row className="mb-3">
+                <Col md={4}>
+                    <Form.Group>
+                        <Form.Label>Учебный год <span className="text-danger">*</span></Form.Label>
                         <Form.Control
                             type="text"
-                            name="controlPerson"
-                            value={form.controlPerson}
+                            name="academicYear"
+                            value={form.academicYear}
                             onChange={handleChange}
-                            placeholder="заведующего отделением робототехники и мобильных электронных систем Макаренко Е.В."
+                            placeholder="напр. 2025/2026"
                             required
                         />
                     </Form.Group>
-                    <Form.Group className="mb-3">
-                        <Form.Label>Основание <span className="text-danger">*</span></Form.Label>
+                </Col>
+                <Col md={4}>
+                    <Form.Group>
+                        <Form.Label>С <span className="text-danger">*</span></Form.Label>
                         <Form.Control
-                            as="textarea"
-                            rows={2}
-                            name="basis"
-                            value={form.basis}
+                            type="text"
+                            name="dateFrom"
+                            value={form.dateFrom}
                             onChange={handleChange}
-                            placeholder="докладная записка заведующего отделением Макаренко Е.В. от 28.01.2026."
+                            placeholder="напр. 29.01.2026"
                             required
                         />
                     </Form.Group>
-                    <Row className="mb-3">
-                        <Col md={4}>
-                            <Form.Group>
-                                <Form.Label>Заведующий отделением</Form.Label>
-                                <Form.Control
-                                    type="text"
-                                    name="headOfDepartment"
-                                    value={form.headOfDepartment}
-                                    onChange={handleChange}
-                                    placeholder="Е.В.Макаренко"
-                                />
-                            </Form.Group>
-                        </Col>
-                        <Col md={4}>
-                            <Form.Group>
-                                <Form.Label>Главный бухгалтер</Form.Label>
-                                <Form.Control
-                                    type="text"
-                                    name="chiefAccountant"
-                                    value={form.chiefAccountant}
-                                    onChange={handleChange}
-                                    placeholder="М.В.Метта"
-                                />
-                            </Form.Group>
-                        </Col>
-                        <Col md={4}>
-                            <Form.Group>
-                                <Form.Label>Юрисконсульт</Form.Label>
-                                <Form.Control
-                                    type="text"
-                                    name="legalCounsel"
-                                    value={form.legalCounsel}
-                                    onChange={handleChange}
-                                    placeholder="Н.В.Демьянович"
-                                />
-                            </Form.Group>
-                        </Col>
-                    </Row>
-                </Modal.Body>
+                </Col>
+                <Col md={4}>
+                    <Form.Group>
+                        <Form.Label>По <span className="text-danger">*</span></Form.Label>
+                        <Form.Control
+                            type="text"
+                            name="dateTo"
+                            value={form.dateTo}
+                            onChange={handleChange}
+                            placeholder="напр. 11.02.2026"
+                            required
+                        />
+                    </Form.Group>
+                </Col>
+            </Row>
 
-                <Modal.Footer>
-                    <Button variant="secondary" onClick={handleClose} disabled={loading}>
-                        Отмена
-                    </Button>
-                    <Button variant="primary" type="submit" disabled={loading}>
-                        {loading ? (
-                            <><Spinner animation="border" size="sm" className="me-2" />Генерация...</>
-                        ) : (
-                            <><i className="bi bi-download me-2"></i>Создать и скачать</>
-                        )}
-                    </Button>
-                </Modal.Footer>
-            </Form>
-        </Modal>
+            {/* Подписи и основание */}
+            <OrderSignaturesSection
+                formData={form}
+                handleChange={handleChange}
+                fields={['controlPerson', 'headOfDepartment', 'chiefAccountant', 'legalCounsel']}
+                placeholders={{
+                    controlPerson: 'заведующего отделением робототехники и мобильных электронных систем Макаренко Е.В.',
+                    headOfDepartment: 'Е.В.Макаренко',
+                    chiefAccountant: 'М.В.Метта',
+                    legalCounsel: 'Н.В.Демьянович',
+                }}
+            >
+                <Form.Group className="mb-3">
+                    <Form.Label>Основание <span className="text-danger">*</span></Form.Label>
+                    <Form.Control
+                        as="textarea"
+                        rows={2}
+                        name="basis"
+                        value={form.basis}
+                        onChange={handleChange}
+                        placeholder="докладная записка заведующего отделением Макаренко Е.В. от 28.01.2026."
+                        required
+                    />
+                </Form.Group>
+            </OrderSignaturesSection>
+        </BaseOrderModal>
     );
 });
 
