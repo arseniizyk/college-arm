@@ -251,6 +251,11 @@ class RequestController {
                 return next(ApiError.forbiddenRequest('Нет доступа к этой заявке'));
             }
 
+            // Запрещено редактировать завершенные или отмененные заявки
+            if (request.status === 'completed' || request.status === 'cancelled') {
+                return next(ApiError.badRequest('Нельзя редактировать завершенную или отклоненную заявку'));
+            }
+
             // Статус заявки вправе менять только администратор
             if (status !== undefined && userRole !== 'ADMIN') {
                 return next(ApiError.forbiddenRequest('Изменять статус заявки может только администратор'));
