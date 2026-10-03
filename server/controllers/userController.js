@@ -2,7 +2,7 @@ const ApiError = require('../error/ApiError')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const { User, USER_WITH_PASSWORD } = require('../models/models')
-const { findSupervisorGroupId } = require('../utils/supervisorGroup')
+const { findSupervisorGroupIds } = require('../utils/supervisorGroup')
 const { validatePassword } = require('../utils/passwordPolicy')
 const { buildEmailWhere, findByEmail, isSameEmail } = require('../utils/userEmail')
 
@@ -90,9 +90,9 @@ class UserController {
 
             const payload = user.get({ plain: true });
 
-            // Куратору сообщаем его группу, чтобы форма заявки показала только её студентов
+            // Куратору сообщаем его группы, чтобы форма заявки показала только их студентов
             if (payload.role === 'TEACHER') {
-                payload.groupId = await findSupervisorGroupId(userId);
+                payload.groupIds = await findSupervisorGroupIds(userId);
             }
 
             return res.json(payload);

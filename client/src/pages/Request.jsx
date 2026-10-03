@@ -5,6 +5,7 @@ import { observer } from 'mobx-react-lite';
 import MultiselectStudents from '../components/MultiselectStudents';
 import { getMe } from '../http/userAPI';
 import { canSelectMultipleStudents } from '../utils/consts';
+import { allowedStudentIds } from '../utils/requestStudents';
 import './Request.css';
 
 const Request = observer(() => {
@@ -20,23 +21,15 @@ const Request = observer(() => {
 
     const [loading, setLoading] = useState(false);
     const [dataLoading, setDataLoading] = useState(true);
-    const [supervisorGroupId, setSupervisorGroupId] = useState(null);
+    const [supervisorGroupIds, setSupervisorGroupIds] = useState([]);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
 
-    // Кому каких студентов можно выбирать:
-    //  - ADMIN — всем, кто зарегистрирован;
-    //  - TEACHER — только учащимся группы, куратором которой он назначен (groupId приходит из /api/user/me);
-    //  - остальные — только привязанному к аккаунту студенту.
-    const allowedStudentIds = (() => {
-        if (userRole === 'ADMIN') return null;
-        if (userRole === 'TEACHER') {
-            return supervisorGroupId
-                ? data.students.filter(s => s.groupId === supervisorGroupId).map(s => s.id)
-                : [];
-        }
-        return data.students.filter(s => s.userId === currentUser?.id).map(s => s.id);
-    })();
+    const selectableStudentIds = allowedStudentIds(data.students, {
+        role: userRole,
+        supervisorGroupIds,
+        userId: currentUser?.id,
+    });
 
     const noStudentsMessage = userRole === 'TEACHER'
         ? 'Ваш аккаунт не привязан к куратору группы. Обратитесь к администратору.'
@@ -60,9 +53,9 @@ const Request = observer(() => {
                     data.fetchAll('students'),
                     data.fetchAll('groups')
                 ];
-                // Куратору нужен его groupId, чтобы показать студентов только своей группы
+                // Куратору нужны его группы, чтобы показать студентов только этих групп
                 if (userRole === 'TEACHER') {
-                    loaders.push(getMe().then(me => setSupervisorGroupId(me.groupId ?? null)));
+                    loaders.push(getMe().then(me => setSupervisorGroupIds(me.groupIds || [])));
                 }
                 await Promise.all(loaders);
             } catch (err) {
@@ -230,7 +223,7 @@ const Request = observer(() => {
                                             setFormData={setFormData}
                                             loading={loading}
                                             data={data}
-                                            allowedStudentIds={allowedStudentIds}
+                                            allowedStudentIds={selectableStudentIds}
                                             noStudentsMessage={noStudentsMessage}
                                         />
                                     </Form.Group>

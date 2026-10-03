@@ -10,13 +10,6 @@ async function findSupervisorGroupIds(userId) {
     return supervisors.map(s => s.groupId).filter(Boolean);
 }
 
-// Ищет группу, куратором которой назначен преподаватель с этим аккаунтом.
-// Возвращает groupId или null, если аккаунт не привязан к куратору группы.
-async function findSupervisorGroupId(userId) {
-    const groupIds = await findSupervisorGroupIds(userId);
-    return groupIds.length > 0 ? groupIds[0] : null;
-}
-
 // Разбирает teacherId из тела запроса в действие над связью «куратор группы».
 // undefined — поле не прислано, связь не трогаем; '' и null — снять куратора.
 // Нужно различать эти случаи: иначе снять куратора через PUT невозможно.
@@ -42,4 +35,4 @@ function formatCuratorBlockMessage(groupNumbers) {
     return `Преподаватель — куратор групп: ${groupNumbers.join(', ')}. Сначала снимите куратора с этих групп.`
 }
 
-module.exports = { findSupervisorGroupId, findSupervisorGroupIds, parseSupervisorAssignment, formatCuratorBlockMessage }
+module.exports = { findSupervisorGroupIds, parseSupervisorAssignment, formatCuratorBlockMessage }
