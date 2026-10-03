@@ -2,6 +2,7 @@ import React, { useState, useContext, useEffect } from 'react';
 import { Form, Button, Row, Col, Card } from 'react-bootstrap';
 import { downloadDoc } from '../http';
 import { orderUrl } from '../utils/consts';
+import { validateEnrollmentGroups, buildEnrollmentGroupsPayload } from '../utils/enrollmentOrder';
 import { Context } from '../index';
 import { observer } from 'mobx-react-lite';
 import BaseOrderModal from './BaseOrderModal';
@@ -106,17 +107,10 @@ const EnrollmentOrderModal = observer(({ show, onHide }) => {
             return;
         }
 
-        for (let i = 0; i < form.groups.length; i++) {
-            const g = form.groups[i];
-            if (!g.groupId) {
-                setError(`Выберите группу для записи #${i + 1}`);
-                return;
-            }
-            const students = getGroupStudents(g.groupId);
-            if (!students.length) {
-                setError(`В выбранной группе #${i + 1} нет студентов`);
-                return;
-            }
+        const groupsError = validateEnrollmentGroups(form.groups, getGroupStudents);
+        if (groupsError) {
+            setError(groupsError);
+            return;
         }
 
         const payload = {
@@ -130,22 +124,7 @@ const EnrollmentOrderModal = observer(({ show, onHide }) => {
             deputyDirector: form.deputyDirector,
             legalCounsel: form.legalCounsel,
             chiefAccountant: form.chiefAccountant,
-            groups: form.groups.map(g => {
-                const { group, specialty } = getGroupInfo(g.groupId);
-                const allStudents = getGroupStudents(g.groupId);
-                const selectedStudents = g.selectedStudentIds?.length
-                    ? allStudents.filter(s => g.selectedStudentIds.includes(String(s.id)))
-                    : allStudents;
-                return {
-                    groupNumber: group?.group_number || '',
-                    specialtyName: specialty?.name || '',
-                    students: selectedStudents.map(s => ({
-                        lastName: s.last_name,
-                        firstName: s.name,
-                        fatherName: s.father_name || '',
-                    })),
-                };
-            }),
+            groups: buildEnrollmentGroupsPayload(form.groups, { getGroupStudents, getGroupInfo }),
             exclusions: form.exclusions
                 .filter(exc => exc.studentName?.trim())
                 .map(exc => {
@@ -269,7 +248,7 @@ const EnrollmentOrderModal = observer(({ show, onHide }) => {
 
                             {g.groupId && (
                                 <div className="mb-3">
-                                    <Form.Label>Студенты (выберите или оставьте всех)</Form.Label>
+                                    <Form.Label>Студенты <span className="text-danger">*</span></Form.Label>
                                     <OrderStudentSelector
                                         students={groupStudents}
                                         selectedIds={g.selectedStudentIds}
