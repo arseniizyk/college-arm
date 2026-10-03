@@ -4,6 +4,7 @@ import { Context } from '../index';
 import { observer } from 'mobx-react-lite';
 import { practiceContractUrl } from '../utils/consts';
 import { downloadDoc } from '../http';
+import { validatePracticeContract, PRACTICE_TYPES } from '../utils/practiceContract';
 import OrderStudentSelector from './OrderStudentSelector';
 import BaseOrderModal from './BaseOrderModal';
 
@@ -75,10 +76,9 @@ const PracticeContractModal = observer(({ show, onHide }) => {
         e.preventDefault();
         setError(null);
 
-        if (!form.contractDay || !form.contractMonth || !form.contractYear || !form.contractNumber ||
-            !form.groupId || !form.studentIds.length ||
-            !form.periodFrom || !form.periodTo || !form.contractEndDate) {
-            setError('Заполните все обязательные поля');
+        const validationError = validatePracticeContract(form);
+        if (validationError) {
+            setError(validationError);
             return;
         }
 
@@ -151,12 +151,13 @@ const PracticeContractModal = observer(({ show, onHide }) => {
                     <Form.Group>
                         <Form.Label>Число <span className="text-danger">*</span></Form.Label>
                         <Form.Control
-                            type="text"
+                            type="number"
                             name="contractDay"
                             value={form.contractDay}
                             onChange={handleChange}
-                            placeholder="01"
-                            maxLength={2}
+                            min={1}
+                            max={31}
+                            placeholder="1"
                             required
                         />
                     </Form.Group>
@@ -181,12 +182,13 @@ const PracticeContractModal = observer(({ show, onHide }) => {
                     <Form.Group>
                         <Form.Label>Год <span className="text-danger">*</span></Form.Label>
                         <Form.Control
-                            type="text"
+                            type="number"
                             name="contractYear"
                             value={form.contractYear}
                             onChange={handleChange}
-                            placeholder="2023"
-                            maxLength={4}
+                            min={2000}
+                            max={2100}
+                            placeholder={new Date().getFullYear()}
                             required
                         />
                     </Form.Group>
@@ -209,14 +211,17 @@ const PracticeContractModal = observer(({ show, onHide }) => {
             <Row className="mb-3">
                 <Col md={6}>
                     <Form.Group>
-                        <Form.Label>Вид практики</Form.Label>
-                        <Form.Control
-                            type="text"
+                        <Form.Label>Вид практики <span className="text-danger">*</span></Form.Label>
+                        <Form.Select
                             name="practiceType"
                             value={form.practiceType}
                             onChange={handleChange}
-                            placeholder="учебной"
-                        />
+                            required
+                        >
+                            {PRACTICE_TYPES.map(type => (
+                                <option key={type} value={type}>{type}</option>
+                            ))}
+                        </Form.Select>
                     </Form.Group>
                 </Col>
             </Row>
@@ -247,18 +252,11 @@ const PracticeContractModal = observer(({ show, onHide }) => {
                 <Col md={6}>
                     <Form.Group>
                         <Form.Label>Специальность</Form.Label>
-                        <Form.Select
-                            name="specialtyId"
-                            value={form.specialtyId}
-                            onChange={handleChange}
-                        >
-                            <option value="">— Выберите специальность —</option>
-                            {data.specialties.map(s => (
-                                <option key={s.id} value={s.id}>
-                                    {s.name}
-                                </option>
-                            ))}
-                        </Form.Select>
+                        <Form.Control
+                            type="text"
+                            value={selectedSpecialty ? `${selectedSpecialty.name}` : '—'}
+                            readOnly
+                        />
                         {selectedSpecialty && (
                             <Form.Text className="text-muted">
                                 Код: {selectedSpecialty.code || '—'}

@@ -13,7 +13,7 @@ const INITIAL = {
     studentId: '',
     dateFrom: '',
     dateTo: '',
-    healthReason: 'необходимостью оздоровления в УП «Санаторий «НЕМАН-72»',
+    healthReason: '',
     responsiblePerson: '',
     controlPerson: '',
     basis: '',

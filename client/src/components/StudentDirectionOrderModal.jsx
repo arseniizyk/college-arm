@@ -120,8 +120,7 @@ const StudentDirectionOrderModal = observer(({ show, onHide }) => {
                 fileName: 'Приказ_направление_учащихся'
             });
 
-            onHide();
-            setForm(INITIAL);
+            handleClose();
         } catch (err) {
             setError(err.message);
         } finally {

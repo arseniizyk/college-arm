@@ -125,9 +125,7 @@ const TransferOrderModal = observer(({ show, onHide }) => {
                 fileName: 'Приказ_перевод_курс'
             });
 
-            onHide();
-            setForm(INITIAL);
-            setShowConditional(false);
+            handleClose();
         } catch (err) {
             setError(err.message);
         } finally {
