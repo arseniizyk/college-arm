@@ -9,7 +9,16 @@ import OrderStudentSelector from './OrderStudentSelector';
 import BaseOrderModal from './BaseOrderModal';
 import OrderSignaturesSection from './OrderSignaturesSection';
 
-const SEMESTERS = ['1 семестр', '2 семестр'];
+const SEMESTERS = [
+    { value: 'первый', label: '1 семестр' },
+    { value: 'второй', label: '2 семестр' },
+    { value: 'третий', label: '3 семестр' },
+    { value: 'четвертый', label: '4 семестр' },
+    { value: 'пятый', label: '5 семестр' },
+    { value: 'шестой', label: '6 семестр' },
+    { value: 'седьмой', label: '7 семестр' },
+    { value: 'восьмой', label: '8 семестр' },
+];
 
 const INITIAL = {
     groupId: '',
@@ -205,7 +214,7 @@ const StipendOrderModal = observer(({ show, onHide }) => {
                         <Col>
                             <Form.Select name="semesterFrom" value={form.semesterFrom} onChange={handleChange} required style={{ height: '38px', padding: '0.25rem 0.5rem' }}>
                                 <option value="">— Семестр —</option>
-                                {SEMESTERS.map(s => <option key={s} value={s}>{s}</option>)}
+                                {SEMESTERS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
                             </Form.Select>
                         </Col>
                         <Col>
@@ -226,7 +235,7 @@ const StipendOrderModal = observer(({ show, onHide }) => {
                         <Col>
                             <Form.Select name="semesterTo" value={form.semesterTo} onChange={handleChange} required style={{ height: '38px', padding: '0.25rem 0.5rem' }}>
                                 <option value="">— Семестр —</option>
-                                {SEMESTERS.map(s => <option key={s} value={s}>{s}</option>)}
+                                {SEMESTERS.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
                             </Form.Select>
                         </Col>
                         <Col>

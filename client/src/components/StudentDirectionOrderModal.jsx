@@ -11,7 +11,7 @@ import OrderSignaturesSection from './OrderSignaturesSection';
 
 const INITIAL = {
     groupId: '',
-    eventName: '',
+    eventDescription: '',
     eventDate: '',
     eventTime: '',
     eventAddress: '',
@@ -73,7 +73,7 @@ const StudentDirectionOrderModal = observer(({ show, onHide }) => {
         e.preventDefault();
         setError(null);
 
-        if (!form.groupId || !form.eventName || !form.eventDate || !form.eventTime ||
+        if (!form.groupId || !form.eventDescription || !form.eventDate || !form.eventTime ||
             !form.eventAddress || !form.responsible || !form.controlPerson || !form.basis) {
             setError('Заполните все обязательные поля');
             return;
@@ -87,7 +87,7 @@ const StudentDirectionOrderModal = observer(({ show, onHide }) => {
         const selectedStudents = groupStudents.filter(s => selectedStudentIds.includes(String(s.id)));
 
         const payload = {
-            eventName: form.eventName,
+            eventDescription: form.eventDescription,
             eventDate: form.eventDate,
             eventTime: form.eventTime,
             eventAddress: form.eventAddress,
@@ -152,11 +152,12 @@ const StudentDirectionOrderModal = observer(({ show, onHide }) => {
                 <i className="bi bi-info-circle me-2"></i>Мероприятие
             </h6>
             <Form.Group className="mb-3">
-                <Form.Label>Название мероприятия <span className="text-danger">*</span></Form.Label>
+                <Form.Label>Описание мероприятия (в предложном падеже) <span className="text-danger">*</span></Form.Label>
                 <Form.Control
-                    type="text"
-                    name="eventName"
-                    value={form.eventName}
+                    as="textarea"
+                    rows={2}
+                    name="eventDescription"
+                    value={form.eventDescription}
                     onChange={handleChange}
                     placeholder="финале Республиканских соревнований по хоккею с шайбой..."
                     required

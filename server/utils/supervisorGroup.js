@@ -1,13 +1,20 @@
 const { Teacher, Supervisor } = require('../models/models')
 
+// Ищет все группы, куратором которых назначен преподаватель с этим аккаунтом.
+// Возвращает массив groupId (пустой, если аккаунт не привязан к куратору).
+async function findSupervisorGroupIds(userId) {
+    const teacher = await Teacher.findOne({ where: { userId }, attributes: ['id'] });
+    if (!teacher) return [];
+
+    const supervisors = await Supervisor.findAll({ where: { teacherId: teacher.id }, attributes: ['groupId'] });
+    return supervisors.map(s => s.groupId).filter(Boolean);
+}
+
 // Ищет группу, куратором которой назначен преподаватель с этим аккаунтом.
 // Возвращает groupId или null, если аккаунт не привязан к куратору группы.
 async function findSupervisorGroupId(userId) {
-    const teacher = await Teacher.findOne({ where: { userId }, attributes: ['id'] });
-    if (!teacher) return null;
-
-    const supervisor = await Supervisor.findOne({ where: { teacherId: teacher.id }, attributes: ['groupId'] });
-    return supervisor ? supervisor.groupId : null;
+    const groupIds = await findSupervisorGroupIds(userId);
+    return groupIds.length > 0 ? groupIds[0] : null;
 }
 
 // Разбирает teacherId из тела запроса в действие над связью «куратор группы».
@@ -35,4 +42,4 @@ function formatCuratorBlockMessage(groupNumbers) {
     return `Преподаватель — куратор групп: ${groupNumbers.join(', ')}. Сначала снимите куратора с этих групп.`
 }
 
-module.exports = { findSupervisorGroupId, parseSupervisorAssignment, formatCuratorBlockMessage }
+module.exports = { findSupervisorGroupId, findSupervisorGroupIds, parseSupervisorAssignment, formatCuratorBlockMessage }

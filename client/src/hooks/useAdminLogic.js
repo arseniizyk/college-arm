@@ -76,11 +76,13 @@ export const useAdminLogic = (data, user) => {
         }
     }, [data]);
 
-    // Функция для обновления поискового термина (клиентская фильтрация)
-    const handleStudentSearch = useCallback((searchValue) => {
+    // Функция для обновления поискового термина (клиентская фильтрация для всех таблиц)
+    const handleSearch = useCallback((searchValue) => {
         setSearchTerm(searchValue);
         setCurrentPage(1);
     }, []);
+
+    const handleStudentSearch = handleSearch;
 
     // Функция для обновления фильтра группы (клиентская фильтрация)
     const handleGroupFilterChange = useCallback((groupId) => {
@@ -292,6 +294,12 @@ export const useAdminLogic = (data, user) => {
     const indexOfFirstItem = indexOfLastItem - itemsPerPage;
     const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
 
+    useEffect(() => {
+        if (currentPage > totalPages) {
+            setCurrentPage(totalPages);
+        }
+    }, [currentPage, totalPages]);
+
     const isLoading = data.isLoading(activeTab) || loading;
     const tableError = data.getError(activeTab);
 
@@ -330,7 +338,7 @@ export const useAdminLogic = (data, user) => {
         setShowModal,
         setFormData,
         setCurrentPage,
-        setSearchTerm,
+        setSearchTerm: handleSearch,
 
         // Обработчики
         handleCreate,
@@ -338,6 +346,7 @@ export const useAdminLogic = (data, user) => {
         handleDelete,
         handleFormSubmit,
         handleTabChange,
+        handleSearch,
         handleStudentSearch,
         handleGroupFilterChange,
         handleRoleFilterChange,

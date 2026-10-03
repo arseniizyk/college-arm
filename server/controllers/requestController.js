@@ -2,7 +2,7 @@ const ApiError = require('../error/ApiError')
 const sequelize = require('../db')
 const { Op } = require('sequelize')
 const { Request, StudentRequest, Student, Document, Group, Specialty, Notification, User } = require('../models/models')
-const { findSupervisorGroupId } = require('../utils/supervisorGroup')
+const { findSupervisorGroupIds } = require('../utils/supervisorGroup')
 const { resolveStudentIds } = require('../utils/studentIds')
 const { statusLabelFeminine, isKnownStatus } = require('../utils/requestStatus')
 
@@ -37,7 +37,7 @@ const getRequestInclude = () => [
 
 // Правила доступа к студентам при подаче заявки:
 //  - ADMIN  — любой студент колледжа;
-//  - TEACHER — только студенты группы, куратором которой он назначен;
+//  - TEACHER — только студенты групп, куратором которых он назначен;
 //  - остальные (USER) — только студент, привязанный к их аккаунту (student.userId === req.user.id).
 const ROLES_WITH_ANY_STUDENT = ['ADMIN'];
 
@@ -49,20 +49,20 @@ async function checkStudentsAccess(userId, userRole, ids) {
     }
 
     if (userRole === 'TEACHER') {
-        const groupId = await findSupervisorGroupId(userId);
-        if (!groupId) {
+        const groupIds = await findSupervisorGroupIds(userId);
+        if (!groupIds || groupIds.length === 0) {
             return ApiError.forbiddenRequest(
                 'Ваш аккаунт не привязан к куратору группы. Обратитесь к администратору'
             );
         }
 
-        // Чужие — те, у которых группа отличается от группы куратора либо не заполнена вовсе
+        // Чужие — те, у которых группа не входит в список курируемых групп либо не заполнена вовсе
         const foreign = await Student.findAll({
             where: {
                 id: ids,
                 [Op.or]: [
                     { groupId: null },
-                    { groupId: { [Op.ne]: groupId } }
+                    { groupId: { [Op.notIn]: groupIds } }
                 ]
             },
             attributes: ['id']

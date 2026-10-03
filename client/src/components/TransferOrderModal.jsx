@@ -53,10 +53,14 @@ const TransferOrderModal = observer(({ show, onHide }) => {
             ? calculateCourse(grp.enroll_date, spec?.duration_years || 4, spec?.duration_months || 0)
             : 0;
 
+        const nextCourseVal = (typeof cCourse === 'number' && cCourse >= 1)
+            ? String(cCourse + 1)
+            : '';
+
         setForm(prev => ({
             ...prev,
             groupId: gId,
-            nextCourse: cCourse ? String(cCourse + 1) : '',
+            nextCourse: nextCourseVal,
             conditionalStudentId: ''
         }));
         setSelectedStudentIds([]);
@@ -73,7 +77,7 @@ const TransferOrderModal = observer(({ show, onHide }) => {
         e.preventDefault();
         setError(null);
 
-        if (!form.groupId || !form.academicYear || !form.dateFrom || !form.dateTo || !form.basis) {
+        if (!form.groupId || !form.academicYear || !form.nextCourse || !form.dateFrom || !form.dateTo || !form.basis) {
             setError('Заполните все обязательные поля');
             return;
         }
@@ -83,6 +87,7 @@ const TransferOrderModal = observer(({ show, onHide }) => {
             return;
         }
 
+        const fullGroup = selectedStudentIds.length === groupStudents.length;
         const selectedStudents = groupStudents.filter(s => selectedStudentIds.includes(String(s.id)));
 
         const conditionalStudent = showConditional && form.conditionalStudentId
@@ -91,11 +96,12 @@ const TransferOrderModal = observer(({ show, onHide }) => {
 
         const payload = {
             academicYear: form.academicYear,
-            course: form.nextCourse,
+            nextCourse: form.nextCourse,
             dateFrom: form.dateFrom,
             dateTo: form.dateTo,
             groupNumber: selectedGroup?.group_number || '',
             specialtyName: selectedSpecialty?.name || '',
+            fullGroup,
             students: selectedStudents.map(s => ({
                 lastName: s.last_name,
                 firstName: s.name,
@@ -162,6 +168,19 @@ const TransferOrderModal = observer(({ show, onHide }) => {
                             value={form.academicYear}
                             onChange={handleChange}
                             placeholder="2024/2025"
+                            required
+                        />
+                    </Form.Group>
+                </Col>
+                <Col md={6}>
+                    <Form.Group>
+                        <Form.Label>Перевод на курс <span className="text-danger">*</span></Form.Label>
+                        <Form.Control
+                            type="text"
+                            name="nextCourse"
+                            value={form.nextCourse}
+                            onChange={handleChange}
+                            placeholder="2"
                             required
                         />
                     </Form.Group>

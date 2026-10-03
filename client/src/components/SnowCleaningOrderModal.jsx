@@ -11,7 +11,6 @@ import OrderSignaturesSection from './OrderSignaturesSection';
 const INITIAL_GROUP = { groupId: '', date: '', responsible: '', selectedStudentIds: [] };
 
 const INITIAL = {
-    reason: 'с обильным выпадением снега и необходимостью расчистки территории колледжа от снега',
     groups: [{ ...INITIAL_GROUP }],
     controlPerson: '',
     basis: '',
@@ -76,7 +75,7 @@ const SnowCleaningOrderModal = observer(({ show, onHide }) => {
         e.preventDefault();
         setError(null);
 
-        if (!form.reason || !form.controlPerson || !form.basis) {
+        if (!form.controlPerson || !form.basis) {
             setError('Заполните все обязательные поля');
             return;
         }
@@ -94,7 +93,6 @@ const SnowCleaningOrderModal = observer(({ show, onHide }) => {
         }
 
         const payload = {
-            reason: form.reason,
             controlPerson: form.controlPerson,
             basis: form.basis,
             headOfDepartment: form.headOfDepartment,
@@ -150,23 +148,6 @@ const SnowCleaningOrderModal = observer(({ show, onHide }) => {
             onSubmit={handleSubmit}
             loading={loading}
         >
-            {/* Причина */}
-            <h6 className="text-muted mb-3 border-bottom pb-2">
-                <i className="bi bi-info-circle me-2"></i>Причина
-            </h6>
-            <Form.Group className="mb-3">
-                <Form.Label>В связи с <span className="text-danger">*</span></Form.Label>
-                <Form.Control
-                    as="textarea"
-                    rows={2}
-                    name="reason"
-                    value={form.reason}
-                    onChange={handleChange}
-                    placeholder="с обильным выпадением снега и необходимостью расчистки территории колледжа от снега"
-                    required
-                />
-            </Form.Group>
-
             {/* Группы */}
             <h6 className="text-muted mb-3 border-bottom pb-2">
                 <i className="bi bi-people me-2"></i>Группы

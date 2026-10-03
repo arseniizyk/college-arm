@@ -379,5 +379,3 @@ export const toGroupFormData = (group) => ({
     ...group,
     teacherId: group?.supervisor?.teacher?.id ?? ''
 });
-
-export const prepareRequestFormData = (formData) => prepareFormData(formData, 'requests');

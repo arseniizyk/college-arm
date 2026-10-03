@@ -55,15 +55,9 @@ const NavBar = observer(() => {
     const recentNotifications = data.notifications.slice(0, 5);
 
     const logOut = () => {
-        user.setUser({})
-        user.setIsAuth(false)
-
-        localStorage.removeItem('token')
+        user.logout()
+        data.reset()
         sessionStorage.clear()
-        
-        // Очищаем уведомления при выходе
-        data.clear('notifications')
-        
         navigate(MAIN_ROUTE)
     }
 

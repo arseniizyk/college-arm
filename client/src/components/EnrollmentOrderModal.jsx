@@ -2,14 +2,14 @@ import React, { useState, useContext, useEffect } from 'react';
 import { Form, Button, Row, Col, Card } from 'react-bootstrap';
 import { downloadDoc } from '../http';
 import { orderUrl } from '../utils/consts';
-import { formatFio } from '../utils/dataHelpers';
 import { Context } from '../index';
 import { observer } from 'mobx-react-lite';
 import BaseOrderModal from './BaseOrderModal';
 import OrderSignaturesSection from './OrderSignaturesSection';
+import OrderStudentSelector from './OrderStudentSelector';
 
-const INITIAL_EXCEPTION = { studentId: '', stipendType: 'WITHOUT_STIPEND' };
-const INITIAL_GROUP = { groupId: '', subgroup1Count: '', subgroup2Count: '', studentExceptions: [] };
+const INITIAL_EXCLUSION = { studentName: '', groupId: '', protocolInfo: '' };
+const INITIAL_GROUP = { groupId: '', selectedStudentIds: [] };
 
 const INITIAL = {
     enrollDate: '',
@@ -17,6 +17,7 @@ const INITIAL = {
     stipendCoefficient: '1.0',
     protocolInfo: '',
     groups: [{ ...INITIAL_GROUP }],
+    exclusions: [],
     controlPerson: '',
     basis: '',
     responsibleSecretary: '',
@@ -57,16 +58,16 @@ const EnrollmentOrderModal = observer(({ show, onHide }) => {
     const handleGroupChange = (index, value) => {
         setForm(prev => {
             const groups = [...prev.groups];
-            groups[index] = { ...groups[index], groupId: value, studentExceptions: [] };
+            groups[index] = { ...groups[index], groupId: value, selectedStudentIds: [] };
             return { ...prev, groups };
         });
         setError(null);
     };
 
-    const handleSubgroupChange = (index, field, value) => {
+    const handleStudentsChange = (groupIndex, selectedIds) => {
         setForm(prev => {
             const groups = [...prev.groups];
-            groups[index] = { ...groups[index], [field]: value };
+            groups[groupIndex] = { ...groups[groupIndex], selectedStudentIds: selectedIds };
             return { ...prev, groups };
         });
         setError(null);
@@ -80,35 +81,19 @@ const EnrollmentOrderModal = observer(({ show, onHide }) => {
         setForm(prev => ({ ...prev, groups: prev.groups.filter((_, i) => i !== index) }));
     };
 
-    const addException = (groupIndex) => {
-        setForm(prev => {
-            const groups = [...prev.groups];
-            groups[groupIndex] = {
-                ...groups[groupIndex],
-                studentExceptions: [...groups[groupIndex].studentExceptions, { ...INITIAL_EXCEPTION }]
-            };
-            return { ...prev, groups };
-        });
+    const addExclusion = () => {
+        setForm(prev => ({ ...prev, exclusions: [...prev.exclusions, { ...INITIAL_EXCLUSION }] }));
     };
 
-    const removeException = (groupIndex, excIndex) => {
-        setForm(prev => {
-            const groups = [...prev.groups];
-            groups[groupIndex] = {
-                ...groups[groupIndex],
-                studentExceptions: groups[groupIndex].studentExceptions.filter((_, i) => i !== excIndex)
-            };
-            return { ...prev, groups };
-        });
+    const removeExclusion = (index) => {
+        setForm(prev => ({ ...prev, exclusions: prev.exclusions.filter((_, i) => i !== index) }));
     };
 
-    const handleExceptionChange = (groupIndex, excIndex, field, value) => {
+    const handleExclusionChange = (index, field, value) => {
         setForm(prev => {
-            const groups = [...prev.groups];
-            const exceptions = [...groups[groupIndex].studentExceptions];
-            exceptions[excIndex] = { ...exceptions[excIndex], [field]: value };
-            groups[groupIndex] = { ...groups[groupIndex], studentExceptions: exceptions };
-            return { ...prev, groups };
+            const exclusions = [...prev.exclusions];
+            exclusions[index] = { ...exclusions[index], [field]: value };
+            return { ...prev, exclusions };
         });
     };
 
@@ -147,30 +132,31 @@ const EnrollmentOrderModal = observer(({ show, onHide }) => {
             chiefAccountant: form.chiefAccountant,
             groups: form.groups.map(g => {
                 const { group, specialty } = getGroupInfo(g.groupId);
-                const students = getGroupStudents(g.groupId);
+                const allStudents = getGroupStudents(g.groupId);
+                const selectedStudents = g.selectedStudentIds?.length
+                    ? allStudents.filter(s => g.selectedStudentIds.includes(String(s.id)))
+                    : allStudents;
                 return {
                     groupNumber: group?.group_number || '',
                     specialtyName: specialty?.name || '',
-                    subgroup1Count: g.subgroup1Count ? parseInt(g.subgroup1Count) : undefined,
-                    subgroup2Count: g.subgroup2Count ? parseInt(g.subgroup2Count) : undefined,
-                    students: students.map(s => ({
+                    students: selectedStudents.map(s => ({
                         lastName: s.last_name,
                         firstName: s.name,
                         fatherName: s.father_name || '',
                     })),
-                    studentExceptions: g.studentExceptions
-                        .filter(exc => exc.studentId)
-                        .map(exc => {
-                            const student = students.find(s => s.id === parseInt(exc.studentId));
-                            return {
-                                lastName: student?.last_name || '',
-                                firstName: student?.name || '',
-                                fatherName: student?.father_name || '',
-                                stipendType: exc.stipendType,
-                            };
-                        }),
                 };
             }),
+            exclusions: form.exclusions
+                .filter(exc => exc.studentName?.trim())
+                .map(exc => {
+                    const { group, specialty } = getGroupInfo(exc.groupId);
+                    return {
+                        studentName: exc.studentName.trim(),
+                        groupNumber: group?.group_number || '',
+                        specialtyName: specialty?.name || '',
+                        protocolInfo: exc.protocolInfo || form.protocolInfo,
+                    };
+                }),
         };
 
         setLoading(true);
@@ -276,83 +262,19 @@ const EnrollmentOrderModal = observer(({ show, onHide }) => {
                                     </small>
                                     <small className="text-muted d-block mt-1">
                                         <i className="bi bi-people me-1"></i>
-                                        Студентов в базе: <strong>{groupStudents.length}</strong>
+                                        Студентов в группе: <strong>{groupStudents.length}</strong>
                                     </small>
                                 </div>
                             )}
 
-                            <Row className="mb-3">
-                                <Col md={6}>
-                                    <Form.Group>
-                                        <Form.Label>1-я подгруппа (чел.)</Form.Label>
-                                        <Form.Control
-                                            type="number"
-                                            value={g.subgroup1Count}
-                                            onChange={(e) => handleSubgroupChange(index, 'subgroup1Count', e.target.value)}
-                                            placeholder="напр. 15"
-                                        />
-                                    </Form.Group>
-                                </Col>
-                                <Col md={6}>
-                                    <Form.Group>
-                                        <Form.Label>2-я подгруппа (чел.)</Form.Label>
-                                        <Form.Control
-                                            type="number"
-                                            value={g.subgroup2Count}
-                                            onChange={(e) => handleSubgroupChange(index, 'subgroup2Count', e.target.value)}
-                                            placeholder="напр. 15"
-                                        />
-                                    </Form.Group>
-                                </Col>
-                            </Row>
-
-                            {/* Исключения по стипендии */}
                             {g.groupId && (
-                                <div className="mt-3">
-                                    <Form.Label className="text-muted small fw-semibold">
-                                        Исключения по стипендии (без стипендии / социальная):
-                                    </Form.Label>
-                                    {g.studentExceptions.map((exc, excIdx) => (
-                                        <Row key={excIdx} className="mb-2 align-items-center">
-                                            <Col md={6}>
-                                                <Form.Select
-                                                    value={exc.studentId}
-                                                    onChange={(e) => handleExceptionChange(index, excIdx, 'studentId', e.target.value)}
-                                                >
-                                                    <option value="">— Выберите студента —</option>
-                                                    {groupStudents.map(s => (
-                                                        <option key={s.id} value={s.id}>{formatFio(s)}</option>
-                                                    ))}
-                                                </Form.Select>
-                                            </Col>
-                                            <Col md={5}>
-                                                <Form.Select
-                                                    value={exc.stipendType}
-                                                    onChange={(e) => handleExceptionChange(index, excIdx, 'stipendType', e.target.value)}
-                                                >
-                                                    <option value="WITHOUT_STIPEND">Без выплаты стипендии</option>
-                                                    <option value="SOCIAL">Социальная стипендия</option>
-                                                </Form.Select>
-                                            </Col>
-                                            <Col md={1}>
-                                                <Button
-                                                    variant="outline-danger"
-                                                    size="sm"
-                                                    onClick={() => removeException(index, excIdx)}
-                                                >
-                                                    <i className="bi bi-x"></i>
-                                                </Button>
-                                            </Col>
-                                        </Row>
-                                    ))}
-                                    <Button
-                                        variant="outline-secondary"
-                                        size="sm"
-                                        onClick={() => addException(index)}
-                                        className="mt-1"
-                                    >
-                                        <i className="bi bi-plus me-1"></i>Добавить исключение
-                                    </Button>
+                                <div className="mb-3">
+                                    <Form.Label>Студенты (выберите или оставьте всех)</Form.Label>
+                                    <OrderStudentSelector
+                                        students={groupStudents}
+                                        selectedIds={g.selectedStudentIds}
+                                        onChange={(ids) => handleStudentsChange(index, ids)}
+                                    />
                                 </div>
                             )}
                         </Card.Body>
@@ -362,6 +284,63 @@ const EnrollmentOrderModal = observer(({ show, onHide }) => {
 
             <Button variant="outline-primary" size="sm" onClick={addGroup} className="mb-4">
                 <i className="bi bi-plus me-1"></i>Добавить группу
+            </Button>
+
+            {/* Исключения из списка зачисленных */}
+            <h6 className="text-muted mb-3 border-bottom pb-2 mt-4">
+                <i className="bi bi-person-x me-2"></i>Исключения из списка зачисленных (не подписавшие договор)
+            </h6>
+            {form.exclusions.map((exc, index) => (
+                <Card key={index} className="mb-3 border">
+                    <Card.Body>
+                        <div className="d-flex justify-content-between align-items-center mb-2">
+                            <strong>Исключение {index + 1}</strong>
+                            <Button variant="outline-danger" size="sm" onClick={() => removeExclusion(index)}>
+                                <i className="bi bi-x"></i>
+                            </Button>
+                        </div>
+                        <Row className="mb-2">
+                            <Col md={6}>
+                                <Form.Group>
+                                    <Form.Label>ФИО абитуриента (в винительном/родительном падеже)</Form.Label>
+                                    <Form.Control
+                                        type="text"
+                                        value={exc.studentName}
+                                        onChange={(e) => handleExclusionChange(index, 'studentName', e.target.value)}
+                                        placeholder="Иванова Ивана Ивановича"
+                                    />
+                                </Form.Group>
+                            </Col>
+                            <Col md={6}>
+                                <Form.Group>
+                                    <Form.Label>Группа / Специальность</Form.Label>
+                                    <Form.Select
+                                        value={exc.groupId}
+                                        onChange={(e) => handleExclusionChange(index, 'groupId', e.target.value)}
+                                    >
+                                        <option value="">— Выберите группу —</option>
+                                        {data.groups.map(gr => (
+                                            <option key={gr.id} value={gr.id}>{gr.group_number}</option>
+                                        ))}
+                                    </Form.Select>
+                                </Form.Group>
+                            </Col>
+                        </Row>
+                        <Form.Group>
+                            <Form.Label>Протокол (если отличается от общего)</Form.Label>
+                            <Form.Control
+                                type="text"
+                                value={exc.protocolInfo}
+                                onChange={(e) => handleExclusionChange(index, 'protocolInfo', e.target.value)}
+                                placeholder="протокол № 2 от 02.08.2025"
+                            />
+                        </Form.Group>
+                    </Card.Body>
+                </Card>
+            ))}
+
+            <Button variant="outline-secondary" size="sm" onClick={addExclusion} className="mb-4">
+                <i className="bi bi-plus me-1"></i>Добавить исключение
             </Button>
 
             {/* Подписи и основание */}

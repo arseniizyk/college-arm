@@ -17,7 +17,7 @@ const INITIAL = {
     contractMonth: '',
     contractYear: '',
     contractNumber: '',
-    practiceType: 'учебная',
+    practiceType: 'учебной',
     groupId: '',
     specialtyId: '',
     studentIds: [],
@@ -215,7 +215,7 @@ const PracticeContractModal = observer(({ show, onHide }) => {
                             name="practiceType"
                             value={form.practiceType}
                             onChange={handleChange}
-                            placeholder="учебная"
+                            placeholder="учебной"
                         />
                     </Form.Group>
                 </Col>
