@@ -100,3 +100,62 @@ test('requestController.update запрещает администратору �
         Request.findByPk = origRequestFindByPk
     }
 })
+
+test('requestController.create возвращает 400 если указанный документ не существует', async () => {
+    const { Document } = require('../models/models')
+    const origUserFindByPk = User.findByPk
+    const origDocFindByPk = Document.findByPk
+
+    try {
+        User.findByPk = async () => ({ id: 1, role: 'ADMIN' })
+        Document.findByPk = async () => null
+
+        let err = null
+        const req = {
+            user: { id: 1, role: 'ADMIN' },
+            body: { documentId: 999, studentIds: [1] }
+        }
+        const res = { json: () => {} }
+        const next = (e) => { err = e }
+
+        await requestController.create(req, res, next)
+
+        assert.ok(err instanceof ApiError)
+        assert.equal(err.status, 400)
+        assert.equal(err.message, 'Указанный документ не существует')
+    } finally {
+        User.findByPk = origUserFindByPk
+        Document.findByPk = origDocFindByPk
+    }
+})
+
+test('requestController.create возвращает 400 если указанные студенты не найдены', async () => {
+    const { Document, Student } = require('../models/models')
+    const origUserFindByPk = User.findByPk
+    const origDocFindByPk = Document.findByPk
+    const origStudentCount = Student.count
+
+    try {
+        User.findByPk = async () => ({ id: 1, role: 'ADMIN' })
+        Document.findByPk = async () => ({ id: 1, document_name: 'Справка' })
+        Student.count = async () => 0
+
+        let err = null
+        const req = {
+            user: { id: 1, role: 'ADMIN' },
+            body: { documentId: 1, studentIds: [999] }
+        }
+        const res = { json: () => {} }
+        const next = (e) => { err = e }
+
+        await requestController.create(req, res, next)
+
+        assert.ok(err instanceof ApiError)
+        assert.equal(err.status, 400)
+        assert.equal(err.message, 'Один или несколько указанных студентов не найдены')
+    } finally {
+        User.findByPk = origUserFindByPk
+        Document.findByPk = origDocFindByPk
+        Student.count = origStudentCount
+    }
+})

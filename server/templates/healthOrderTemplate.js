@@ -29,7 +29,7 @@ const createHealthOrderTemplate = (data) => {
         studentAccusative = declined.fullName;
     } catch {}
 
-    const isFemale = detectGender(studentFatherName) === 'female';
+    const isFemale = detectGender(studentFatherName, studentFirstName) === 'female';
     const studentWord = isFemale ? 'учащуюся' : 'учащегося';
     const studyingWord = isFemale ? 'обучающуюся' : 'обучающегося';
 

@@ -179,7 +179,7 @@ function prepareStudyCertificateData(student, group, specialty) {
     const endDateYear = endDate.getFullYear();
     
     // Определяем пол для правильного склонения.
-    const genderSuffix = detectGender(student.father_name) === 'female' ? 'а' : '';
+    const genderSuffix = detectGender(student.father_name, student.name) === 'female' ? 'а' : '';
     
     // Проверяем, нужен ли абзац о переименовании
     const needsRenameNote = new Date(student.enroll_date) < new Date('2022-12-06');

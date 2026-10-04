@@ -128,6 +128,18 @@ class RequestController {
                 return next(ApiError.badRequest('Необходимо выбрать документ или указать описание'));
             }
 
+            if (documentId) {
+                const doc = await Document.findByPk(documentId);
+                if (!doc) {
+                    return next(ApiError.badRequest('Указанный документ не существует'));
+                }
+            }
+
+            const count = await Student.count({ where: { id: ids } });
+            if (count !== ids.length) {
+                return next(ApiError.badRequest('Один или несколько указанных студентов не найдены'));
+            }
+
             const accessError = await checkStudentsAccess(userId, userRole, ids);
             if (accessError) {
                 return next(accessError);
@@ -267,6 +279,13 @@ class RequestController {
             // Сохраняем старый статус для проверки изменения
             const oldStatus = request.status;
             
+            if (documentId !== undefined && documentId !== null) {
+                const doc = await Document.findByPk(documentId);
+                if (!doc) {
+                    return next(ApiError.badRequest('Указанный документ не существует'));
+                }
+            }
+
             // Валидация studentIds при обновлении
             let ids;
             if (studentIds !== undefined) {
@@ -279,6 +298,11 @@ class RequestController {
                     return next(resolved.error);
                 }
                 ids = resolved.ids;
+
+                const count = await Student.count({ where: { id: ids } });
+                if (count !== ids.length) {
+                    return next(ApiError.badRequest('Один или несколько указанных студентов не найдены'));
+                }
 
                 const accessError = await checkStudentsAccess(userId, userRole, ids);
                 if (accessError) {

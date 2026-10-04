@@ -1,4 +1,4 @@
-const {Specialty} = require('../models/models')
+const { Specialty, Group } = require('../models/models')
 const ApiError = require('../error/ApiError')
 
 class SpecialtyController {
@@ -64,6 +64,10 @@ class SpecialtyController {
             const spec = await Specialty.findByPk(id);
             if (!spec) {
                 return next(ApiError.badRequest('Специальность не найдена'));
+            }
+            const groupCount = await Group.count({ where: { specialtyId: id } });
+            if (groupCount > 0) {
+                return next(ApiError.badRequest('Невозможно удалить специальность, к которой привязаны группы. Сначала измените специальность у связанных групп.'));
             }
             await spec.destroy();
             return res.json({

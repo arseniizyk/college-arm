@@ -32,7 +32,7 @@ const createPracticeContractTemplate = (data) => {
         studentAccusative = declined.fullName;
     }
 
-    const isFemale = detectGender(studentFatherName) === 'female';
+    const isFemale = detectGender(studentFatherName, studentFirstName) === 'female';
     const studyingWord = isFemale ? 'обучающуюся' : 'обучающегося';
 
 

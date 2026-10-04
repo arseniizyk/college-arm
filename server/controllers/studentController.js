@@ -17,6 +17,26 @@ class StudentController {
                 return next(ApiError.badRequest('Не все обязательные поля заполнены'));
             }
 
+            const enrollDateObj = new Date(enroll_date);
+            if (isNaN(enrollDateObj.getTime())) {
+                return next(ApiError.badRequest('Некорректный формат даты зачисления'));
+            }
+
+            if (expell_date) {
+                const expellDateObj = new Date(expell_date);
+                if (isNaN(expellDateObj.getTime())) {
+                    return next(ApiError.badRequest('Некорректный формат даты отчисления'));
+                }
+                if (expellDateObj < enrollDateObj) {
+                    return next(ApiError.badRequest('Дата отчисления не может быть раньше даты зачисления'));
+                }
+            }
+
+            const group = await Group.findByPk(groupId);
+            if (!group) {
+                return next(ApiError.badRequest('Указанная группа не существует'));
+            }
+
             const resolvedUser = await resolveStudentUserId(userId);
             if (resolvedUser.error) {
                 return next(resolvedUser.error);
@@ -27,7 +47,7 @@ class StudentController {
                 name, 
                 father_name, 
                 order_number, 
-                enroll_date: new Date(enroll_date), 
+                enroll_date: enrollDateObj, 
                 groupId, 
                 expell_date: expell_date ? new Date(expell_date) : null,
                 userId: resolvedUser.value
@@ -52,13 +72,45 @@ class StudentController {
             if (!student) {
                 return next(ApiError.badRequest('Студент не найден'));
             }
+
+            if (groupId !== undefined) {
+                const group = await Group.findByPk(groupId);
+                if (!group) {
+                    return next(ApiError.badRequest('Указанная группа не существует'));
+                }
+            }
+
+            let enrollDateObj = null;
+            if (enroll_date !== undefined && enroll_date !== null) {
+                enrollDateObj = new Date(enroll_date);
+                if (isNaN(enrollDateObj.getTime())) {
+                    return next(ApiError.badRequest('Некорректный формат даты зачисления'));
+                }
+            }
+
+            let expellDateObj = null;
+            if (expell_date) {
+                expellDateObj = new Date(expell_date);
+                if (isNaN(expellDateObj.getTime())) {
+                    return next(ApiError.badRequest('Некорректный формат даты отчисления'));
+                }
+            }
+
+            const effectiveEnrollDate = enroll_date !== undefined ? enroll_date : student.enroll_date;
+            const effectiveExpellDate = expell_date !== undefined ? expell_date : student.expell_date;
+
+            if (effectiveExpellDate && effectiveEnrollDate) {
+                if (new Date(effectiveExpellDate) < new Date(effectiveEnrollDate)) {
+                    return next(ApiError.badRequest('Дата отчисления не может быть раньше даты зачисления'));
+                }
+            }
             
             const updateData = {};
             if (last_name) updateData.last_name = last_name;
             if (name) updateData.name = name;
             if (father_name !== undefined) updateData.father_name = father_name;
             if (order_number) updateData.order_number = order_number;
-            if (enroll_date) updateData.enroll_date = new Date(enroll_date);
+            if (enroll_date) updateData.enroll_date = enrollDateObj || new Date(enroll_date);
             if (groupId) updateData.groupId = groupId;
             if (expell_date !== undefined) {
                 updateData.expell_date = expell_date ? new Date(expell_date) : null;
