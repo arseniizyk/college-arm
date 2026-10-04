@@ -363,7 +363,16 @@ export const prepareFormData = (formData, activeTab) => {
     return submitData;
 };
 
+export const formatDateForInput = (dateStr) => (dateStr ? String(dateStr).slice(0, 10) : '');
+
+export const toStudentFormData = (student) => ({
+    ...student,
+    enroll_date: formatDateForInput(student?.enroll_date),
+    expell_date: formatDateForInput(student?.expell_date)
+});
+
 export const toGroupFormData = (group) => ({
     ...group,
+    enroll_date: formatDateForInput(group?.enroll_date),
     teacherId: group?.supervisor?.teacher?.id ?? ''
 });

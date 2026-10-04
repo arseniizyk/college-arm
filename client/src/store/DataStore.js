@@ -163,6 +163,11 @@ export default class DataStore {
         if (entityType === 'students') {
           this._allStudents = [...this._allStudents, createdData]
         }
+
+        // Обновляем _myRequests при создании заявки
+        if (entityType === 'requests') {
+          this._myRequests = [createdData, ...this._myRequests]
+        }
       })
       
       return createdData
@@ -271,6 +276,7 @@ export default class DataStore {
     // Сохраняем текущее состояние для возможного отката
     const oldItems = [...this._entities[entityType]]
     const oldAllStudents = entityType === 'students' ? [...this._allStudents] : null
+    const oldMyRequests = entityType === 'requests' ? [...this._myRequests] : null
     
     try {
       // Оптимистичное удаление
@@ -280,6 +286,11 @@ export default class DataStore {
         // Обновляем _allStudents при удалении студента
         if (entityType === 'students') {
           this._allStudents = this._allStudents.filter(item => item.id !== id)
+        }
+
+        // Обновляем _myRequests при удалении заявки
+        if (entityType === 'requests') {
+          this._myRequests = this._myRequests.filter(item => item.id !== id)
         }
       })
       
@@ -296,6 +307,11 @@ export default class DataStore {
         // Откатываем _allStudents при ошибке
         if (entityType === 'students' && oldAllStudents) {
           this._allStudents = oldAllStudents
+        }
+
+        // Откатываем _myRequests при ошибке
+        if (entityType === 'requests' && oldMyRequests) {
+          this._myRequests = oldMyRequests
         }
       })
       throw error

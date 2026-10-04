@@ -151,16 +151,20 @@ const StudentDirectionOrderModal = observer(({ show, onHide }) => {
                 <i className="bi bi-info-circle me-2"></i>Мероприятие
             </h6>
             <Form.Group className="mb-3">
-                <Form.Label>Описание мероприятия (в предложном падеже) <span className="text-danger">*</span></Form.Label>
+                <Form.Label>Описание мероприятия (в предложном падеже с предлогом «в/на») <span className="text-danger">*</span></Form.Label>
                 <Form.Control
                     as="textarea"
                     rows={2}
                     name="eventDescription"
                     value={form.eventDescription}
                     onChange={handleChange}
-                    placeholder="финале Республиканских соревнований по хоккею с шайбой..."
+                    placeholder="в финале Республиканских соревнований по хоккею с шайбой..."
                     required
                 />
+                <Form.Text className="text-muted">
+                    <i className="bi-info-circle me-1"></i>
+                    Указывайте с предлогом (например: «в финале...» или «на выставке...» для подстановки после «для участия»)
+                </Form.Text>
             </Form.Group>
             <Row className="mb-3">
                 <Col md={5}>

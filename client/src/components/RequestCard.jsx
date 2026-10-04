@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Card, Badge, Button, Collapse, ListGroup, Row, Col, Spinner } from 'react-bootstrap';
 import { calculateCourse, formatFio, MISSING_SPECIALTY_LABEL } from '../utils/dataHelpers';
 import { isTerminalStatus, isNewRequest, statusBadge, statusLabel, statusTerminalHint, REQUEST_STATUSES, STATUS_KEYS } from '../utils/requestStatus';
@@ -154,6 +154,10 @@ const RequestCard = ({ request, onStatusChange, getNameById, onViewUpdate }) => 
     const [expanded, setExpanded] = useState(false);
     const [generating, setGenerating] = useState(false);
     const [isViewed, setIsViewed] = useState(request.isViewed || false);
+
+    useEffect(() => {
+        setIsViewed(request.isViewed || false);
+    }, [request.isViewed]);
     // Собственный флаг запроса, а не проп: блокировка кнопок должна
     // наступать в том же кадре, что и клик, иначе повторное нажатие
     // успевает уйти до обновления состояния родителя.

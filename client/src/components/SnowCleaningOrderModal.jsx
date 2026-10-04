@@ -201,7 +201,7 @@ const SnowCleaningOrderModal = observer(({ show, onHide }) => {
                                             type="text"
                                             value={g.responsible}
                                             onChange={(e) => handleGroupChange(index, 'responsible', e.target.value)}
-                                            placeholder="преподавателя Прокопович М.Е."
+                                            placeholder="например: Прокопович М.Е."
                                             required
                                         />
                                     </Form.Group>

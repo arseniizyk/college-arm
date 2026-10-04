@@ -60,7 +60,7 @@ const CRUDModal = ({
                 {field.type === 'select' ? (
                     <Form.Select
                         name={field.name}
-                        value={formData[field.name] || ''}
+                        value={formData[field.name] ?? ''}
                         onChange={handleInputChange}
                         required={field.required}
                         disabled={loading || (field.options && field.options.length === 0)}
@@ -96,7 +96,7 @@ const CRUDModal = ({
                         as="textarea"
                         rows={3}
                         name={field.name}
-                        value={formData[field.name] || ''}
+                        value={formData[field.name] ?? ''}
                         onChange={handleInputChange}
                         required={field.required}
                         disabled={loading}
@@ -106,7 +106,7 @@ const CRUDModal = ({
                     <Form.Control
                         type={field.type}
                         name={field.name}
-                        value={formData[field.name] || ''}
+                        value={field.type === 'date' && formData[field.name] ? String(formData[field.name]).slice(0, 10) : (formData[field.name] ?? '')}
                         onChange={handleInputChange}
                         required={field.required}
                         disabled={loading}

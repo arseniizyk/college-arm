@@ -1,4 +1,4 @@
-import { prepareFormData, toGroupFormData, calculateCourse } from './dataHelpers'
+import { prepareFormData, toGroupFormData, toStudentFormData, formatDateForInput, calculateCourse } from './dataHelpers'
 
 // Набор кейсов повторяет server/utils/course.test.js: правило курса одно,
 // расхождение двух реализаций и есть регрессия.
@@ -97,4 +97,35 @@ test('группа без куратора открывается с пусты�
 
 test('остальные поля группы не теряются при маппинге куратора', () => {
   expect(toGroupFormData({ group_number: '12-34' }).group_number).toBe('12-34')
+})
+
+test('formatDateForInput обрезает ISO дату до YYYY-MM-DD', () => {
+  expect(formatDateForInput('2025-09-01T00:00:00.000Z')).toBe('2025-09-01')
+  expect(formatDateForInput('2025-09-01')).toBe('2025-09-01')
+  expect(formatDateForInput(null)).toBe('')
+  expect(formatDateForInput('')).toBe('')
+})
+
+test('toStudentFormData нормализует enroll_date и expell_date', () => {
+  const student = {
+    id: 1,
+    last_name: 'Иванов',
+    enroll_date: '2025-09-01T00:00:00.000Z',
+    expell_date: '2026-06-30T12:00:00.000Z'
+  }
+  const form = toStudentFormData(student)
+  expect(form.enroll_date).toBe('2025-09-01')
+  expect(form.expell_date).toBe('2026-06-30')
+  expect(form.last_name).toBe('Иванов')
+})
+
+test('toGroupFormData нормализует enroll_date', () => {
+  const group = {
+    group_number: '12-34',
+    enroll_date: '2024-09-01T00:00:00.000Z',
+    supervisor: { teacher: { id: 5 } }
+  }
+  const form = toGroupFormData(group)
+  expect(form.enroll_date).toBe('2024-09-01')
+  expect(form.teacherId).toBe(5)
 })
