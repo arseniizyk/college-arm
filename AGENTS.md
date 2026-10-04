@@ -11,6 +11,21 @@ server/  Express 4 (CommonJS) + Sequelize + PostgreSQL + docx
 
 - **The `archive` branch is off limits.** Do not check it out, read its files, diff against it, merge it, cherry-pick from it, or rebase onto it — no reading and no interaction of any kind. Work on the current branch only. If a task seems to need `archive`, ask the user instead of touching it.
 
+### Commit messages
+
+Commits follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/):
+
+```
+<type>(<scope>): <subject>
+```
+
+- **type** — `feat`, `fix`, `refactor`, `perf`, `docs`, `test`, `build`, `ci`, `chore`, `revert`.
+- **scope** — optional, the area touched: `client`, `server`, `orders`, `auth`, `db`, `docker`, `agents`. Use it when the change spans more than one file or one layer; omit it for a small local change.
+- **subject** — short imperative summary in English, no trailing period, ≤ 72 characters. Lowercase after the type.
+- Body / `BREAKING CHANGE:` footer only when they add something the subject cannot say.
+
+Examples from this repository: `fix(client): require explicit student selection for enrollment order and align course calculation with server`, `docs(env): add DIRECTOR_FULL_NAME to .env.example`, `refactor(server): single parameterized order route instead of ten methods`.
+
 ## Commands
 
 Run each app from its own directory; there is no root install.
