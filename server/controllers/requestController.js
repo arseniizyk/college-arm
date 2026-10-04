@@ -135,14 +135,18 @@ class RequestController {
                 }
             }
 
-            const count = await Student.count({ where: { id: ids } });
-            if (count !== ids.length) {
-                return next(ApiError.badRequest('Один или несколько указанных студентов не найдены'));
-            }
-
             const accessError = await checkStudentsAccess(userId, userRole, ids);
             if (accessError) {
                 return next(accessError);
+            }
+
+            // Существование проверяем после доступа: иначе по коду ответа
+            // перебором id можно узнать, существует ли студент с чужим id.
+            // Для ADMIN и TEACHER проверка остаётся действующей, для USER
+            // доступ отсекает раньше.
+            const count = await Student.count({ where: { id: ids } });
+            if (count !== ids.length) {
+                return next(ApiError.badRequest('Один или несколько указанных студентов не найдены'));
             }
 
             let requestId;
@@ -299,14 +303,15 @@ class RequestController {
                 }
                 ids = resolved.ids;
 
-                const count = await Student.count({ where: { id: ids } });
-                if (count !== ids.length) {
-                    return next(ApiError.badRequest('Один или несколько указанных студентов не найдены'));
-                }
-
                 const accessError = await checkStudentsAccess(userId, userRole, ids);
                 if (accessError) {
                     return next(accessError);
+                }
+
+                // Порядок как в create: существование — после доступа
+                const count = await Student.count({ where: { id: ids } });
+                if (count !== ids.length) {
+                    return next(ApiError.badRequest('Один или несколько указанных студентов не найдены'));
                 }
             }
             

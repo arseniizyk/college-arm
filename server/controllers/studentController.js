@@ -88,12 +88,8 @@ class StudentController {
                 }
             }
 
-            let expellDateObj = null;
-            if (expell_date) {
-                expellDateObj = new Date(expell_date);
-                if (isNaN(expellDateObj.getTime())) {
-                    return next(ApiError.badRequest('Некорректный формат даты отчисления'));
-                }
+            if (expell_date && isNaN(new Date(expell_date).getTime())) {
+                return next(ApiError.badRequest('Некорректный формат даты отчисления'));
             }
 
             const effectiveEnrollDate = enroll_date !== undefined ? enroll_date : student.enroll_date;
@@ -110,7 +106,7 @@ class StudentController {
             if (name) updateData.name = name;
             if (father_name !== undefined) updateData.father_name = father_name;
             if (order_number) updateData.order_number = order_number;
-            if (enroll_date) updateData.enroll_date = enrollDateObj || new Date(enroll_date);
+            if (enroll_date) updateData.enroll_date = enrollDateObj;
             if (groupId) updateData.groupId = groupId;
             if (expell_date !== undefined) {
                 updateData.expell_date = expell_date ? new Date(expell_date) : null;
