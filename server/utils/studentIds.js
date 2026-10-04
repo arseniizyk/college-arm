@@ -7,7 +7,7 @@ function resolveStudentIds(rawIds, userRole, emptyMessage = 'Не выбран �
         return { error: ApiError.badRequest(emptyMessage) };
     }
 
-    const ids = rawIds.map(id => Number(id));
+    const ids = Array.from(new Set(rawIds.map(id => Number(id))));
     if (ids.some(id => !Number.isInteger(id))) {
         return { error: ApiError.badRequest('Некорректный идентификатор студента') };
     }

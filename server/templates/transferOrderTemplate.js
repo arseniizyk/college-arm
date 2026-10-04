@@ -44,11 +44,11 @@ const createTransferOrderTemplate = (data) => {
         point('ПРИКАЗЫВАЮ:'),
 
         // Пункт 1
-        point(`1. Перевести на ${nextCourse} курс и установить каникулы с ${dateFrom} по ${dateTo} учащимися учебной группы ${groupNumber}, обучающихся по специальности ${specialtyName} ${fullGroup ? 'в полном составе' : 'в следующем составе'}:`),
+        point(`1. Перевести на ${nextCourse} курс и установить каникулы с ${dateFrom} по ${dateTo} учащимся учебной группы ${groupNumber}, обучающимся по специальности ${specialtyName} ${fullGroup ? 'в полном составе' : 'в следующем составе'}:`),
 
         // Список студентов
         ...students.map((s, index) =>
-            listItem(`1.${index + 1} . ${s.lastName} ${s.firstName}${s.fatherName ? ' ' + s.fatherName : ''}${index === students.length - 1 ? '.' : ''}`)
+            listItem(`1.${index + 1}. ${s.lastName} ${s.firstName}${s.fatherName ? ' ' + s.fatherName : ''}${index === students.length - 1 ? '.' : ''}`)
         ),
 
         // Пункт 2 — условный перевод (если есть)

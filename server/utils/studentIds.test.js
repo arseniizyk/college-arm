@@ -37,3 +37,8 @@ test('нечисловые id отклоняются для любой роли,
         assert.match(error.message, /идентификатор студента/)
     }
 })
+
+test('дедуплицирует повторяющиеся идентификаторы студентов', () => {
+    assert.deepEqual(resolveStudentIds([1, 2, 1, 2], 'ADMIN').ids, [1, 2])
+    assert.deepEqual(resolveStudentIds([5, 5, '5'], 'USER').ids, [5])
+})

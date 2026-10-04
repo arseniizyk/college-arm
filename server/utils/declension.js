@@ -1,16 +1,31 @@
-// Утилита для склонения ФИО в дательный падеж с использованием библиотеки petrovich
 const petrovich = require('petrovich');
 
+const MALE_NAME_EXCEPTIONS = new Set([
+    'илья', 'никита', 'данила', 'данил', 'лёва', 'лева', 'кузьма', 'лука', 'фома', 'савва', 'юноша'
+]);
+
 /**
- * Определяет пол по отчеству
+ * Определяет пол по отчеству или имени (при отсутствии отчества)
  */
-function detectGender(middleName) {
-    if (!middleName) return 'male'; // По умолчанию мужской
+function detectGender(middleName, firstName = '') {
+    if (middleName) {
+        const lowerMiddle = middleName.trim().toLowerCase();
+        if (lowerMiddle.endsWith('овна') || lowerMiddle.endsWith('евна') || lowerMiddle.endsWith('ична') || lowerMiddle.endsWith('инична')) {
+            return 'female';
+        }
+        if (lowerMiddle.endsWith('ович') || lowerMiddle.endsWith('евич') || lowerMiddle.endsWith('ич')) {
+            return 'male';
+        }
+    }
     
-    const lower = middleName.toLowerCase();
-    
-    if (lower.endsWith('овна') || lower.endsWith('евна') || lower.endsWith('ична')) {
-        return 'female';
+    if (firstName) {
+        const lowerFirst = firstName.trim().toLowerCase();
+        if (MALE_NAME_EXCEPTIONS.has(lowerFirst)) {
+            return 'male';
+        }
+        if (lowerFirst.endsWith('а') || lowerFirst.endsWith('я')) {
+            return 'female';
+        }
     }
     
     return 'male';
@@ -25,12 +40,13 @@ function detectGender(middleName) {
  */
 function declineFullName(lastName, firstName, middleName) {
     try {
-        const gender = detectGender(middleName);
+        const gender = detectGender(middleName, firstName);
         const result = petrovich({
+            gender,
             last: lastName,
             first: firstName,
             middle: middleName || ''
-        }, 'dative', gender);
+        }, 'dative');
         
         return {
             lastName: result.last,
@@ -55,12 +71,13 @@ function declineFullName(lastName, firstName, middleName) {
  */
 function declineFullNameAccusative(lastName, firstName, middleName) {
     try {
-        const gender = detectGender(middleName);
+        const gender = detectGender(middleName, firstName);
         const result = petrovich({
+            gender,
             last: lastName,
             first: firstName,
             middle: middleName || ''
-        }, 'accusative', gender);
+        }, 'accusative');
         
         return {
             lastName: result.last,

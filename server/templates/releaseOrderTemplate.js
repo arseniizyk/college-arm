@@ -20,9 +20,9 @@ const createReleaseOrderTemplate = (data) => {
         acquainted = [],
     } = data;
 
-    const isFemale = detectGender(studentFatherName) === 'female';
-    const studentWord = isFemale ? 'учащейся' : 'учащегося';
-    const studyingWord = isFemale ? 'обучающейся' : 'обучающегося';
+    const isFemale = detectGender(studentFatherName, studentFirstName) === 'female';
+    const studentWord = isFemale ? 'учащуюся' : 'учащегося';
+    const studyingWord = isFemale ? 'обучающуюся' : 'обучающегося';
 
     // Склоняем ФИО в винительный падеж
     let studentAccusative = `${studentLastName} ${studentFirstName}${studentFatherName ? ' ' + studentFatherName : ''}`;

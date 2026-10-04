@@ -134,4 +134,22 @@ describe('обновление записи пересоздаёт массив'
 
     expect(store.myRequests[0].isViewed).toBe(true)
   })
+
+  test('create requests добавляет новую заявку в myRequests', async () => {
+    store.setMyRequests([{ id: 1, status: 'pending' }])
+    $authHost.post.mockResolvedValue(ok({ id: 2, status: 'pending' }))
+
+    await store.create('requests', { status: 'pending' })
+
+    expect(store.myRequests.map(r => r.id)).toEqual([2, 1])
+  })
+
+  test('delete requests удаляет заявку из myRequests', async () => {
+    store.setMyRequests([{ id: 1, status: 'pending' }, { id: 2, status: 'completed' }])
+    $authHost.delete.mockResolvedValue(ok({ success: true }))
+
+    await store.delete('requests', 1)
+
+    expect(store.myRequests.map(r => r.id)).toEqual([2])
+  })
 })

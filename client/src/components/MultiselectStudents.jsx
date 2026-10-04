@@ -10,7 +10,7 @@ const MultiselectStudents = ({ field, formData, setFormData, loading, data, allo
     const isSingleSelect = field.type === 'select';
 
     // Получаем студентов с информацией о группах
-    const sourceStudents = data.allStudents || data.students || [];
+    const sourceStudents = (data.allStudents?.length ? data.allStudents : data.students) || [];
     const allStudents = sourceStudents
         .filter(student => !allowedStudentIds || allowedStudentIds.includes(student.id))
         .map(student => {

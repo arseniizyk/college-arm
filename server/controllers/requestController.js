@@ -128,9 +128,25 @@ class RequestController {
                 return next(ApiError.badRequest('Необходимо выбрать документ или указать описание'));
             }
 
+            if (documentId) {
+                const doc = await Document.findByPk(documentId);
+                if (!doc) {
+                    return next(ApiError.badRequest('Указанный документ не существует'));
+                }
+            }
+
             const accessError = await checkStudentsAccess(userId, userRole, ids);
             if (accessError) {
                 return next(accessError);
+            }
+
+            // Существование проверяем после доступа: иначе по коду ответа
+            // перебором id можно узнать, существует ли студент с чужим id.
+            // Для ADMIN и TEACHER проверка остаётся действующей, для USER
+            // доступ отсекает раньше.
+            const count = await Student.count({ where: { id: ids } });
+            if (count !== ids.length) {
+                return next(ApiError.badRequest('Один или несколько указанных студентов не найдены'));
             }
 
             let requestId;
@@ -267,6 +283,13 @@ class RequestController {
             // Сохраняем старый статус для проверки изменения
             const oldStatus = request.status;
             
+            if (documentId !== undefined && documentId !== null) {
+                const doc = await Document.findByPk(documentId);
+                if (!doc) {
+                    return next(ApiError.badRequest('Указанный документ не существует'));
+                }
+            }
+
             // Валидация studentIds при обновлении
             let ids;
             if (studentIds !== undefined) {
@@ -283,6 +306,12 @@ class RequestController {
                 const accessError = await checkStudentsAccess(userId, userRole, ids);
                 if (accessError) {
                     return next(accessError);
+                }
+
+                // Порядок как в create: существование — после доступа
+                const count = await Student.count({ where: { id: ids } });
+                if (count !== ids.length) {
+                    return next(ApiError.badRequest('Один или несколько указанных студентов не найдены'));
                 }
             }
             
