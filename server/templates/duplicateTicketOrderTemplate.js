@@ -26,8 +26,8 @@ const createDuplicateTicketOrderTemplate = (data) => {
 
     // Определяем пол
     const isFemale = detectGender(studentFatherName, studentFirstName) === 'female';
+    const ticketWord = isFemale ? 'учащейся' : 'учащегося';
     const studentDativeWord = isFemale ? 'учащейся' : 'учащемуся';
-    const studentGenitiveWord = isFemale ? 'учащейся' : 'учащегося';
     const studyingWord = isFemale ? 'обучающейся' : 'обучающемуся';
 
     return [
@@ -44,7 +44,7 @@ const createDuplicateTicketOrderTemplate = (data) => {
         point(`1. Секретарю учебной части учреждения образования «${collegeName}»:`),
 
         // Пункт 1.1 — отступ 720, как у элемента списка
-        listItem(`1.1. Выдать дубликат билета ${studentDativeWord} ${studentDative}, ${studentGenitiveWord} учебной группы ${groupNumber}, ${studyingWord} по специальности ${specialtyName} в связи с тем, что ${lossReason}.`),
+        listItem(`1.1. Выдать дубликат билета ${ticketWord} ${studentDative}, ${studentDativeWord} учебной группы ${groupNumber}, ${studyingWord} по специальности ${specialtyName} в связи с тем, что ${lossReason}.`),
 
         // Пункт 2
         point('2. Внести записи в книгу регистрации выдачи билетов учащихся.'),
