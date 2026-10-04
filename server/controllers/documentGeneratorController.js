@@ -129,6 +129,11 @@ class DocumentGeneratorController {
 
 }
 
+const GENITIVE_MONTHS = [
+    'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+    'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'
+];
+
 /**
  * Подготавливает данные для шаблона справки об обучении
  */
@@ -155,20 +160,22 @@ function prepareStudyCertificateData(student, group, specialty) {
     // Невычислимый курс утилита сводит к первому, а не пропускает в документ "NaN"
     const courseText = courseTextGenitive(group.enroll_date, specialty.duration_years, specialty.duration_months);
     
-    // Вычисляем дату окончания обучения
-    const endDate = new Date(enrollDate);
-    endDate.setFullYear(endDate.getFullYear() + specialty.duration_years);
-    endDate.setMonth(endDate.getMonth() + (specialty.duration_months || 0));
-    endDate.setMonth(5); // Июнь
-    endDate.setDate(30); // 30 июня
+    // Вычисляем дату окончания обучения (всегда 30 июня)
+    // Чтобы избежать мутаций Date, где 31 число при смене месяца на июнь с 30 днями
+    // перескакивает на 1 июля (а затем 30 июля), вычисляем год окончания через Date с днем 1
+    const graduationCalc = new Date(enrollDate);
+    graduationCalc.setDate(1);
+    graduationCalc.setFullYear(graduationCalc.getFullYear() + specialty.duration_years);
+    graduationCalc.setMonth(graduationCalc.getMonth() + (specialty.duration_months || 0));
+    const endDate = new Date(graduationCalc.getFullYear(), 5, 30);
     
     // Форматируем даты
     const enrollDateDay = enrollDate.getDate();
-    const enrollDateMonthGenitive = enrollDate.toLocaleDateString('ru-RU', { month: 'long' }).replace(/ь$/, 'я');
+    const enrollDateMonthGenitive = GENITIVE_MONTHS[enrollDate.getMonth()];
     const enrollDateYear = enrollDate.getFullYear();
     
     const endDateDay = endDate.getDate();
-    const endDateMonthGenitive = endDate.toLocaleDateString('ru-RU', { month: 'long' }).replace(/ь$/, 'я');
+    const endDateMonthGenitive = GENITIVE_MONTHS[endDate.getMonth()];
     const endDateYear = endDate.getFullYear();
     
     // Определяем пол для правильного склонения.
@@ -206,4 +213,8 @@ function prepareStudyCertificateData(student, group, specialty) {
     };
 }
 
-module.exports = new DocumentGeneratorController();
+const controller = new DocumentGeneratorController();
+controller.prepareStudyCertificateData = prepareStudyCertificateData;
+controller.GENITIVE_MONTHS = GENITIVE_MONTHS;
+
+module.exports = controller;

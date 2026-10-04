@@ -1,11 +1,13 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { Modal, Form, Button, Row, Col, Spinner, Alert } from 'react-bootstrap';
+import { Form, Button, Row, Col } from 'react-bootstrap';
 import { Context } from '../index';
 import { observer } from 'mobx-react-lite';
 import { calculateCourse } from '../utils/dataHelpers';
 import { downloadDoc } from '../http';
 import { orderUrl } from '../utils/consts';
 import OrderStudentSelector from './OrderStudentSelector';
+import BaseOrderModal from './BaseOrderModal';
+import OrderSignaturesSection from './OrderSignaturesSection';
 
 const INITIAL_SUBJECT = { date: '', subject: '', teacher: '' };
 
@@ -38,7 +40,6 @@ const ExamAdmissionOrderModal = observer(({ show, onHide }) => {
         ? data.students.filter(s => s.groupId === parseInt(form.groupId))
         : [];
 
-    // Автоматически вычисляем специальность и курс по группе
     const selectedGroup = data.groups.find(g => g.id === parseInt(form.groupId));
     const selectedSpecialty = data.specialties.find(s => s.id === selectedGroup?.specialtyId);
     const computedCourse = selectedGroup
@@ -51,12 +52,16 @@ const ExamAdmissionOrderModal = observer(({ show, onHide }) => {
 
     const handleGroupChange = (e) => {
         setForm(prev => ({ ...prev, groupId: e.target.value }));
+        setSelectedStudentIds([]);
         setError(null);
     };
 
     const handleChange = (e) => {
         const { name, value } = e.target;
         setForm(prev => ({ ...prev, [name]: value }));
+        if (name === 'groupId') {
+            setSelectedStudentIds([]);
+        }
         setError(null);
     };
 
@@ -147,213 +152,156 @@ const ExamAdmissionOrderModal = observer(({ show, onHide }) => {
     };
 
     return (
-        <Modal show={show} onHide={handleClose} size="lg" centered>
-            <Modal.Header closeButton>
-                <Modal.Title>
-                    <i className="bi bi-pencil-square me-2"></i>
-                    Приказ о допуске к экзаменам
-                </Modal.Title>
-            </Modal.Header>
-
-            <Form onSubmit={handleSubmit}>
-                <Modal.Body>
-                    {error && (
-                        <Alert variant="danger" dismissible onClose={() => setError(null)}>
-                            <i className="bi bi-exclamation-circle me-2"></i>
-                            {error}
-                        </Alert>
-                    )}
-
-                    {/* Группа */}
-                    <h6 className="text-muted mb-3 border-bottom pb-2 mt-4">
-                        <i className="bi bi-mortarboard me-2"></i>Группа
-                    </h6>
-                    <Row className="mb-3">
-                        <Col md={6}>
-                            <Form.Group>
-                                <Form.Label>Группа <span className="text-danger">*</span></Form.Label>
-                                <Form.Select name="groupId" value={form.groupId} onChange={handleGroupChange} required>
-                                    <option value="">— Выберите —</option>
-                                    {data.groups.map(g => (
-                                        <option key={g.id} value={g.id}>{g.group_number}</option>
-                                    ))}
-                                </Form.Select>
-                            </Form.Group>
-                        </Col>
-                        {form.groupId && (
-                            <Col md={6}>
-                                <div className="p-2 bg-light rounded h-100 d-flex flex-column justify-content-center">
-                                    <small className="text-muted d-block">
-                                        <i className="bi bi-mortarboard me-1"></i>
-                                        Специальность: <strong>{selectedSpecialty?.name || '—'}</strong>
-                                    </small>
-                                    <small className="text-muted d-block mt-1">
-                                        <i className="bi bi-arrow-up-circle me-1"></i>
-                                        Курс: <strong>{computedCourse}</strong>
-                                    </small>
-                                    <small className="text-muted d-block mt-1">
-                                        <i className="bi bi-people me-1"></i>
-                                        Студентов: <strong>{groupStudents.length}</strong>
-                                    </small>
-                                </div>
-                            </Col>
-                        )}
-                    </Row>
-
-                    {/* Студенты */}
-                    {form.groupId && (
-                        <div className="mb-3">
-                            <Form.Label>Студенты <span className="text-danger">*</span></Form.Label>
-                            <OrderStudentSelector
-                                students={groupStudents}
-                                selectedIds={selectedStudentIds}
-                                onChange={setSelectedStudentIds}
-                            />
+        <BaseOrderModal
+            show={show}
+            onHide={handleClose}
+            title="Приказ о допуске к экзаменам"
+            icon="bi bi-pencil-square"
+            error={error}
+            onErrorClose={() => setError(null)}
+            onSubmit={handleSubmit}
+            loading={loading}
+        >
+            {/* Группа */}
+            <h6 className="text-muted mb-3 border-bottom pb-2 mt-4">
+                <i className="bi bi-mortarboard me-2"></i>Группа
+            </h6>
+            <Row className="mb-3">
+                <Col md={6}>
+                    <Form.Group>
+                        <Form.Label>Группа <span className="text-danger">*</span></Form.Label>
+                        <Form.Select name="groupId" value={form.groupId} onChange={handleGroupChange} required>
+                            <option value="">— Выберите —</option>
+                            {data.groups.map(g => (
+                                <option key={g.id} value={g.id}>{g.group_number}</option>
+                            ))}
+                        </Form.Select>
+                    </Form.Group>
+                </Col>
+                {form.groupId && (
+                    <Col md={6}>
+                        <div className="p-2 bg-light rounded h-100 d-flex flex-column justify-content-center">
+                            <small className="text-muted d-block">
+                                <i className="bi bi-mortarboard me-1"></i>
+                                Специальность: <strong>{selectedSpecialty?.name || '—'}</strong>
+                            </small>
+                            <small className="text-muted d-block mt-1">
+                                <i className="bi bi-arrow-up-circle me-1"></i>
+                                Курс: <strong>{computedCourse}</strong>
+                            </small>
+                            <small className="text-muted d-block mt-1">
+                                <i className="bi bi-people me-1"></i>
+                                Студентов: <strong>{groupStudents.length}</strong>
+                            </small>
                         </div>
-                    )}
+                    </Col>
+                )}
+            </Row>
 
-                    {/* Предметы */}
-                    <h6 className="text-muted mb-3 border-bottom pb-2 mt-4">
-                        <i className="bi bi-journal-text me-2"></i>Предметы экзаменов <span className="text-danger">*</span>
-                    </h6>
-                    {form.examSubjects.map((subj, index) => (
-                        <Row key={index} className="mb-2 align-items-end">
-                            <Col md={3}>
-                                <Form.Group>
-                                    {index === 0 && <Form.Label>Дата</Form.Label>}
-                                    <Form.Control
-                                        type="text"
-                                        value={subj.date}
-                                        onChange={(e) => handleSubjectChange(index, 'date', e.target.value)}
-                                        placeholder="06.12.2025"
-                                        required
-                                    />
-                                </Form.Group>
-                            </Col>
-                            <Col md={4}>
-                                <Form.Group>
-                                    {index === 0 && <Form.Label>Предмет</Form.Label>}
-                                    <Form.Control
-                                        type="text"
-                                        value={subj.subject}
-                                        onChange={(e) => handleSubjectChange(index, 'subject', e.target.value)}
-                                        placeholder="Экономика организации"
-                                        required
-                                    />
-                                </Form.Group>
-                            </Col>
-                            <Col md={4}>
-                                <Form.Group>
-                                    {index === 0 && <Form.Label>Преподаватель</Form.Label>}
-                                    <Form.Control
-                                        type="text"
-                                        value={subj.teacher}
-                                        onChange={(e) => handleSubjectChange(index, 'teacher', e.target.value)}
-                                        placeholder="Богдановская О.Н."
-                                        required
-                                    />
-                                </Form.Group>
-                            </Col>
-                            <Col md={1} className="d-flex align-items-end pb-1">
-                                {form.examSubjects.length > 1 && (
-                                    <Button
-                                        variant="outline-danger"
-                                        size="sm"
-                                        onClick={() => removeSubject(index)}
-                                        style={{ width: '32px', height: '32px', padding: 0 }}
-                                    >
-                                        <i className="bi bi-x"></i>
-                                    </Button>
-                                )}
-                            </Col>
-                        </Row>
-                    ))}
-                    <Button variant="outline-secondary" size="sm" onClick={addSubject} className="mb-3">
-                        <i className="bi bi-plus me-1"></i>
-                        Добавить предмет
-                    </Button>
+            {/* Студенты */}
+            {form.groupId && (
+                <div className="mb-3">
+                    <Form.Label>Студенты <span className="text-danger">*</span></Form.Label>
+                    <OrderStudentSelector
+                        students={groupStudents}
+                        selectedIds={selectedStudentIds}
+                        onChange={setSelectedStudentIds}
+                    />
+                </div>
+            )}
 
-                    {/* Прочие поля */}
-                    <h6 className="text-muted mb-3 border-bottom pb-2 mt-4">
-                        <i className="bi bi-person-lines-fill me-2"></i>Подписи и основание
-                    </h6>
-                    <Form.Group className="mb-3">
-                        <Form.Label>Контроль за исполнением приказа возложить на <span className="text-danger">*</span></Form.Label>
-                        <Form.Control
-                            type="text"
-                            name="controlPerson"
-                            value={form.controlPerson}
-                            onChange={handleChange}
-                            placeholder="заместителя директора по учебной работе Филипцову Е.В."
-                            required
-                        />
-                    </Form.Group>
-                    <Form.Group className="mb-3">
-                        <Form.Label>Основание <span className="text-danger">*</span></Form.Label>
-                        <Form.Control
-                            as="textarea"
-                            rows={2}
-                            name="basis"
-                            value={form.basis}
-                            onChange={handleChange}
-                            placeholder="докладная записка заведующего центром профессиональной и социальной реабилитации Гвоздик Т.В. от 04.12.2025."
-                            required
-                        />
-                    </Form.Group>
-                    <Row className="mb-3">
-                        <Col md={4}>
-                            <Form.Group>
-                                <Form.Label>Зам. директора по УР</Form.Label>
-                                <Form.Control
-                                    type="text"
-                                    name="deputyDirector"
-                                    value={form.deputyDirector}
-                                    onChange={handleChange}
-                                    placeholder="Е.В.Филипцова"
-                                />
-                            </Form.Group>
-                        </Col>
-                        <Col md={4}>
-                            <Form.Group>
-                                <Form.Label>Юрисконсульт</Form.Label>
-                                <Form.Control
-                                    type="text"
-                                    name="legalCounsel"
-                                    value={form.legalCounsel}
-                                    onChange={handleChange}
-                                    placeholder="Н.В.Демьянович"
-                                />
-                            </Form.Group>
-                        </Col>
-                        <Col md={4}>
-                            <Form.Group>
-                                <Form.Label>Ознакомлена</Form.Label>
-                                <Form.Control
-                                    type="text"
-                                    name="acquainted"
-                                    value={form.acquainted}
-                                    onChange={handleChange}
-                                    placeholder="Т.В.Гвоздик"
-                                />
-                            </Form.Group>
-                        </Col>
-                    </Row>
-                </Modal.Body>
-
-                <Modal.Footer>
-                    <Button variant="secondary" onClick={handleClose} disabled={loading}>
-                        Отмена
-                    </Button>
-                    <Button variant="primary" type="submit" disabled={loading}>
-                        {loading ? (
-                            <><Spinner animation="border" size="sm" className="me-2" />Генерация...</>
-                        ) : (
-                            <><i className="bi bi-download me-2"></i>Создать и скачать</>
+            {/* Предметы */}
+            <h6 className="text-muted mb-3 border-bottom pb-2 mt-4">
+                <i className="bi bi-journal-text me-2"></i>Предметы экзаменов <span className="text-danger">*</span>
+            </h6>
+            {form.examSubjects.map((subj, index) => (
+                <Row key={index} className="mb-2 align-items-end">
+                    <Col md={3}>
+                        <Form.Group>
+                            {index === 0 && <Form.Label>Дата</Form.Label>}
+                            <Form.Control
+                                type="text"
+                                value={subj.date}
+                                onChange={(e) => handleSubjectChange(index, 'date', e.target.value)}
+                                placeholder="06.12.2025"
+                                required
+                            />
+                        </Form.Group>
+                    </Col>
+                    <Col md={4}>
+                        <Form.Group>
+                            {index === 0 && <Form.Label>Предмет</Form.Label>}
+                            <Form.Control
+                                type="text"
+                                value={subj.subject}
+                                onChange={(e) => handleSubjectChange(index, 'subject', e.target.value)}
+                                placeholder="Экономика организации"
+                                required
+                            />
+                        </Form.Group>
+                    </Col>
+                    <Col md={4}>
+                        <Form.Group>
+                            {index === 0 && <Form.Label>Преподаватель</Form.Label>}
+                            <Form.Control
+                                type="text"
+                                value={subj.teacher}
+                                onChange={(e) => handleSubjectChange(index, 'teacher', e.target.value)}
+                                placeholder="Богдановская О.Н."
+                                required
+                            />
+                        </Form.Group>
+                    </Col>
+                    <Col md={1} className="d-flex align-items-end pb-1">
+                        {form.examSubjects.length > 1 && (
+                            <Button
+                                variant="outline-danger"
+                                size="sm"
+                                onClick={() => removeSubject(index)}
+                                style={{ width: '32px', height: '32px', padding: 0 }}
+                            >
+                                <i className="bi bi-x"></i>
+                            </Button>
                         )}
-                    </Button>
-                </Modal.Footer>
-            </Form>
-        </Modal>
+                    </Col>
+                </Row>
+            ))}
+            <Button variant="outline-secondary" size="sm" onClick={addSubject} className="mb-3">
+                <i className="bi bi-plus me-1"></i>
+                Добавить предмет
+            </Button>
+
+            {/* Подписи и основание */}
+            <OrderSignaturesSection
+                formData={form}
+                handleChange={handleChange}
+                fields={['controlPerson', 'deputyDirector', 'legalCounsel', 'acquainted']}
+                controlPersonLabel="Контроль за исполнением приказа возложить на"
+                placeholders={{
+                    controlPerson: 'заместителя директора по учебной работе Филипцову Е.В.',
+                    deputyDirector: 'Е.В.Филипцова',
+                    legalCounsel: 'Н.В.Демьянович',
+                    acquainted: 'Т.В.Гвоздик',
+                }}
+                labels={{
+                    deputyDirector: 'Зам. директора по УР',
+                    acquainted: 'Ознакомлена',
+                }}
+            >
+                <Form.Group className="mb-3">
+                    <Form.Label>Основание <span className="text-danger">*</span></Form.Label>
+                    <Form.Control
+                        as="textarea"
+                        rows={2}
+                        name="basis"
+                        value={form.basis}
+                        onChange={handleChange}
+                        placeholder="докладная записка заведующего центром профессиональной и социальной реабилитации Гвоздик Т.В. от 04.12.2025."
+                        required
+                    />
+                </Form.Group>
+            </OrderSignaturesSection>
+        </BaseOrderModal>
     );
 });
 

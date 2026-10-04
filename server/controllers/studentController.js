@@ -1,4 +1,4 @@
-const { Student, Group, Specialty } = require('../models/models')
+const { Student, Group, Specialty, User, Supervisor, Teacher } = require('../models/models')
 const ApiError = require('../error/ApiError')
 const { Op } = require('sequelize')
 const { resolveUserId } = require('../utils/resolveUserId')
@@ -81,7 +81,31 @@ class StudentController {
 
     async get(req, res, next) {
         try {
+            if (!req.user || !req.user.id) {
+                return next(ApiError.unauthorized('Пользователь не авторизован'));
+            }
+
+            const user = await User.findByPk(req.user.id, { attributes: ['id', 'email', 'role'] });
+            if (!user) {
+                return next(ApiError.unauthorized('Пользователь не авторизован'));
+            }
+
             const { groupId, groupNumber, search, limit, offset } = req.query;
+
+            const sendEmpty = () => {
+                const emptyResponse = {
+                    students: [],
+                    ...( (limit || offset) && {
+                        pagination: {
+                            total: 0,
+                            limit: limit ? parseInt(limit, 10) : null,
+                            offset: offset ? parseInt(offset, 10) : 0,
+                            hasMore: false
+                        }
+                    })
+                };
+                return res.json(emptyResponse);
+            };
             
             // Базовые опции запроса
             const queryOptions = {
@@ -104,9 +128,46 @@ class StudentController {
             const whereConditions = {};
             const groupWhereConditions = {};
 
-            // Поиск по ID группы
-            if (groupId) {
-                whereConditions.groupId = groupId;
+            // Ограничение по роли из БД:
+            // ADMIN: доступ ко всем студентам
+            // TEACHER: только студенты групп, куратором которых является преподаватель
+            // USER: только студент, привязанный к аккаунту
+            if (user.role === 'TEACHER') {
+                const teacher = await Teacher.findOne({ where: { userId: user.id }, attributes: ['id'] });
+                if (!teacher) {
+                    return sendEmpty();
+                }
+                const supervisors = await Supervisor.findAll({
+                    where: { teacherId: teacher.id },
+                    attributes: ['groupId']
+                });
+                const groupIds = supervisors.map(s => s.groupId).filter(Boolean);
+                if (groupIds.length === 0) {
+                    return sendEmpty();
+                }
+
+                if (groupId) {
+                    const parsedGroupId = parseInt(groupId, 10);
+                    if (!groupIds.includes(parsedGroupId)) {
+                        return sendEmpty();
+                    }
+                    whereConditions.groupId = parsedGroupId;
+                } else {
+                    whereConditions.groupId = { [Op.in]: groupIds };
+                }
+            } else if (user.role !== 'ADMIN') {
+                const student = await Student.findOne({ where: { userId: user.id }, attributes: ['id', 'groupId'] });
+                if (!student) {
+                    return sendEmpty();
+                }
+                if (groupId && parseInt(groupId, 10) !== student.groupId) {
+                    return sendEmpty();
+                }
+                whereConditions.id = student.id;
+            } else {
+                if (groupId) {
+                    whereConditions.groupId = parseInt(groupId, 10);
+                }
             }
 
             // Поиск по номеру группы

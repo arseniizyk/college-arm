@@ -32,6 +32,7 @@ export default class DataStore {
     this._loading = {}
     this._errors = {}
     this._allStudents = [] // Полный список студентов без фильтрации
+    this._myRequests = [] // Заявки текущего пользователя (отдельно от общих заявок)
 
     // Инициализируем пустые массивы для всех типов
     ENTITY_TYPES.forEach(type => {
@@ -135,10 +136,16 @@ export default class DataStore {
     const entities = data || []
 
     runInAction(() => {
-      this._entities.requests = entities
+      this._myRequests = entities
     })
 
     return entities
+  }
+
+  setMyRequests(requests) {
+    runInAction(() => {
+      this._myRequests = Array.isArray(requests) ? requests : []
+    })
   }
 
   // Создание записи
@@ -184,21 +191,47 @@ export default class DataStore {
   // Замена элемента с пересозданием массива: мутация по индексу оставляет
   // ссылку прежней, и useMemo в списках возвращает устаревшие объекты
   _replaceItem(entityType, id, updates) {
-    const list = this._entities[entityType]
-    const index = list.findIndex(item => item.id === id)
-    if (index === -1) return
+    if (entityType === 'myRequests') {
+      const mIndex = this._myRequests.findIndex(item => item.id === id)
+      if (mIndex !== -1) {
+        this._myRequests = [
+          ...this._myRequests.slice(0, mIndex),
+          { ...this._myRequests[mIndex], ...updates },
+          ...this._myRequests.slice(mIndex + 1)
+        ]
+      }
+      return
+    }
 
-    this._entities[entityType] = [
-      ...list.slice(0, index),
-      { ...list[index], ...updates },
-      ...list.slice(index + 1)
-    ]
+    const list = this._entities[entityType]
+    if (list) {
+      const index = list.findIndex(item => item.id === id)
+      if (index !== -1) {
+        this._entities[entityType] = [
+          ...list.slice(0, index),
+          { ...list[index], ...updates },
+          ...list.slice(index + 1)
+        ]
+      }
+    }
 
     // Обновляем _allStudents при обновлении студента
     if (entityType === 'students') {
       this._allStudents = this._allStudents.map(
         item => (item.id === id ? { ...item, ...updates } : item)
       )
+    }
+
+    // Обновляем _myRequests при обновлении заявки в requests
+    if (entityType === 'requests') {
+      const mIndex = this._myRequests.findIndex(item => item.id === id)
+      if (mIndex !== -1) {
+        this._myRequests = [
+          ...this._myRequests.slice(0, mIndex),
+          { ...this._myRequests[mIndex], ...updates },
+          ...this._myRequests.slice(mIndex + 1)
+        ]
+      }
     }
   }
 
@@ -212,7 +245,24 @@ export default class DataStore {
   // Очистка списка сущности без запроса к серверу (например, при выходе из аккаунта)
   clear(entityType) {
     runInAction(() => {
-      this._entities[entityType] = []
+      if (entityType === 'myRequests') {
+        this._myRequests = []
+      } else if (this._entities[entityType]) {
+        this._entities[entityType] = []
+      }
+    })
+  }
+
+  // Сброс хранилища в начальное состояние
+  reset() {
+    runInAction(() => {
+      ENTITY_TYPES.forEach(type => {
+        this._entities[type] = []
+        this._loading[type] = false
+        this._errors[type] = null
+      })
+      this._allStudents = []
+      this._myRequests = []
     })
   }
 
@@ -285,6 +335,20 @@ export default class DataStore {
 
   get requests() {
     return Array.isArray(this._entities.requests) ? this._entities.requests : []
+  }
+
+  get myRequests() {
+    return Array.isArray(this._myRequests) ? this._myRequests : []
+  }
+
+  getMyRequests() {
+    return this.myRequests
+  }
+
+  getEntities(entityType) {
+    if (entityType === 'allStudents') return this.allStudents
+    if (entityType === 'myRequests') return this.myRequests
+    return Array.isArray(this._entities[entityType]) ? this._entities[entityType] : []
   }
 
   get notifications() {

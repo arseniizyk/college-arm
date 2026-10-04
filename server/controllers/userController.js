@@ -2,7 +2,7 @@ const ApiError = require('../error/ApiError')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const { User, USER_WITH_PASSWORD } = require('../models/models')
-const { findSupervisorGroupId } = require('../utils/supervisorGroup')
+const { findSupervisorGroupIds } = require('../utils/supervisorGroup')
 const { validatePassword } = require('../utils/passwordPolicy')
 const { buildEmailWhere, findByEmail, isSameEmail } = require('../utils/userEmail')
 
@@ -48,11 +48,11 @@ class UserController {
                 where: buildEmailWhere(email)
             })
             if (!user) {
-                return next(ApiError.internalRequest("Пользователь не найден"))
+                return next(ApiError.badRequest('Неверный email или пароль'))
             }
-            const comparePassword = bcrypt.compareSync(password, user.password)
+            const comparePassword = await bcrypt.compare(password, user.password)
             if (!comparePassword) {
-                return next(ApiError.badRequest('Неверный пароль'))
+                return next(ApiError.badRequest('Неверный email или пароль'))
             }
             const token = generateJwt(user.id, user.email, user.role)
             return res.json({ token })
@@ -90,9 +90,9 @@ class UserController {
 
             const payload = user.get({ plain: true });
 
-            // Куратору сообщаем его группу, чтобы форма заявки показала только её студентов
+            // Куратору сообщаем его группы, чтобы форма заявки показала только их студентов
             if (payload.role === 'TEACHER') {
-                payload.groupId = await findSupervisorGroupId(userId);
+                payload.groupIds = await findSupervisorGroupIds(userId);
             }
 
             return res.json(payload);
@@ -231,13 +231,13 @@ class UserController {
             }
 
             // Проверяем текущий пароль
-            const isPasswordValid = bcrypt.compareSync(currentPassword, user.password);
+            const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
             if (!isPasswordValid) {
                 return next(ApiError.badRequest('Неверный текущий пароль'));
             }
 
             // Проверяем, что новый пароль отличается от текущего
-            const isSamePassword = bcrypt.compareSync(newPassword, user.password);
+            const isSamePassword = await bcrypt.compare(newPassword, user.password);
             if (isSamePassword) {
                 return next(ApiError.badRequest('Новый пароль должен отличаться от текущего'));
             }
@@ -274,7 +274,7 @@ class UserController {
             }
 
             // Проверяем пароль
-            const isPasswordValid = bcrypt.compareSync(password, user.password);
+            const isPasswordValid = await bcrypt.compare(password, user.password);
             if (!isPasswordValid) {
                 return next(ApiError.badRequest('Неверный пароль'));
             }
@@ -321,7 +321,7 @@ class UserController {
             }
 
             // Проверяем пароль
-            const isPasswordValid = bcrypt.compareSync(password, user.password);
+            const isPasswordValid = await bcrypt.compare(password, user.password);
             if (!isPasswordValid) {
                 return next(ApiError.badRequest('Неверный пароль'));
             }

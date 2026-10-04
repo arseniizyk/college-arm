@@ -23,47 +23,35 @@ export const formatFioShort = (person) => {
     return `${person.last_name || ''} ${initial(person.name)}${initial(person.father_name)}`.trim();
 };
 
+// Учебный год начинается 1 сентября, поэтому месяцы сравниваются с индексом 8.
+const ACADEMIC_YEAR_START_MONTH = 8;
+
+// Держим в паре с server/utils/course.js: правило курса одно на оба приложения.
+const getAcademicYear = (date) => (
+    date.getMonth() >= ACADEMIC_YEAR_START_MONTH
+        ? date.getFullYear()
+        : date.getFullYear() - 1
+);
+
 /**
  * Вычисляет текущий курс группы на основе даты зачисления и длительности обучения
  * @param {Date|string} enrollDate - Дата зачисления группы
  * @param {number} durationYears - Длительность обучения в годах
  * @param {number} durationMonths - Длительность обучения в месяцах
- * @returns {number|string} - Номер курса или "Выпускник"
+ * @param {{now?: Date}} options - now подменяется в тестах
+ * @returns {number|string} - Номер курса, "Выпускник" или "-", если дата неизвестна
  */
-export const calculateCourse = (enrollDate, durationYears = 4, durationMonths = 0) => {
+export const calculateCourse = (enrollDate, durationYears = 4, durationMonths = 0, { now = new Date() } = {}) => {
     if (!enrollDate) return '-';
-    
+
     const enroll = new Date(enrollDate);
-    const now = new Date();
-    
-    // Вычисляем разницу в годах
-    let yearsDiff = now.getFullYear() - enroll.getFullYear();
-    
-    // Учитываем учебный год (с 1 сентября)
-    const enrollMonth = enroll.getMonth();
-    const currentMonth = now.getMonth();
-    
-    // Если текущий месяц до сентября, а зачисление было после сентября прошлого года
-    if (currentMonth < 8) { // 8 = сентябрь (месяцы с 0)
-        if (enrollMonth >= 8) {
-            yearsDiff--;
-        }
-    }
-    
-    const course = yearsDiff + 1;
-    
-    // Проверяем, не превышает ли курс максимальный
+    if (Number.isNaN(enroll.getTime())) return '-';
+
+    // Смена курса строго 1 сентября, независимо от месяца зачисления.
+    const course = Math.max(getAcademicYear(now) - getAcademicYear(enroll) + 1, 1);
+
     const maxCourse = durationYears + (durationMonths > 0 ? 1 : 0);
-    
-    if (course > maxCourse) {
-        return 'Выпускник';
-    }
-    
-    if (course < 1) {
-        return 1;
-    }
-    
-    return course;
+    return course > maxCourse ? 'Выпускник' : course;
 };
 
 /**
@@ -344,15 +332,17 @@ export const prepareFormData = (formData, activeTab) => {
     let submitData = { ...formData };
     
     // Специальная обработка для заявок
-    if (activeTab === 'requests' && submitData.studentIds) {
-        submitData.studentIds = (Array.isArray(submitData.studentIds)
-            ? submitData.studentIds
-            : [submitData.studentIds]
-        ).map(id => parseInt(id, 10));
+    if (activeTab === 'requests') {
+        if (submitData.studentIds) {
+            submitData.studentIds = (Array.isArray(submitData.studentIds)
+                ? submitData.studentIds
+                : [submitData.studentIds]
+            ).map(id => parseInt(id, 10));
+        }
 
-        // Преобразуем documentId в число, если он есть
-        if (submitData.documentId) {
-            submitData.documentId = parseInt(submitData.documentId, 10);
+        // Преобразуем documentId в число, если он есть, или null если пустая строка/не задан
+        if ('documentId' in submitData) {
+            submitData.documentId = submitData.documentId ? parseInt(submitData.documentId, 10) : null;
         }
     }
 

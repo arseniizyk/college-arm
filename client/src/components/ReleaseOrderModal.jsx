@@ -1,10 +1,12 @@
 import React, { useState, useContext, useEffect } from 'react';
-import { Modal, Form, Button, Row, Col, Spinner, Alert, Card } from 'react-bootstrap';
+import { Form, Button, Row, Col, Card } from 'react-bootstrap';
 import { formatFio, formatFioShort } from '../utils/dataHelpers';
 import { downloadDoc } from '../http';
 import { orderUrl } from '../utils/consts';
 import { Context } from '../index';
 import { observer } from 'mobx-react-lite';
+import BaseOrderModal from './BaseOrderModal';
+import OrderSignaturesSection from './OrderSignaturesSection';
 
 const INITIAL_PERIOD = { dateFrom: '', dateTo: '', eventName: '', eventAddress: '' };
 
@@ -49,7 +51,11 @@ const ReleaseOrderModal = observer(({ show, onHide }) => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setForm(prev => ({ ...prev, [name]: value }));
+        setForm(prev => ({
+            ...prev,
+            [name]: value,
+            ...(name === 'groupId' ? { studentId: '' } : {})
+        }));
         setError(null);
     };
 
@@ -125,171 +131,147 @@ const ReleaseOrderModal = observer(({ show, onHide }) => {
     const handleClose = () => { setForm(INITIAL); setError(null); onHide(); };
 
     return (
-        <Modal show={show} onHide={handleClose} size="lg" centered>
-            <Modal.Header closeButton>
-                <Modal.Title>
-                    <i className="bi bi-calendar-x me-2"></i>
-                    Приказ об освобождении от занятий
-                </Modal.Title>
-            </Modal.Header>
+        <BaseOrderModal
+            show={show}
+            onHide={handleClose}
+            title="Приказ об освобождении от занятий"
+            icon="bi bi-calendar-x"
+            error={error}
+            onErrorClose={() => setError(null)}
+            onSubmit={handleSubmit}
+            loading={loading}
+        >
+            {/* Основание */}
+            <h6 className="text-muted mb-3 border-bottom pb-2">
+                <i className="bi bi-file-text me-2"></i>Основание
+            </h6>
+            <Form.Group className="mb-3">
+                <Form.Label>Основание <span className="text-danger">*</span></Form.Label>
+                <Form.Control
+                    as="textarea"
+                    rows={2}
+                    name="basis"
+                    value={form.basis}
+                    onChange={handleChange}
+                    placeholder="докладная записка тренера (директора ООО «Макацуге») Ленкова Д.С. от 05.02.2026."
+                    required
+                />
+            </Form.Group>
 
-            <Form onSubmit={handleSubmit}>
-                <Modal.Body>
-                    {error && (
-                        <Alert variant="danger" dismissible onClose={() => setError(null)}>
-                            <i className="bi bi-exclamation-circle me-2"></i>{error}
-                        </Alert>
-                    )}
-
-                    {/* Основание */}
-                    <h6 className="text-muted mb-3 border-bottom pb-2">
-                        <i className="bi bi-file-text me-2"></i>Основание
-                    </h6>
-                    <Form.Group className="mb-3">
-                        <Form.Label>На основании <span className="text-danger">*</span></Form.Label>
-                        <Form.Control
-                            as="textarea"
-                            rows={2}
-                            name="basis"
-                            value={form.basis}
-                            onChange={handleChange}
-                            placeholder="писем общества с ограниченной ответственностью «Макацуге» от 14.01.2026 №1 и № 2, заявлений учащегося..."
-                            required
-                        />
+            {/* Учащийся */}
+            <h6 className="text-muted mb-3 border-bottom pb-2 mt-4">
+                <i className="bi bi-person me-2"></i>Учащийся
+            </h6>
+            <Row className="mb-3">
+                <Col md={6}>
+                    <Form.Group>
+                        <Form.Label>Группа <span className="text-danger">*</span></Form.Label>
+                        <Form.Select name="groupId" value={form.groupId} onChange={handleGroupChange} required>
+                            <option value="">— Выберите —</option>
+                            {data.groups.map(g => (
+                                <option key={g.id} value={g.id}>{g.group_number}</option>
+                            ))}
+                        </Form.Select>
                     </Form.Group>
+                </Col>
+                <Col md={6}>
+                    <Form.Group>
+                        <Form.Label>Студент <span className="text-danger">*</span></Form.Label>
+                        <Form.Select name="studentId" value={form.studentId} onChange={handleChange} disabled={!form.groupId} required>
+                            <option value="">— Выберите —</option>
+                            {groupStudents.map(s => (
+                                <option key={s.id} value={s.id}>{formatFio(s)}</option>
+                            ))}
+                        </Form.Select>
+                    </Form.Group>
+                </Col>
+            </Row>
 
-                    {/* Учащийся */}
-                    <h6 className="text-muted mb-3 border-bottom pb-2 mt-4">
-                        <i className="bi bi-person me-2"></i>Учащийся
-                    </h6>
-                    <Row className="mb-3">
-                        <Col md={6}>
-                            <Form.Group>
-                                <Form.Label>Группа <span className="text-danger">*</span></Form.Label>
-                                <Form.Select name="groupId" value={form.groupId} onChange={handleGroupChange} required>
-                                    <option value="">— Выберите —</option>
-                                    {data.groups.map(g => (
-                                        <option key={g.id} value={g.id}>{g.group_number}</option>
-                                    ))}
-                                </Form.Select>
-                            </Form.Group>
-                        </Col>
-                        <Col md={6}>
-                            <Form.Group>
-                                <Form.Label>Студент <span className="text-danger">*</span></Form.Label>
-                                <Form.Select name="studentId" value={form.studentId} onChange={handleChange} disabled={!form.groupId} required>
-                                    <option value="">— Выберите —</option>
-                                    {groupStudents.map(s => (
-                                        <option key={s.id} value={s.id}>
-                                            {formatFio(s)}
-                                        </option>
-                                    ))}
-                                </Form.Select>
-                            </Form.Group>
-                        </Col>
-                    </Row>
-                    {form.groupId && (
-                        <div className="mb-3 p-2 bg-light rounded">
-                            <small className="text-muted d-block">
-                                <i className="bi bi-mortarboard me-1"></i>
-                                Специальность: <strong>{selectedSpecialty?.name || '—'}</strong>
-                            </small>
-                            <small className="text-muted d-block mt-1">
-                                <i className="bi bi-person-badge me-1"></i>
-                                Куратор: <strong>{curatorName || '—'}</strong>
-                            </small>
+            {form.groupId && (
+                <div className="mb-3 p-2 bg-light rounded">
+                    <small className="text-muted d-block">
+                        <i className="bi bi-mortarboard me-1"></i>
+                        Специальность: <strong>{selectedSpecialty?.name || '—'}</strong>
+                    </small>
+                    <small className="text-muted d-block mt-1">
+                        <i className="bi bi-person-badge me-1"></i>
+                        Куратор: <strong>{curatorName || '—'}</strong>
+                    </small>
+                </div>
+            )}
+
+            {/* Периоды освобождения */}
+            <h6 className="text-muted mb-3 border-bottom pb-2 mt-4">
+                <i className="bi bi-calendar-range me-2"></i>Периоды освобождения
+            </h6>
+            {form.periods.map((period, index) => (
+                <Card key={index} className="mb-3 border">
+                    <Card.Body>
+                        <div className="d-flex justify-content-between align-items-center mb-2">
+                            <strong>Период {index + 1}</strong>
+                            {form.periods.length > 1 && (
+                                <Button variant="outline-danger" size="sm" onClick={() => removePeriod(index)}>
+                                    <i className="bi bi-x"></i>
+                                </Button>
+                            )}
                         </div>
-                    )}
-
-                    {/* Периоды освобождения */}
-                    <h6 className="text-muted mb-3 border-bottom pb-2 mt-4">
-                        <i className="bi bi-calendar-range me-2"></i>Периоды освобождения
-                    </h6>
-                    {form.periods.map((period, index) => (
-                        <Card key={index} className="mb-3 border">
-                            <Card.Body>
-                                <div className="d-flex justify-content-between align-items-center mb-3">
-                                    <strong>Период {index + 1}</strong>
-                                    {form.periods.length > 1 && (
-                                        <Button variant="outline-danger" size="sm" onClick={() => removePeriod(index)}>
-                                            <i className="bi bi-x"></i>
-                                        </Button>
-                                    )}
-                                </div>
-                                <Row className="mb-2">
-                                    <Col md={5}>
-                                        <Form.Group>
-                                            <Form.Label>С <span className="text-danger">*</span></Form.Label>
-                                            <Form.Control type="text" value={period.dateFrom} onChange={(e) => handlePeriodChange(index, 'dateFrom', e.target.value)} placeholder="17.01.2026" required />
-                                        </Form.Group>
-                                    </Col>
-                                    <Col md={5}>
-                                        <Form.Group>
-                                            <Form.Label>По (если несколько дней)</Form.Label>
-                                            <Form.Control type="text" value={period.dateTo} onChange={(e) => handlePeriodChange(index, 'dateTo', e.target.value)} placeholder="31.01.2026" />
-                                        </Form.Group>
-                                    </Col>
-                                </Row>
-                                <Form.Group className="mb-2">
-                                    <Form.Label>Мероприятие (название в предложном падеже, без предлога «в») <span className="text-danger">*</span></Form.Label>
-                                    <Form.Control type="text" value={period.eventName} onChange={(e) => handlePeriodChange(index, 'eventName', e.target.value)} placeholder='спортивно-массовом мероприятии «Благотворительный рождественский турнир»' required />
+                        <Row className="mb-2">
+                            <Col md={6}>
+                                <Form.Group>
+                                    <Form.Label>С <span className="text-danger">*</span></Form.Label>
+                                    <Form.Control type="text" value={period.dateFrom} onChange={(e) => handlePeriodChange(index, 'dateFrom', e.target.value)} placeholder="06.02.2026" required />
                                 </Form.Group>
-                                <Form.Group className="mb-2">
-                                    <Form.Label>Адрес <span className="text-danger">*</span></Form.Label>
-                                    <Form.Control type="text" value={period.eventAddress} onChange={(e) => handlePeriodChange(index, 'eventAddress', e.target.value)} placeholder="г. Минск, пр-т Победителей, 105Б" required />
+                            </Col>
+                            <Col md={6}>
+                                <Form.Group>
+                                    <Form.Label>По (необязательно)</Form.Label>
+                                    <Form.Control type="text" value={period.dateTo} onChange={(e) => handlePeriodChange(index, 'dateTo', e.target.value)} placeholder="08.02.2026" />
                                 </Form.Group>
-                            </Card.Body>
-                        </Card>
-                    ))}
-                    <Button variant="outline-primary" size="sm" onClick={addPeriod} className="mb-4">
-                        <i className="bi bi-plus me-1"></i>
-                        Добавить период
-                    </Button>
+                            </Col>
+                        </Row>
+                        <Form.Group className="mb-2">
+                            <Form.Label>Мероприятие <span className="text-danger">*</span></Form.Label>
+                            <Form.Control type="text" value={period.eventName} onChange={(e) => handlePeriodChange(index, 'eventName', e.target.value)} placeholder="для участия в учебно-тренировочном сборе" required />
+                        </Form.Group>
+                        <Form.Group className="mb-2">
+                            <Form.Label>Адрес <span className="text-danger">*</span></Form.Label>
+                            <Form.Control type="text" value={period.eventAddress} onChange={(e) => handlePeriodChange(index, 'eventAddress', e.target.value)} placeholder="г. Минск, пр-т Победителей, 105Б" required />
+                        </Form.Group>
+                    </Card.Body>
+                </Card>
+            ))}
+            <Button variant="outline-primary" size="sm" onClick={addPeriod} className="mb-4">
+                <i className="bi bi-plus me-1"></i>
+                Добавить период
+            </Button>
 
-                    {/* Ответственные */}
-                    <h6 className="text-muted mb-3 border-bottom pb-2">
-                        <i className="bi bi-person-lines-fill me-2"></i>Ответственные
-                    </h6>
-                    <Form.Group className="mb-3">
-                        <Form.Label>Ответственность за жизнь и безопасность возложить на <span className="text-danger">*</span></Form.Label>
-                        <Form.Control type="text" name="responsible" value={form.responsible} onChange={handleChange} placeholder="тренера (директора ООО «Макацуге») Ленкова Д.С." required />
-                    </Form.Group>
-                    <Form.Group className="mb-3">
-                        <Form.Label>Контроль за исполнением возложить на <span className="text-danger">*</span></Form.Label>
-                        <Form.Control type="text" name="controlPerson" value={form.controlPerson} onChange={handleChange} placeholder="заведующего отделением Звягину Д.Ч." required />
-                    </Form.Group>
-                    <Row className="mb-3">
-                        <Col md={6}>
-                            <Form.Group>
-                                <Form.Label>Заведующий отделением</Form.Label>
-                                <Form.Control type="text" name="headOfDepartment" value={form.headOfDepartment} onChange={handleChange} placeholder="Д.Ч.Звягина" />
-                            </Form.Group>
-                        </Col>
-                        <Col md={6}>
-                            <Form.Group>
-                                <Form.Label>Юрисконсульт</Form.Label>
-                                <Form.Control type="text" name="legalCounsel" value={form.legalCounsel} onChange={handleChange} placeholder="Н.В.Демьянович" />
-                            </Form.Group>
-                        </Col>
-                    </Row>
+            {/* Ответственные */}
+            <h6 className="text-muted mb-3 border-bottom pb-2">
+                <i className="bi bi-person-lines-fill me-2"></i>Ответственные
+            </h6>
+            <Form.Group className="mb-3">
+                <Form.Label>Ответственность за жизнь и безопасность возложить на <span className="text-danger">*</span></Form.Label>
+                <Form.Control type="text" name="responsible" value={form.responsible} onChange={handleChange} placeholder="тренера (директора ООО «Макацуге») Ленкова Д.С." required />
+            </Form.Group>
+
+            <OrderSignaturesSection
+                hideTitle
+                formData={form}
+                handleChange={handleChange}
+                fields={['controlPerson', 'headOfDepartment', 'legalCounsel']}
+                placeholders={{
+                    controlPerson: 'заведующего отделением Звягину Д.Ч.',
+                    headOfDepartment: 'Д.Ч.Звягина',
+                    legalCounsel: 'Н.В.Демьянович',
+                }}
+                extra={
                     <Form.Group>
                         <Form.Label>С приказом ознакомлен(а) (каждый с новой строки)</Form.Label>
                         <Form.Control as="textarea" rows={2} name="acquainted" value={form.acquainted} onChange={handleChange} placeholder="Д.В.Бокач" />
                     </Form.Group>
-                </Modal.Body>
-
-                <Modal.Footer>
-                    <Button variant="secondary" onClick={handleClose} disabled={loading}>Отмена</Button>
-                    <Button variant="primary" type="submit" disabled={loading}>
-                        {loading ? (
-                            <><Spinner animation="border" size="sm" className="me-2" />Генерация...</>
-                        ) : (
-                            <><i className="bi bi-download me-2"></i>Создать и скачать</>
-                        )}
-                    </Button>
-                </Modal.Footer>
-            </Form>
-        </Modal>
+                }
+            />
+        </BaseOrderModal>
     );
 });
 

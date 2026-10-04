@@ -96,4 +96,42 @@ describe('обновление записи пересоздаёт массив'
     await store.update('requests', 1, { status: 'completed' })
     expect(seenDuringSilent).toEqual([false, true])
   })
+
+  test('fetchMyRequests сохраняет в myRequests и не перезаписывает requests', async () => {
+    store._entities.requests = [{ id: 10, status: 'pending' }]
+    $authHost.get.mockResolvedValue(ok([{ id: 99, status: 'completed' }]))
+
+    const result = await store.fetchMyRequests()
+
+    expect(result).toEqual([{ id: 99, status: 'completed' }])
+    expect(store.myRequests).toEqual([{ id: 99, status: 'completed' }])
+    expect(store.getMyRequests()).toEqual([{ id: 99, status: 'completed' }])
+    expect(store.requests).toEqual([{ id: 10, status: 'pending' }])
+    expect(store.getEntities('requests')).toEqual([{ id: 10, status: 'pending' }])
+    expect(store.getEntities('myRequests')).toEqual([{ id: 99, status: 'completed' }])
+  })
+
+  test('setMyRequests устанавливает myRequests', () => {
+    store.setMyRequests([{ id: 50, status: 'rejected' }])
+    expect(store.myRequests).toEqual([{ id: 50, status: 'rejected' }])
+  })
+
+  test('reset очищает myRequests и сущности', () => {
+    store._entities.requests = [{ id: 1 }]
+    store.setMyRequests([{ id: 2 }])
+    store._allStudents = [{ id: 3 }]
+
+    store.reset()
+
+    expect(store.myRequests).toEqual([])
+    expect(store.requests).toEqual([])
+    expect(store.allStudents).toEqual([])
+  })
+
+  test('updateLocal обновляет запись в myRequests', () => {
+    store.setMyRequests([{ id: 1, isViewed: false }])
+    store.updateLocal('myRequests', 1, { isViewed: true })
+
+    expect(store.myRequests[0].isViewed).toBe(true)
+  })
 })

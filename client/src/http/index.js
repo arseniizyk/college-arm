@@ -22,6 +22,19 @@ const authInterceptor = (config) => {
 
 $authHost.interceptors.request.use(authInterceptor)
 
+$authHost.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 401) {
+            localStorage.removeItem('token')
+            if (typeof window !== 'undefined' && window.dispatchEvent) {
+                window.dispatchEvent(new Event('auth:logout'))
+            }
+        }
+        return Promise.reject(error)
+    }
+)
+
 const limit = (message) =>
     typeof message === 'string' && message.length > MAX_ERROR_LENGTH
         ? `${message.slice(0, MAX_ERROR_LENGTH)}…`

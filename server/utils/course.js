@@ -11,8 +11,21 @@ const toDate = (value) => {
 };
 
 /**
+ * Вычисляет учебный год для даты: с 1 сентября учебный год равен календарному,
+ * до 1 сентября (январь–август) — предыдущему календарному году.
+ * @param {Date} date
+ * @returns {number}
+ */
+const getAcademicYear = (date) => (
+    date.getMonth() >= ACADEMIC_YEAR_START_MONTH
+        ? date.getFullYear()
+        : date.getFullYear() - 1
+);
+
+/**
  * Номер курса, на котором группа учится сейчас.
- * Дата зачисления раньше 1 сентября учебного года сдвигает курс на год назад.
+ * Вычисляется по разнице учебных годов: смена курса всегда происходит
+ * строго 1 сентября, вне зависимости от месяца зачисления (зима, весна или осень).
  * Невычислимый случай (нет даты зачисления, зачисление в будущем) даёт 1.
  * @param {Date|string} enrollDate - Дата зачисления группы
  * @param {number} durationYears - Длительность обучения в годах
@@ -24,15 +37,10 @@ const calculateCourse = (enrollDate, durationYears, durationMonths = 0, { now = 
     const enroll = toDate(enrollDate);
     if (!enroll) return 1;
 
-    let yearsDiff = now.getFullYear() - enroll.getFullYear();
-    if (
-        now.getMonth() < ACADEMIC_YEAR_START_MONTH &&
-        enroll.getMonth() >= ACADEMIC_YEAR_START_MONTH
-    ) {
-        yearsDiff--;
-    }
+    const currentAcademicYear = getAcademicYear(now);
+    const enrollAcademicYear = getAcademicYear(enroll);
 
-    return Math.max(yearsDiff + 1, 1);
+    return Math.max(currentAcademicYear - enrollAcademicYear + 1, 1);
 };
 
 /**
@@ -50,5 +58,6 @@ const courseTextGenitive = (enrollDate, durationYears, durationMonths = 0, optio
 
 module.exports = {
     calculateCourse,
-    courseTextGenitive
+    courseTextGenitive,
+    getAcademicYear
 };

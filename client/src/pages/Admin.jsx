@@ -15,7 +15,7 @@ const Admin = observer(() => {
     const [mainTab, setMainTab] = useState('data');
     
     // Подсчитываем количество новых заявок (в обработке и ещё не просмотренные)
-    const newRequestsCount = (data.requests || []).filter(req => req.status === 'pending' && !req.isViewed).length;
+    const newRequestsCount = (data.getEntities('requests') || []).filter(req => req.status === 'pending' && !req.isViewed).length;
     
     // Автоматическое обновление заявок каждую минуту
     useEffect(() => {
@@ -179,7 +179,7 @@ const Admin = observer(() => {
                         }
                     >
                         <RequestsManagement
-                            requests={data.requests || []}
+                            requests={data.getEntities('requests')}
                             loading={data.isLoading('requests')}
                             onStatusChange={handleRequestStatusChange}
                             getNameById={getNameByIdWithData}
@@ -208,7 +208,7 @@ const Admin = observer(() => {
                         }
                     >
                         <RequestStatistics
-                            requests={data.requests || []}
+                            requests={data.getEntities('requests')}
                         />
                     </Tab>
 

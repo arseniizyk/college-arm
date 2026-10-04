@@ -2,7 +2,7 @@ const ApiError = require('../error/ApiError')
 const sequelize = require('../db')
 const { Op } = require('sequelize')
 const { Request, StudentRequest, Student, Document, Group, Specialty, Notification, User } = require('../models/models')
-const { findSupervisorGroupId } = require('../utils/supervisorGroup')
+const { findSupervisorGroupIds } = require('../utils/supervisorGroup')
 const { resolveStudentIds } = require('../utils/studentIds')
 const { statusLabelFeminine, isKnownStatus } = require('../utils/requestStatus')
 
@@ -37,7 +37,7 @@ const getRequestInclude = () => [
 
 // Правила доступа к студентам при подаче заявки:
 //  - ADMIN  — любой студент колледжа;
-//  - TEACHER — только студенты группы, куратором которой он назначен;
+//  - TEACHER — только студенты групп, куратором которых он назначен;
 //  - остальные (USER) — только студент, привязанный к их аккаунту (student.userId === req.user.id).
 const ROLES_WITH_ANY_STUDENT = ['ADMIN'];
 
@@ -49,20 +49,20 @@ async function checkStudentsAccess(userId, userRole, ids) {
     }
 
     if (userRole === 'TEACHER') {
-        const groupId = await findSupervisorGroupId(userId);
-        if (!groupId) {
+        const groupIds = await findSupervisorGroupIds(userId);
+        if (!groupIds || groupIds.length === 0) {
             return ApiError.forbiddenRequest(
                 'Ваш аккаунт не привязан к куратору группы. Обратитесь к администратору'
             );
         }
 
-        // Чужие — те, у которых группа отличается от группы куратора либо не заполнена вовсе
+        // Чужие — те, у которых группа не входит в список курируемых групп либо не заполнена вовсе
         const foreign = await Student.findAll({
             where: {
                 id: ids,
                 [Op.or]: [
                     { groupId: null },
-                    { groupId: { [Op.ne]: groupId } }
+                    { groupId: { [Op.notIn]: groupIds } }
                 ]
             },
             attributes: ['id']
@@ -93,14 +93,32 @@ async function checkStudentsAccess(userId, userRole, ids) {
     return null;
 }
 
+// Роль берём из БД, а не из токена: иначе понижение прав не действует до истечения токена (TTL 24h)
+async function resolveRequestUser(req, next) {
+    if (!req.user || !req.user.id) {
+        next(ApiError.unauthorized('Пользователь не авторизован'));
+        return null;
+    }
+    const user = await User.findByPk(req.user.id, { attributes: ['id', 'email', 'role'] });
+    if (!user) {
+        next(ApiError.unauthorized('Пользователь не авторизован'));
+        return null;
+    }
+    return user;
+}
+
 class RequestController {
     async create(req, res, next) {
         try {
+            const user = await resolveRequestUser(req, next);
+            if (!user) return;
+
             const { documentId, description, studentIds } = req.body
-            const userId = req.user.id; // Берем ID пользователя из токена
+            const userId = user.id;
+            const userRole = user.role;
 
             // Валидация
-            const resolvedIds = resolveStudentIds(studentIds, req.user.role);
+            const resolvedIds = resolveStudentIds(studentIds, userRole);
             if (resolvedIds.error) {
                 return next(resolvedIds.error);
             }
@@ -110,7 +128,7 @@ class RequestController {
                 return next(ApiError.badRequest('Необходимо выбрать документ или указать описание'));
             }
 
-            const accessError = await checkStudentsAccess(userId, req.user.role, ids);
+            const accessError = await checkStudentsAccess(userId, userRole, ids);
             if (accessError) {
                 return next(accessError);
             }
@@ -191,24 +209,33 @@ class RequestController {
         }
     }
 
-    async get(req, res) {
+    async get(req, res, next) {
         try {
+            const user = await resolveRequestUser(req, next);
+            if (!user) return;
+            if (user.role !== 'ADMIN') {
+                return next(ApiError.forbiddenRequest('Нет доступа'));
+            }
+
             const requests = await Request.findAll({
                 include: getRequestInclude(),
                 order: [['createdAt', 'DESC']]
             });
             return res.json(requests);
         } catch (error) {
-            return res.status(500).json({ error: error.message });
+            next(ApiError.internalRequest(error.message));
         }
     }
 
     async update(req, res, next) {
         try {
+            const user = await resolveRequestUser(req, next);
+            if (!user) return;
+
             const { id } = req.params;
             const { documentId, description, studentIds, status } = req.body;
-            const userId = req.user.id; // Берем ID пользователя из токена
-            const userRole = req.user.role; // Роль пользователя из токена
+            const userId = user.id;
+            const userRole = user.role;
 
             if (!id) {
                 return next(ApiError.badRequest('Не указан ID заявки'));
@@ -222,6 +249,11 @@ class RequestController {
             // Заявку может править только её автор или администратор
             if (request.userId !== userId && userRole !== 'ADMIN') {
                 return next(ApiError.forbiddenRequest('Нет доступа к этой заявке'));
+            }
+
+            // Запрещено редактировать завершенные или отмененные заявки
+            if (request.status === 'completed' || request.status === 'cancelled') {
+                return next(ApiError.badRequest('Нельзя редактировать завершенную или отклоненную заявку'));
             }
 
             // Статус заявки вправе менять только администратор
@@ -316,8 +348,11 @@ class RequestController {
 
     async getMine(req, res, next) {
         try {
+            const user = await resolveRequestUser(req, next);
+            if (!user) return;
+
             const requests = await Request.findAll({
-                where: { userId: req.user.id },
+                where: { userId: user.id },
                 include: getRequestInclude(),
                 order: [['createdAt', 'DESC']]
             });
@@ -329,6 +364,9 @@ class RequestController {
 
     async getOne(req, res, next) {
         try {
+            const user = await resolveRequestUser(req, next);
+            if (!user) return;
+
             const { id } = req.params;
 
             if (!id) {
@@ -342,7 +380,7 @@ class RequestController {
                 return next(ApiError.badRequest('Заявка не найдена'));
             }
 
-            if (request.userId !== req.user.id && req.user.role !== 'ADMIN') {
+            if (request.userId !== user.id && user.role !== 'ADMIN') {
                 return next(ApiError.forbiddenRequest('Нет доступа к этой заявке'));
             }
 
@@ -354,6 +392,9 @@ class RequestController {
 
     async markAsViewed(req, res, next) {
         try {
+            const user = await resolveRequestUser(req, next);
+            if (!user) return;
+
             const { id } = req.params;
 
             if (!id) {
@@ -365,7 +406,7 @@ class RequestController {
                 return next(ApiError.badRequest('Заявка не найдена'));
             }
 
-            if (req.user.role !== 'ADMIN' && request.userId !== req.user.id) {
+            if (user.role !== 'ADMIN' && request.userId !== user.id) {
                 return next(ApiError.forbiddenRequest('Недостаточно прав для изменения заявки'));
             }
             
@@ -380,6 +421,12 @@ class RequestController {
 
     async delete(req, res, next) {
         try {
+            const user = await resolveRequestUser(req, next);
+            if (!user) return;
+            if (user.role !== 'ADMIN') {
+                return next(ApiError.forbiddenRequest('Нет доступа'));
+            }
+
             const { id } = req.params;
             if (!id) {
                 return next(ApiError.badRequest('Не указан ID заявки'));

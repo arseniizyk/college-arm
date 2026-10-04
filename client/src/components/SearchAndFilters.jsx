@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { InputGroup, FormControl, Form, Badge } from 'react-bootstrap';
 import { MISSING_SPECIALTY_FILTER, MISSING_SPECIALTY_LABEL } from '../utils/dataHelpers';
 import { STATUS_KEYS, statusLabel } from '../utils/requestStatus';
@@ -21,63 +21,6 @@ const SearchAndFilters = ({
     currentPage,
     totalPages
 }) => {
-    // Локальные состояния для фильтров
-    const [displayGroupFilter, setDisplayGroupFilter] = useState(selectedGroupFilter || '');
-    const [displayRoleFilter, setDisplayRoleFilter] = useState(selectedRoleFilter || '');
-    const [displayStatusFilter, setDisplayStatusFilter] = useState(selectedStatusFilter || '');
-    const [displaySpecialtyFilter, setDisplaySpecialtyFilter] = useState(selectedSpecialtyFilter || '');
-
-    // Синхронизируем локальные состояния с пропсами
-    useEffect(() => {
-        setDisplayGroupFilter(selectedGroupFilter || '');
-    }, [selectedGroupFilter]);
-
-    useEffect(() => {
-        setDisplayRoleFilter(selectedRoleFilter || '');
-    }, [selectedRoleFilter]);
-
-    useEffect(() => {
-        setDisplayStatusFilter(selectedStatusFilter || '');
-    }, [selectedStatusFilter]);
-
-    useEffect(() => {
-        setDisplaySpecialtyFilter(selectedSpecialtyFilter || '');
-    }, [selectedSpecialtyFilter]);
-
-    // Обработчик изменения поиска (синхронный)
-    const handleSearchChange = (value) => {
-        onSearch(value);
-    };
-
-    // Обработчики изменения фильтров
-    const handleGroupFilterChange = (value) => {
-        setDisplayGroupFilter(value);
-        if (onGroupFilterChange) {
-            onGroupFilterChange(value);
-        }
-    };
-
-    const handleRoleFilterChange = (value) => {
-        setDisplayRoleFilter(value);
-        if (onRoleFilterChange) {
-            onRoleFilterChange(value);
-        }
-    };
-
-    const handleStatusFilterChange = (value) => {
-        setDisplayStatusFilter(value);
-        if (onStatusFilterChange) {
-            onStatusFilterChange(value);
-        }
-    };
-
-    const handleSpecialtyFilterChange = (value) => {
-        setDisplaySpecialtyFilter(value);
-        if (onSpecialtyFilterChange) {
-            onSpecialtyFilterChange(value);
-        }
-    };
-
     // Определяем плейсхолдер для поиска
     const getSearchPlaceholder = () => {
         switch (tableType) {
@@ -114,8 +57,8 @@ const SearchAndFilters = ({
                         </InputGroup.Text>
                         <FormControl
                             placeholder={getSearchPlaceholder()}
-                            value={searchTerm}
-                            onChange={(e) => handleSearchChange(e.target.value)}
+                            value={searchTerm || ''}
+                            onChange={(e) => onSearch && onSearch(e.target.value)}
                         />
                     </InputGroup>
                 </div>
@@ -128,8 +71,8 @@ const SearchAndFilters = ({
                                 <i className="bi-people-fill"></i>
                             </InputGroup.Text>
                             <Form.Select
-                                value={displayGroupFilter}
-                                onChange={(e) => handleGroupFilterChange(e.target.value)}
+                                value={selectedGroupFilter || ''}
+                                onChange={(e) => onGroupFilterChange && onGroupFilterChange(e.target.value)}
                             >
                                 <option value="">Все группы</option>
                                 {groups.map(group => (
@@ -150,8 +93,8 @@ const SearchAndFilters = ({
                                 <i className="bi-person-badge"></i>
                             </InputGroup.Text>
                             <Form.Select
-                                value={displayRoleFilter}
-                                onChange={(e) => handleRoleFilterChange(e.target.value)}
+                                value={selectedRoleFilter || ''}
+                                onChange={(e) => onRoleFilterChange && onRoleFilterChange(e.target.value)}
                             >
                                 <option value="">Все роли</option>
                                 <option value="USER">Пользователь</option>
@@ -170,8 +113,8 @@ const SearchAndFilters = ({
                                 <i className="bi-flag"></i>
                             </InputGroup.Text>
                             <Form.Select
-                                value={displayStatusFilter}
-                                onChange={(e) => handleStatusFilterChange(e.target.value)}
+                                value={selectedStatusFilter || ''}
+                                onChange={(e) => onStatusFilterChange && onStatusFilterChange(e.target.value)}
                             >
                                 <option value="">Все статусы</option>
                                 {STATUS_KEYS.map(key => (
@@ -190,8 +133,8 @@ const SearchAndFilters = ({
                                 <i className="bi-mortarboard"></i>
                             </InputGroup.Text>
                             <Form.Select
-                                value={displaySpecialtyFilter}
-                                onChange={(e) => handleSpecialtyFilterChange(e.target.value)}
+                                value={selectedSpecialtyFilter || ''}
+                                onChange={(e) => onSpecialtyFilterChange && onSpecialtyFilterChange(e.target.value)}
                             >
                                 <option value="">Все специальности</option>
                                 {specialties.map(spec => (

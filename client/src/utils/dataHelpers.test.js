@@ -1,4 +1,44 @@
-import { prepareFormData, toGroupFormData } from './dataHelpers'
+import { prepareFormData, toGroupFormData, calculateCourse } from './dataHelpers'
+
+// Набор кейсов повторяет server/utils/course.test.js: правило курса одно,
+// расхождение двух реализаций и есть регрессия.
+const january = { now: new Date(2025, 0, 15) }
+const september = { now: new Date(2025, 8, 10) }
+
+test('зачисление в сентябре прошлого года — первый курс до 1 сентября', () => {
+  expect(calculateCourse('2024-09-01', 4, 0, january)).toBe(1)
+})
+
+test('после 1 сентября учебный год переключается', () => {
+  expect(calculateCourse('2024-09-01', 4, 0, september)).toBe(2)
+})
+
+test('зачисление до 1 сентября года переключает курс 1 сентября', () => {
+  expect(calculateCourse('2024-06-01', 4, 0, { now: new Date(2024, 8, 10) })).toBe(2)
+  expect(calculateCourse('2024-06-01', 4, 0, september)).toBe(3)
+})
+
+test('зачисление весной переключает курс 1 сентября, а не 1 января', () => {
+  const enrollFeb = '2024-02-15'
+  expect(calculateCourse(enrollFeb, 4, 0, { now: new Date(2024, 4, 20) })).toBe(1)
+  expect(calculateCourse(enrollFeb, 4, 0, { now: new Date(2024, 7, 31) })).toBe(1)
+  expect(calculateCourse(enrollFeb, 4, 0, { now: new Date(2024, 8, 1) })).toBe(2)
+  expect(calculateCourse(enrollFeb, 4, 0, january)).toBe(2)
+  expect(calculateCourse(enrollFeb, 4, 0, september)).toBe(3)
+})
+
+test('зачисление в марте не переключается 1 января', () => {
+  expect(calculateCourse('2024-03-01', 4, 0, january)).toBe(2)
+  expect(calculateCourse('2024-03-01', 4, 0, september)).toBe(3)
+})
+
+test('курс не уезжает за срок обучения', () => {
+  expect(calculateCourse('2019-09-01', 4, 0, september)).toBe('Выпускник')
+})
+
+test('без даты зачисления курс неизвестен', () => {
+  expect(calculateCourse('', 4, 0, september)).toBe('-')
+})
 
 test('одиночный id приходит массивом чисел', () => {
   expect(prepareFormData({ studentIds: '7' }, 'requests').studentIds).toEqual([7])
@@ -14,6 +54,11 @@ test('пустой массив не превращается в [NaN]', () => {
 
 test('documentId приводится к числу', () => {
   expect(prepareFormData({ studentIds: ['7'], documentId: '3' }, 'requests').documentId).toBe(3)
+})
+
+test('пустой documentId превращается в null', () => {
+  expect(prepareFormData({ studentIds: ['7'], documentId: '' }, 'requests').documentId).toBeNull()
+  expect(prepareFormData({ studentIds: ['7'], documentId: null }, 'requests').documentId).toBeNull()
 })
 
 test('для остальных вкладок studentIds не трогается', () => {

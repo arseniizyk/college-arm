@@ -3,35 +3,83 @@ import { Tabs, Tab, Button } from 'react-bootstrap';
 import { TABLE_COLUMNS } from '../utils/tableConfig';
 import TableContent from './TableContent';
 
-const DataManagement = ({
-    activeTab,
-    handleTabChange,
-    currentItems,
-    isLoading,
-    handleEdit,
-    handleDelete,
-    setSearchTerm,
-    searchTerm,
-    currentPage,
-    totalPages,
-    setCurrentPage,
-    filteredData,
-    getNameByIdWithData,
-    handleStudentSearch,
-    selectedGroupFilter,
-    handleGroupFilterChange,
-    groups,
-    selectedRoleFilter,
-    handleRoleFilterChange,
-    selectedStatusFilter,
-    handleStatusFilterChange,
-    selectedSpecialtyFilter,
-    handleSpecialtyFilterChange,
-    specialties,
-    handleCreate,
-    loadTableData,
-    itemsPerPage
-}) => {
+const TABS = [
+    {
+        key: 'users',
+        label: 'Пользователи',
+        icon: 'bi-people',
+        getExtraProps: (props) => ({
+            selectedRoleFilter: props.selectedRoleFilter,
+            onRoleFilterChange: props.handleRoleFilterChange,
+        }),
+    },
+    {
+        key: 'students',
+        label: 'Студенты',
+        icon: 'bi-mortarboard',
+        getExtraProps: (props) => ({
+            onSearch: props.handleStudentSearch,
+            selectedGroupFilter: props.selectedGroupFilter,
+            onGroupFilterChange: props.handleGroupFilterChange,
+            groups: props.groups,
+        }),
+    },
+    {
+        key: 'groups',
+        label: 'Группы',
+        icon: 'bi-people-fill',
+        getExtraProps: (props) => ({
+            selectedSpecialtyFilter: props.selectedSpecialtyFilter,
+            onSpecialtyFilterChange: props.handleSpecialtyFilterChange,
+            specialties: props.specialties,
+        }),
+    },
+    {
+        key: 'specialties',
+        label: 'Специальности',
+        icon: 'bi-award',
+    },
+    {
+        key: 'teachers',
+        label: 'Преподаватели',
+        icon: 'bi-person-badge',
+    },
+    {
+        key: 'documents',
+        label: 'Документы',
+        icon: 'bi-file-earmark-text',
+    },
+    {
+        key: 'requests',
+        label: 'Заявки',
+        icon: 'bi-clipboard-check',
+        getExtraProps: (props) => ({
+            selectedStatusFilter: props.selectedStatusFilter,
+            onStatusFilterChange: props.handleStatusFilterChange,
+        }),
+    },
+];
+
+const DataManagement = (props) => {
+    const {
+        activeTab,
+        handleTabChange,
+        currentItems,
+        isLoading,
+        handleEdit,
+        handleDelete,
+        setSearchTerm,
+        searchTerm,
+        currentPage,
+        totalPages,
+        setCurrentPage,
+        filteredData,
+        getNameByIdWithData,
+        handleCreate,
+        loadTableData,
+        itemsPerPage
+    } = props;
+
     const getTableColumns = TABLE_COLUMNS[activeTab] || [];
 
     return (
@@ -46,183 +94,36 @@ const DataManagement = ({
                 onSelect={handleTabChange}
                 className="admin-tabs mb-4"
             >
-                <Tab eventKey="users" title={
-                    <div className="d-flex align-items-center">
-                        <i className="bi-people me-2"></i>
-                        <span>Пользователи</span>
-                    </div>
-                }>
-                    <TableContent
-                        data={currentItems}
-                        columns={getTableColumns}
-                        loading={isLoading}
-                        onEdit={handleEdit}
-                        onDelete={handleDelete}
-                        onSearch={setSearchTerm}
-                        searchTerm={searchTerm}
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        onPageChange={setCurrentPage}
-                        totalItems={filteredData.length}
-                        itemsPerPage={itemsPerPage}
-                        getNameById={getNameByIdWithData}
-                        tableType="users"
-                        selectedRoleFilter={selectedRoleFilter}
-                        onRoleFilterChange={handleRoleFilterChange}
-                    />
-                </Tab>
-
-                <Tab eventKey="students" title={
-                    <div className="d-flex align-items-center">
-                        <i className="bi-mortarboard me-2"></i>
-                        <span>Студенты</span>
-                    </div>
-                }>
-                    <TableContent
-                        data={currentItems}
-                        columns={getTableColumns}
-                        loading={isLoading}
-                        onEdit={handleEdit}
-                        onDelete={handleDelete}
-                        onSearch={handleStudentSearch}
-                        searchTerm={searchTerm}
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        onPageChange={setCurrentPage}
-                        totalItems={filteredData.length}
-                        itemsPerPage={itemsPerPage}
-                        getNameById={getNameByIdWithData}
-                        tableType="students"
-                        selectedGroupFilter={selectedGroupFilter}
-                        onGroupFilterChange={handleGroupFilterChange}
-                        groups={groups}
-                    />
-                </Tab>
-
-                <Tab eventKey="groups" title={
-                    <div className="d-flex align-items-center">
-                        <i className="bi-people-fill me-2"></i>
-                        <span>Группы</span>
-                    </div>
-                }>
-                    <TableContent
-                        data={currentItems}
-                        columns={getTableColumns}
-                        loading={isLoading}
-                        onEdit={handleEdit}
-                        onDelete={handleDelete}
-                        onSearch={setSearchTerm}
-                        searchTerm={searchTerm}
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        onPageChange={setCurrentPage}
-                        totalItems={filteredData.length}
-                        itemsPerPage={itemsPerPage}
-                        getNameById={getNameByIdWithData}
-                        tableType="groups"
-                        selectedSpecialtyFilter={selectedSpecialtyFilter}
-                        onSpecialtyFilterChange={handleSpecialtyFilterChange}
-                        specialties={specialties}
-                    />
-                </Tab>
-
-                <Tab eventKey="specialties" title={
-                    <div className="d-flex align-items-center">
-                        <i className="bi-award me-2"></i>
-                        <span>Специальности</span>
-                    </div>
-                }>
-                    <TableContent
-                        data={currentItems}
-                        columns={getTableColumns}
-                        loading={isLoading}
-                        onEdit={handleEdit}
-                        onDelete={handleDelete}
-                        onSearch={setSearchTerm}
-                        searchTerm={searchTerm}
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        onPageChange={setCurrentPage}
-                        totalItems={filteredData.length}
-                        itemsPerPage={itemsPerPage}
-                        getNameById={getNameByIdWithData}
-                        tableType="specialties"
-                    />
-                </Tab>
-
-                <Tab eventKey="teachers" title={
-                    <div className="d-flex align-items-center">
-                        <i className="bi-person-badge me-2"></i>
-                        <span>Преподаватели</span>
-                    </div>
-                }>
-                    <TableContent
-                        data={currentItems}
-                        columns={getTableColumns}
-                        loading={isLoading}
-                        onEdit={handleEdit}
-                        onDelete={handleDelete}
-                        onSearch={setSearchTerm}
-                        searchTerm={searchTerm}
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        onPageChange={setCurrentPage}
-                        totalItems={filteredData.length}
-                        itemsPerPage={itemsPerPage}
-                        getNameById={getNameByIdWithData}
-                        tableType="teachers"
-                    />
-                </Tab>
-
-                <Tab eventKey="documents" title={
-                    <div className="d-flex align-items-center">
-                        <i className="bi-file-earmark-text me-2"></i>
-                        <span>Документы</span>
-                    </div>
-                }>
-                    <TableContent
-                        data={currentItems}
-                        columns={getTableColumns}
-                        loading={isLoading}
-                        onEdit={handleEdit}
-                        onDelete={handleDelete}
-                        onSearch={setSearchTerm}
-                        searchTerm={searchTerm}
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        onPageChange={setCurrentPage}
-                        totalItems={filteredData.length}
-                        itemsPerPage={itemsPerPage}
-                        getNameById={getNameByIdWithData}
-                        tableType="documents"
-                    />
-                </Tab>
-
-                <Tab eventKey="requests" title={
-                    <div className="d-flex align-items-center">
-                        <i className="bi-clipboard-check me-2"></i>
-                        <span>Заявки</span>
-                    </div>
-                }>
-                    <TableContent
-                        data={currentItems}
-                        columns={getTableColumns}
-                        loading={isLoading}
-                        onEdit={handleEdit}
-                        onDelete={handleDelete}
-                        onSearch={setSearchTerm}
-                        searchTerm={searchTerm}
-                        currentPage={currentPage}
-                        totalPages={totalPages}
-                        onPageChange={setCurrentPage}
-                        totalItems={filteredData.length}
-                        itemsPerPage={itemsPerPage}
-                        getNameById={getNameByIdWithData}
-                        tableType="requests"
-                        selectedStatusFilter={selectedStatusFilter}
-                        onStatusFilterChange={handleStatusFilterChange}
-                    />
-                </Tab>
+                {TABS.map(tab => (
+                    <Tab
+                        key={tab.key}
+                        eventKey={tab.key}
+                        title={
+                            <div className="d-flex align-items-center">
+                                <i className={`${tab.icon} me-2`}></i>
+                                <span>{tab.label}</span>
+                            </div>
+                        }
+                    >
+                        <TableContent
+                            data={currentItems}
+                            columns={getTableColumns}
+                            loading={isLoading}
+                            onEdit={handleEdit}
+                            onDelete={handleDelete}
+                            onSearch={setSearchTerm}
+                            searchTerm={searchTerm}
+                            currentPage={currentPage}
+                            totalPages={totalPages}
+                            onPageChange={setCurrentPage}
+                            totalItems={filteredData.length}
+                            itemsPerPage={itemsPerPage}
+                            getNameById={getNameByIdWithData}
+                            tableType={tab.key}
+                            {...(tab.getExtraProps ? tab.getExtraProps(props) : {})}
+                        />
+                    </Tab>
+                ))}
             </Tabs>
 
             <div className="action-buttons mt-4">
