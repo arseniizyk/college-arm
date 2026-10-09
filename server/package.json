@@ -9,6 +9,7 @@
     "migrate:baseline": "node scripts/migrate.js --baseline",
     "test": "node --test",
     "seed": "node seed.js",
+    "import:students": "node scripts/importDocxStudents.js",
     "test-backup": "node testBackup.js"
   },
   "keywords": [],
