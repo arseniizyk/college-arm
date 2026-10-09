@@ -32,7 +32,6 @@ def extract_docx_groups(docx_path):
             if text:
                 paragraphs.append(text)
 
-    # Find all "Приказ о зачислении" positions
     order_indices = [i for i, p in enumerate(paragraphs) if re.match(r'^Приказ о зачислении', p, re.I)]
 
     parsed_groups = []
@@ -44,7 +43,7 @@ def extract_docx_groups(docx_path):
         qual_raw = paragraphs[ord_idx + 2]
         curator_raw = paragraphs[ord_idx + 3]
 
-        # 1. Parse Group Number
+        # Parse Group Number
         group_num_m = re.match(r'^([0-9]+[\*\s]*[А-Яа-яA-Za-z]+[\*\s]*)', header_raw)
         raw_group_num = group_num_m.group(1).strip() if group_num_m else header_raw.split('(')[0].strip()
         clean_group_number = raw_group_num.replace('*', '').replace(' ', '')
@@ -52,7 +51,7 @@ def extract_docx_groups(docx_path):
         group_enroll_date = parse_date(header_raw)
         payment_type = 'платной' if 'платн' in header_raw.lower() else 'бесплатной'
 
-        # 2. Parse Specialty & Qualification
+        # Parse Specialty & Qualification
         spec_clean = spec_raw.replace('Специальность:', '').strip()
         spec_code_m = re.search(r'([0-9]-[0-9]{2}-[0-9]{4}-[0-9]{2})', spec_clean)
         spec_code = spec_code_m.group(1) if spec_code_m else None
@@ -72,14 +71,14 @@ def extract_docx_groups(docx_path):
             duration_years = 3
             duration_months = 0
 
-        # 3. Parse Curator
+        # Parse Curator
         curator_clean = curator_raw.replace('Куратор:', '').strip().rstrip('.')
         cur_parts = curator_clean.split()
         curator_last_name = cur_parts[0] if len(cur_parts) > 0 else ''
-        curator_first_name = cur_parts[1] if len(cur_parts) > 1 else ''
+        curator_name = cur_parts[1] if len(cur_parts) > 1 else ''
         curator_father_name = ' '.join(cur_parts[2:]) if len(cur_parts) > 2 else ''
 
-        # 4. Parse Students
+        # Parse Students
         student_lines_start = ord_idx + 4
         student_lines_end = order_indices[i + 1] - 1 if i + 1 < len(order_indices) else len(paragraphs)
         raw_lines = paragraphs[student_lines_start:student_lines_end]
@@ -170,7 +169,7 @@ def extract_docx_groups(docx_path):
             'duration_years': duration_years,
             'duration_months': duration_months,
             'curator_last_name': curator_last_name,
-            'curator_name': curator_first_name,
+            'curator_name': curator_name,
             'curator_father_name': curator_father_name,
             'order_number': order_raw.strip(),
             'students': group_students
@@ -179,18 +178,14 @@ def extract_docx_groups(docx_path):
     return parsed_groups
 
 if __name__ == '__main__':
-    if len(sys.argv) > 1:
-        target_path = sys.argv[1]
-    else:
-        candidates = [
-            os.path.join(os.path.dirname(__file__), '..', 'data', 'Список учащихся 2026-2027.docx'),
-            os.path.join(os.path.dirname(__file__), '..', 'Список учащихся 2026-2027.docx'),
-            r"C:\Users\Magic\Downloads\Telegram Desktop\Список учащихся 2026-2027.docx"
-        ]
-        target_path = next((p for p in candidates if os.path.exists(p)), candidates[0])
+    if len(sys.argv) < 2:
+        print("Ошибка: Не указан путь к файлу .docx", file=sys.stderr)
+        print("Использование: python parseDocx.py <путь_к_файлу.docx>", file=sys.stderr)
+        sys.exit(1)
 
+    target_path = os.path.abspath(sys.argv[1])
     if not os.path.exists(target_path):
-        print(f"Ошибка: Файл не найден: {target_path}\nИспользование: python parseDocx.py <путь_к_файлу.docx>", file=sys.stderr)
+        print(f"Ошибка: Файл не найден: {target_path}", file=sys.stderr)
         sys.exit(1)
 
     data = extract_docx_groups(target_path)
