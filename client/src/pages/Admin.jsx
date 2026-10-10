@@ -9,10 +9,12 @@ import RequestsManagement from '../components/RequestsManagement';
 import RequestStatistics from '../components/RequestStatistics';
 import DocumentsGeneration from '../components/DocumentsGeneration';
 import CRUDModal from '../components/CRUDModal';
+import { notify } from '../context/ToastContext';
 
 const Admin = observer(() => {
     const { data, user } = useContext(Context);
     const [mainTab, setMainTab] = useState('data');
+    const [isSyncing, setIsSyncing] = useState(false);
     
     // Подсчитываем количество новых заявок (в обработке и ещё не просмотренные)
     const newRequestsCount = (data.getEntities('requests') || []).filter(req => req.status === 'pending' && !req.isViewed).length;
@@ -21,6 +23,8 @@ const Admin = observer(() => {
     useEffect(() => {
         const intervalId = setInterval(async () => {
             try {
+                setIsSyncing(true);
+                const prevCount = (data.getEntities('requests') || []).length;
                 // Получаем просмотренные заявки из localStorage
                 const viewedRequestsStr = localStorage.getItem('viewedRequests');
                 const viewedRequestIds = viewedRequestsStr ? JSON.parse(viewedRequestsStr) : [];
@@ -31,8 +35,20 @@ const Admin = observer(() => {
                 viewedRequestIds.forEach(id => {
                     data.updateLocal('requests', id, { isViewed: true });
                 });
+
+                const newCount = (data.getEntities('requests') || []).length;
+                if (newCount > prevCount) {
+                    const diff = newCount - prevCount;
+                    notify({
+                        title: 'Новые заявки',
+                        message: `Поступили новые заявки (${diff} шт.)`,
+                        variant: 'info'
+                    });
+                }
             } catch (err) {
                 console.error('Ошибка автообновления заявок:', err);
+            } finally {
+                setTimeout(() => setIsSyncing(false), 1200);
             }
         }, 60000); // 60000 мс = 1 минута
 
@@ -93,7 +109,16 @@ const Admin = observer(() => {
                     <i className="bi-gear me-3"></i>
                     Административная панель
                 </h1>
-                <p className="text-white fs-5">Управление данными системы и обработка заявок</p>
+                <p className="text-white fs-5 mb-2">Управление данными системы и обработка заявок</p>
+                <div className="d-flex justify-content-center">
+                    <span
+                        className="badge bg-white text-dark bg-opacity-75 shadow-sm fw-normal py-1 px-3 d-inline-flex align-items-center"
+                        title="Периодическая фоновая проверка каждые 60 секунд"
+                    >
+                        <i className={`bi bi-arrow-repeat me-1 ${isSyncing ? 'spin-icon text-primary' : 'text-muted'}`}></i>
+                        {isSyncing ? 'Синхронизация данных...' : 'Данные синхронизированы'}
+                    </span>
+                </div>
             </div>
 
             {error && (

@@ -4,6 +4,7 @@ import { getDefaultFormData } from '../utils/tableConfig';
 import { ITEMS_PER_PAGE } from '../utils/consts';
 import { statusLabel } from '../utils/requestStatus';
 import { errorMessage } from '../http';
+import { notify } from '../context/ToastContext';
 
 export const useAdminLogic = (data, user) => {
     const [activeTab, setActiveTab] = useState('users');
@@ -133,9 +134,13 @@ export const useAdminLogic = (data, user) => {
 
             data.fetchAll('notifications').catch(() => {});
 
-            setSuccess(`Статус заявки #${requestId} изменен на "${statusLabel(newStatus)}"`);
-
-            setTimeout(() => setSuccess(null), 3000);
+            const msg = `Статус заявки #${requestId} изменен на "${statusLabel(newStatus)}"`;
+            setSuccess(msg);
+            notify({
+                title: 'Статус заявки',
+                message: msg,
+                variant: 'success'
+            });
             return true;
         } catch (err) {
             data.updateLocal('requests', requestId, { status: request.status });
@@ -206,27 +211,34 @@ export const useAdminLogic = (data, user) => {
                 }
             }
 
+            let actionMsg = 'Операция выполнена успешно';
             if (modalType === 'create') {
                 await data.create(activeTab, submitData);
                 // Перезагружаем заявки после создания, чтобы получить полные данные
                 if (activeTab === 'requests') {
                     await data.fetchAll('requests');
                 }
-                setSuccess('Запись успешно создана');
+                actionMsg = 'Запись успешно создана';
             } else if (modalType === 'edit') {
                 await data.update(activeTab, currentItem.id, submitData);
                 // Перезагружаем заявки после обновления
                 if (activeTab === 'requests') {
                     await data.fetchAll('requests');
                 }
-                setSuccess('Запись успешно обновлена');
+                actionMsg = 'Запись успешно обновлена';
             } else if (modalType === 'delete') {
                 await data.delete(activeTab, currentItem.id);
-                setSuccess('Запись успешно удалена');
+                actionMsg = 'Запись успешно удалена';
             }
 
+            setSuccess(actionMsg);
+            notify({
+                title: 'Управление данными',
+                message: actionMsg,
+                variant: 'success'
+            });
+
             setShowModal(false);
-            setTimeout(() => setSuccess(null), 3000);
 
         } catch (err) {
             setError(err.response?.data?.message || 'Ошибка операции');

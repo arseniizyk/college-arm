@@ -1,4 +1,5 @@
 import axios from "axios";
+import { notify } from "../context/ToastContext";
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:7000'
 
@@ -80,6 +81,12 @@ const downloadDoc = async (path, { method = 'POST', payload = null, params = nul
     const suffix = stamp === null || stamp === undefined ? Date.now() : stamp
     const name = `${fileName}_${suffix}.docx`
 
+    notify({
+        title: 'Формирование документа',
+        message: `Формирование документа «${fileName}»... Пожалуйста, подождите.`,
+        variant: 'info'
+    })
+
     const config = { method, url: path, responseType: 'blob' }
     if (params) config.params = params
     if (payload) {
@@ -92,15 +99,33 @@ const downloadDoc = async (path, { method = 'POST', payload = null, params = nul
         response = await $authHost.request(config)
     } catch (err) {
         const message = await extractErrorMessage(err.response?.data)
+        notify({
+            title: 'Ошибка загрузки',
+            message,
+            variant: 'danger',
+            autohide: false
+        })
         throw new Error(message, { cause: err })
     }
 
     const contentType = response.headers['content-type'] || ''
     if (!contentType.includes(DOCX_MIME) && !contentType.includes(BINARY_MIME)) {
-        throw new Error(`Сервер вернул не документ (${contentType || 'без типа содержимого'})`)
+        const errMessage = `Сервер вернул не документ (${contentType || 'без типа содержимого'})`
+        notify({
+            title: 'Ошибка типа документа',
+            message: errMessage,
+            variant: 'danger',
+            autohide: false
+        })
+        throw new Error(errMessage)
     }
 
     saveBlob(response.data, name)
+    notify({
+        title: 'Документ загружен',
+        message: `Файл «${name}» успешно сохранен`,
+        variant: 'success'
+    })
     return name
 }
 

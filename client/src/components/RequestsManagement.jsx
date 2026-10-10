@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Form, InputGroup, Row, Col, Alert, Spinner } from 'react-bootstrap';
+import { Form, InputGroup, Row, Col, Alert, Spinner, Button } from 'react-bootstrap';
 import RequestCard from './RequestCard';
 import Pagination from './Pagination';
 import { formatFio } from '../utils/dataHelpers';
@@ -196,14 +196,27 @@ const RequestsManagement = ({
                     </>
                 ) : (
                     <div className="text-center py-5">
-                        <i className="bi-inbox fs-1 text-muted mb-3"></i>
+                        <i className="bi bi-inbox fs-1 text-muted mb-3 d-block"></i>
                         <h5 className="text-muted">Заявки не найдены</h5>
-                        <p className="text-muted">
+                        <p className="text-muted mb-3">
                             {searchTerm || statusFilter 
                                 ? 'Попробуйте изменить условия поиска или фильтрации'
-                                : 'Нет заявок для отображения'
+                                : 'В системе пока нет заявок'
                             }
                         </p>
+                        {(searchTerm || statusFilter) && (
+                            <Button
+                                variant="outline-secondary"
+                                size="sm"
+                                onClick={() => {
+                                    setSearchTerm('');
+                                    setStatusFilter('');
+                                }}
+                            >
+                                <i className="bi bi-x-circle me-1"></i>
+                                Сбросить фильтры
+                            </Button>
+                        )}
                     </div>
                 )}
             </div>

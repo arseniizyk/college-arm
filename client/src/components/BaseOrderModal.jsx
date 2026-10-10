@@ -40,6 +40,15 @@ const BaseOrderModal = ({
                             {error}
                         </Alert>
                     )}
+                    {loading && (
+                        <Alert variant="info" className="d-flex align-items-center mb-3 py-2">
+                            <Spinner animation="border" size="sm" className="me-2 flex-shrink-0" />
+                            <div>
+                                <strong>Формирование документа Word...</strong>
+                                <div className="small text-muted">Пожалуйста, подождите, файл формируется и загрузится автоматически.</div>
+                            </div>
+                        </Alert>
+                    )}
                     {children}
                 </Modal.Body>
 

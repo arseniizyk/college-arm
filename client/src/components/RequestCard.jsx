@@ -226,8 +226,6 @@ const RequestCard = ({ request, onStatusChange, getNameById, onViewUpdate }) => 
     const handleGenerateDocument = async () => {
         setGenerating(true);
         try {
-            // downloadDoc разбирает тело ответа, поэтому в alert попадает текст
-            // сервера, а не общее «Ошибка при генерации».
             await downloadDoc(`/api/generate/study-certificate/${request.id}`, {
                 method: 'GET',
                 fileName: 'Справка_об_обучении',
@@ -235,7 +233,6 @@ const RequestCard = ({ request, onStatusChange, getNameById, onViewUpdate }) => 
             });
         } catch (error) {
             console.error('Ошибка при генерации документа:', error);
-            alert(error.message || 'Ошибка при генерации документа');
         } finally {
             setGenerating(false);
         }

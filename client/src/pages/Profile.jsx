@@ -2,13 +2,14 @@ import React, { useState, useEffect, useContext } from 'react';
 import { Container, Card, Spinner, Alert, Badge, Tabs, Tab, Form, Button, Modal } from 'react-bootstrap';
 import { Context } from '../index';
 import { observer } from 'mobx-react-lite';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import RequestCard from '../components/RequestCard';
 import { getNameById as getNameByIdForField } from '../utils/dataHelpers';
 import { $authHost, errorMessage } from '../http';
 import Pagination from '../components/Pagination';
-import { ITEMS_PER_PAGE, MIN_PASSWORD_LENGTH } from '../utils/consts';
+import { ITEMS_PER_PAGE, MIN_PASSWORD_LENGTH, REQUEST_ROUTE } from '../utils/consts';
 import { REQUEST_STATUSES, STATUS_KEYS, statusLabelPlural } from '../utils/requestStatus';
+import { notify } from '../context/ToastContext';
 import './Profile.css';
 
 const Profile = observer(() => {
@@ -22,6 +23,7 @@ const Profile = observer(() => {
     const [requestsTab, setRequestsTab] = useState('all'); // Подвкладка заявок
     const [settingsTab, setSettingsTab] = useState('password'); // Подвкладка настроек: password, email
     const [currentPage, setCurrentPage] = useState(1);
+    const [isSyncing, setIsSyncing] = useState(false);
     const itemsPerPage = ITEMS_PER_PAGE; // Количество заявок на странице
 
     // Состояния для формы смены пароля
@@ -86,6 +88,7 @@ const Profile = observer(() => {
     useEffect(() => {
         const intervalId = setInterval(async () => {
             try {
+                setIsSyncing(true);
                 // Получаем просмотренные заявки из localStorage
                 const viewedRequestsStr = localStorage.getItem('viewedRequests');
                 const viewedRequestIds = viewedRequestsStr ? JSON.parse(viewedRequestsStr) : [];
@@ -99,6 +102,8 @@ const Profile = observer(() => {
                 });
             } catch (err) {
                 console.error('Ошибка автообновления заявок:', err);
+            } finally {
+                setTimeout(() => setIsSyncing(false), 1200);
             }
         }, 60000); // 60000 мс = 1 минута
 
@@ -209,16 +214,18 @@ const Profile = observer(() => {
                 newPassword: passwordForm.newPassword
             });
 
-            setPasswordSuccess('Пароль успешно изменен');
+            const pwdMsg = 'Пароль успешно изменен';
+            setPasswordSuccess(pwdMsg);
+            notify({
+                title: 'Безопасность',
+                message: pwdMsg,
+                variant: 'success'
+            });
             setPasswordForm({
                 currentPassword: '',
                 newPassword: '',
                 confirmPassword: ''
             });
-
-            // Скрываем сообщение об успехе через 5 секунд
-            setTimeout(() => setPasswordSuccess(null), 5000);
-
         } catch (err) {
             setPasswordError(errorMessage(err, 'Ошибка при смене пароля'));
         } finally {
@@ -268,15 +275,17 @@ const Profile = observer(() => {
             // Обновляем информацию о пользователе
             setUserInfo(prev => ({ ...prev, email: emailForm.newEmail }));
 
-            setEmailSuccess('Email успешно изменен. Используйте новый email для входа.');
+            const emailMsg = 'Email успешно изменен. Используйте новый email для входа.';
+            setEmailSuccess(emailMsg);
+            notify({
+                title: 'Профиль',
+                message: emailMsg,
+                variant: 'success'
+            });
             setEmailForm({
                 newEmail: '',
                 password: ''
             });
-
-            // Скрываем сообщение об успехе через 5 секунд
-            setTimeout(() => setEmailSuccess(null), 5000);
-
         } catch (err) {
             setEmailError(errorMessage(err, 'Ошибка при смене email'));
         } finally {
@@ -329,9 +338,18 @@ const Profile = observer(() => {
                             <h1 className="display-4 fw-bold mb-3">
                                 Личный кабинет
                             </h1>
-                            <p className="lead mb-0">
+                            <p className="lead mb-2">
                                 {currentUser?.email || 'Пользователь'}
                             </p>
+                            <div className="d-flex justify-content-center">
+                                <span
+                                    className="badge bg-white text-dark bg-opacity-75 shadow-sm fw-normal py-1 px-3 d-inline-flex align-items-center"
+                                    title="Периодическая фоновая проверка каждые 60 секунд"
+                                >
+                                    <i className={`bi bi-arrow-repeat me-1 ${isSyncing ? 'spin-icon text-primary' : 'text-muted'}`}></i>
+                                    {isSyncing ? 'Синхронизация заявок...' : 'Данные актуальны'}
+                                </span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -432,14 +450,31 @@ const Profile = observer(() => {
                                                             </>
                                                         ) : (
                                                             <div className="text-center py-5">
-                                                                <i className={`bi ${info.icon} fs-1 text-muted mb-3`}></i>
-                                                                <h5 className="text-muted">Нет заявок</h5>
-                                                                <p className="text-muted">
-                                                                    {key === 'all' 
-                                                                        ? 'У вас пока нет ни одной заявки'
-                                                                        : `У вас нет заявок со статусом "${info.label}"`
-                                                                    }
-                                                                </p>
+                                                                {key === 'all' ? (
+                                                                    <>
+                                                                        <i className="bi bi-inbox fs-1 text-muted mb-3 d-block"></i>
+                                                                        <h5 className="text-muted">У вас пока нет ни одной заявки</h5>
+                                                                        <p className="text-muted mb-3">
+                                                                            Оформите заявку на необходимый документ в несколько кликов
+                                                                        </p>
+                                                                        <Button as={Link} to={REQUEST_ROUTE} variant="primary">
+                                                                            <i className="bi bi-file-earmark-plus me-2"></i>
+                                                                            Подать заявку
+                                                                        </Button>
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        <i className={`bi ${info.icon} fs-1 text-muted mb-3 d-block`}></i>
+                                                                        <h5 className="text-muted">Нет заявок со статусом «{info.label}»</h5>
+                                                                        <p className="text-muted mb-3">
+                                                                            В этой категории пока нет записей
+                                                                        </p>
+                                                                        <Button variant="outline-secondary" size="sm" onClick={() => setRequestsTab('all')}>
+                                                                            <i className="bi bi-list-ul me-2"></i>
+                                                                            Показать все заявки
+                                                                        </Button>
+                                                                    </>
+                                                                )}
                                                             </div>
                                                         )}
                                                     </div>

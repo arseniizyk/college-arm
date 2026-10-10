@@ -29,7 +29,8 @@ const TableContent = ({
     selectedSpecialtyFilter,
     onSpecialtyFilterChange,
     specialties,
-    itemsPerPage = ITEMS_PER_PAGE
+    itemsPerPage = ITEMS_PER_PAGE,
+    onAdd
 }) => {
     if (loading) {
         return (
@@ -42,6 +43,22 @@ const TableContent = ({
 
     // Гарантируем, что data - это массив
     const safeData = Array.isArray(data) ? data : [];
+
+    const hasActiveFilters = Boolean(
+        searchTerm ||
+        selectedGroupFilter ||
+        selectedRoleFilter ||
+        selectedStatusFilter ||
+        selectedSpecialtyFilter
+    );
+
+    const handleResetFilters = () => {
+        if (onSearch) onSearch('');
+        if (onGroupFilterChange) onGroupFilterChange('');
+        if (onRoleFilterChange) onRoleFilterChange('');
+        if (onStatusFilterChange) onStatusFilterChange('');
+        if (onSpecialtyFilterChange) onSpecialtyFilterChange('');
+    };
 
     return (
         <div className="table-container">
@@ -77,11 +94,37 @@ const TableContent = ({
                     {safeData.length === 0 ? (
                         <tr>
                             <td colSpan={columns.length + 1} className="text-center py-5">
-                                <i className="bi-database fs-1 text-muted mb-3"></i>
-                                <p className="text-muted fs-5">Нет данных для отображения</p>
-                                <p className="text-muted">
-                                    {searchTerm ? 'Попробуйте изменить условия поиска' : 'Добавьте данные через кнопку "Добавить запись"'}
-                                </p>
+                                {hasActiveFilters ? (
+                                    <>
+                                        <i className="bi bi-search fs-1 text-muted mb-3 d-block"></i>
+                                        <p className="text-muted fs-5 mb-1">Ничего не найдено</p>
+                                        <p className="text-muted mb-3">
+                                            Попробуйте изменить поисковый запрос или сбросить фильтры
+                                        </p>
+                                        <Button
+                                            variant="outline-secondary"
+                                            size="sm"
+                                            onClick={handleResetFilters}
+                                        >
+                                            <i className="bi bi-x-circle me-1"></i>
+                                            Сбросить фильтры и поиск
+                                        </Button>
+                                    </>
+                                ) : (
+                                    <>
+                                        <i className="bi bi-inbox fs-1 text-muted mb-3 d-block"></i>
+                                        <p className="text-muted fs-5 mb-1">Нет записей</p>
+                                        <p className="text-muted mb-3">
+                                            В этом разделе пока нет добавленных данных
+                                        </p>
+                                        {onAdd && (
+                                            <Button variant="primary" size="sm" onClick={onAdd}>
+                                                <i className="bi bi-plus-lg me-1"></i>
+                                                Добавить запись
+                                            </Button>
+                                        )}
+                                    </>
+                                )}
                             </td>
                         </tr>
                     ) : (

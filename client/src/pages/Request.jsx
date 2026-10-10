@@ -6,6 +6,7 @@ import MultiselectStudents from '../components/MultiselectStudents';
 import { getMe } from '../http/userAPI';
 import { canSelectMultipleStudents } from '../utils/consts';
 import { allowedStudentIds } from '../utils/requestStudents';
+import { notify } from '../context/ToastContext';
 import './Request.css';
 
 const Request = observer(() => {
@@ -105,7 +106,13 @@ const Request = observer(() => {
                 studentIds: studentIds
             });
 
-            setSuccess('Заявка успешно создана! Вы можете отслеживать её статус в личном кабинете.');
+            const successMsg = 'Заявка успешно создана! Вы можете отслеживать её статус в личном кабинете.';
+            setSuccess(successMsg);
+            notify({
+                title: 'Заявка отправлена',
+                message: successMsg,
+                variant: 'success'
+            });
             setValidated(false);
             
             // Прокрутка к началу страницы
@@ -117,8 +124,6 @@ const Request = observer(() => {
                 description: '',
                 studentIds: canSelectMultipleStudents(userRole) ? [] : ''
             });
-
-            setTimeout(() => setSuccess(null), 5000);
         } catch (err) {
             setError(err.response?.data?.message || 'Ошибка создания заявки');
         } finally {

@@ -120,6 +120,7 @@ const DataManagement = (props) => {
                             itemsPerPage={itemsPerPage}
                             getNameById={getNameByIdWithData}
                             tableType={tab.key}
+                            onAdd={handleCreate}
                             {...(tab.getExtraProps ? tab.getExtraProps(props) : {})}
                         />
                     </Tab>
