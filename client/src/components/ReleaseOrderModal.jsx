@@ -7,6 +7,7 @@ import { Context } from '../index';
 import { observer } from 'mobx-react-lite';
 import BaseOrderModal from './BaseOrderModal';
 import OrderSignaturesSection from './OrderSignaturesSection';
+import { formatDotDate, toIsoDate } from '../utils/dateFormatters';
 
 const INITIAL_PERIOD = { dateFrom: '', dateTo: '', eventName: '', eventAddress: '' };
 
@@ -219,13 +220,22 @@ const ReleaseOrderModal = observer(({ show, onHide }) => {
                             <Col md={6}>
                                 <Form.Group>
                                     <Form.Label>С <span className="text-danger">*</span></Form.Label>
-                                    <Form.Control type="text" value={period.dateFrom} onChange={(e) => handlePeriodChange(index, 'dateFrom', e.target.value)} placeholder="06.02.2026" required />
+                                    <Form.Control
+                                        type="date"
+                                        value={toIsoDate(period.dateFrom)}
+                                        onChange={(e) => handlePeriodChange(index, 'dateFrom', formatDotDate(e.target.value))}
+                                        required
+                                    />
                                 </Form.Group>
                             </Col>
                             <Col md={6}>
                                 <Form.Group>
                                     <Form.Label>По (необязательно)</Form.Label>
-                                    <Form.Control type="text" value={period.dateTo} onChange={(e) => handlePeriodChange(index, 'dateTo', e.target.value)} placeholder="08.02.2026" />
+                                    <Form.Control
+                                        type="date"
+                                        value={toIsoDate(period.dateTo)}
+                                        onChange={(e) => handlePeriodChange(index, 'dateTo', formatDotDate(e.target.value))}
+                                    />
                                 </Form.Group>
                             </Col>
                         </Row>

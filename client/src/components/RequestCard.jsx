@@ -27,8 +27,17 @@ const StudentDetailsItem = ({ student, index, getNameById }) => {
                 <div className="flex-grow-1">
                     {/* Заголовок - кликабельный */}
                     <div 
-                        className="fw-bold text-dark mb-1"
+                        className="fw-bold text-dark mb-1 d-inline-block"
+                        role="button"
+                        tabIndex={0}
+                        aria-expanded={showDetails}
                         onClick={toggleDetails}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                toggleDetails(e);
+                            }
+                        }}
                         style={{ cursor: 'pointer' }}
                     >
                         <i className="bi-person-fill me-2"></i>
@@ -37,7 +46,8 @@ const StudentDetailsItem = ({ student, index, getNameById }) => {
 
                     {/* Сворачиваемая дополнительная информация */}
                     <Collapse in={showDetails}>
-                        <div className="mt-2 pt-2 border-top">
+                        <div>
+                            <div className="mt-2 pt-2 border-top">
                             {/* Группа и курс */}
                             <div className="mb-2">
                                 <small className="text-muted">
@@ -131,7 +141,8 @@ const StudentDetailsItem = ({ student, index, getNameById }) => {
                                 </div>
                             )}
                         </div>
-                    </Collapse>
+                    </div>
+                </Collapse>
                 </div>
 
                 {/* Кнопка раскрытия */}
@@ -244,7 +255,17 @@ const RequestCard = ({ request, onStatusChange, getNameById, onViewUpdate }) => 
             >
                 <div 
                     className="request-card-header-content"
+                    role="button"
+                    tabIndex={0}
+                    aria-expanded={expanded}
+                    aria-label={`Заявка №${request.id}, ${expanded ? 'свернуть' : 'развернуть'}`}
                     onClick={handleToggleExpand}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            handleToggleExpand();
+                        }
+                    }}
                     style={{ cursor: 'pointer' }}
                 >
                     <div className="request-card-title-section">
@@ -287,7 +308,8 @@ const RequestCard = ({ request, onStatusChange, getNameById, onViewUpdate }) => 
             </Card.Header>
 
             <Collapse in={expanded}>
-                <Card.Body className="request-card-body">
+                <div>
+                    <Card.Body className="request-card-body">
                     <Row>
                         {/* Информация о заявке */}
                         <Col md={6} className="mb-3 mb-md-0">
@@ -429,6 +451,7 @@ const RequestCard = ({ request, onStatusChange, getNameById, onViewUpdate }) => 
                         </div>
                     )}
                 </Card.Body>
+                </div>
             </Collapse>
         </Card>
     );

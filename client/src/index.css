@@ -293,3 +293,16 @@ html, body {
   font-weight: 500 !important;
 }
 
+/* WCAG 2.1 AA доступность: контраст вторичного текста (≥ 4.5:1 на светлых фонах) */
+.text-muted {
+  color: #475569 !important;
+}
+
+/* Четкий фокус при навигации с клавиатуры */
+.multiselect-item:focus-visible,
+.request-card-header-content:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid var(--mgkct-blue) !important;
+  outline-offset: 2px !important;
+}
+

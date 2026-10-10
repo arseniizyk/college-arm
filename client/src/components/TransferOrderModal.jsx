@@ -8,6 +8,7 @@ import { orderUrl } from '../utils/consts';
 import OrderStudentSelector from './OrderStudentSelector';
 import BaseOrderModal from './BaseOrderModal';
 import OrderSignaturesSection from './OrderSignaturesSection';
+import { formatDotDate, toIsoDate } from '../utils/dateFormatters';
 
 const INITIAL = {
     groupId: '',
@@ -188,13 +189,25 @@ const TransferOrderModal = observer(({ show, onHide }) => {
                 <Col md={6}>
                     <Form.Group>
                         <Form.Label>Каникулы с <span className="text-danger">*</span></Form.Label>
-                        <Form.Control type="text" name="dateFrom" value={form.dateFrom} onChange={handleChange} placeholder="12.07.2025" required />
+                        <Form.Control
+                            type="date"
+                            name="dateFrom"
+                            value={toIsoDate(form.dateFrom)}
+                            onChange={(e) => setForm(prev => ({ ...prev, dateFrom: formatDotDate(e.target.value) }))}
+                            required
+                        />
                     </Form.Group>
                 </Col>
                 <Col md={6}>
                     <Form.Group>
                         <Form.Label>По <span className="text-danger">*</span></Form.Label>
-                        <Form.Control type="text" name="dateTo" value={form.dateTo} onChange={handleChange} placeholder="31.08.2025" required />
+                        <Form.Control
+                            type="date"
+                            name="dateTo"
+                            value={toIsoDate(form.dateTo)}
+                            onChange={(e) => setForm(prev => ({ ...prev, dateTo: formatDotDate(e.target.value) }))}
+                            required
+                        />
                     </Form.Group>
                 </Col>
             </Row>

@@ -24,6 +24,7 @@ const Request = observer(() => {
     const [supervisorGroupIds, setSupervisorGroupIds] = useState([]);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
+    const [validated, setValidated] = useState(false);
 
     const selectableStudentIds = allowedStudentIds(data.students, {
         role: userRole,
@@ -67,26 +68,31 @@ const Request = observer(() => {
         loadData();
     }, [data, userRole]);
 
+    const isDocValid = Boolean(formData.documentId || formData.description?.trim());
+    const hasStudents = Array.isArray(formData.studentIds)
+        ? formData.studentIds.length > 0
+        : Boolean(formData.studentIds);
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+        setValidated(true);
+
+        // Валидация
+        if (!isDocValid) {
+            setError('Необходимо выбрать тип документа или указать его описание в поле ниже');
+            return;
+        }
+
+        if (!hasStudents) {
+            setError('Необходимо выбрать хотя бы одного студента');
+            return;
+        }
+
         setLoading(true);
         setError(null);
         setSuccess(null);
 
         try {
-            // Валидация
-            if (!formData.documentId && !formData.description) {
-                setError('Необходимо выбрать документ или указать описание');
-                setLoading(false);
-                return;
-            }
-
-            if (!formData.studentIds || formData.studentIds.length === 0) {
-                setError('Необходимо выбрать хотя бы одного студента');
-                setLoading(false);
-                return;
-            }
-
             // Преобразуем studentIds в числа, если они строки
             const studentIds = Array.isArray(formData.studentIds) 
                 ? formData.studentIds.map(id => typeof id === 'string' ? parseInt(id) : id)
@@ -100,6 +106,7 @@ const Request = observer(() => {
             });
 
             setSuccess('Заявка успешно создана! Вы можете отслеживать её статус в личном кабинете.');
+            setValidated(false);
             
             // Прокрутка к началу страницы
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -166,7 +173,7 @@ const Request = observer(() => {
                                         <p className="mt-3 text-muted">Загрузка данных...</p>
                                     </div>
                                 ) : (
-                                    <Form onSubmit={handleSubmit}>
+                                    <Form noValidate onSubmit={handleSubmit}>
                                     {/* Выбор документа */}
                                     <Form.Group className="mb-4">
                                         <Form.Label className="form-label-custom">
@@ -176,6 +183,7 @@ const Request = observer(() => {
                                             className="form-control-custom"
                                             value={formData.documentId}
                                             onChange={(e) => setFormData({ ...formData, documentId: e.target.value })}
+                                            isInvalid={validated && !isDocValid}
                                         >
                                             <option value="">Выберите документ...</option>
                                             {data.documents.map(doc => (
@@ -184,6 +192,9 @@ const Request = observer(() => {
                                                 </option>
                                             ))}
                                         </Form.Select>
+                                        <Form.Control.Feedback type="invalid">
+                                            Выберите документ из списка или опишите его в поле ниже
+                                        </Form.Control.Feedback>
                                         <Form.Text className="text-muted">
                                             <i className="bi bi-info-circle me-1"></i>
                                             Если нужного документа нет в списке, опишите его в поле ниже
@@ -208,7 +219,7 @@ const Request = observer(() => {
                                     {/* Выбор студентов */}
                                     <Form.Group className="mb-4">
                                         <Form.Label className="form-label-custom">
-                                            Студенты
+                                            Студенты <span className="text-danger">*</span>
                                         </Form.Label>
                                         <MultiselectStudents
                                             field={{
@@ -223,6 +234,12 @@ const Request = observer(() => {
                                             allowedStudentIds={selectableStudentIds}
                                             noStudentsMessage={noStudentsMessage}
                                         />
+                                        {validated && !hasStudents && (
+                                            <div className="text-danger small mt-2">
+                                                <i className="bi bi-exclamation-circle me-1"></i>
+                                                Необходимо выбрать хотя бы одного студента
+                                            </div>
+                                        )}
                                     </Form.Group>
 
                                     {/* Кнопки */}

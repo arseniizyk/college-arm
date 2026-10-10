@@ -217,11 +217,20 @@ const MultiselectStudents = ({ field, formData, setFormData, loading, data, allo
                             <div 
                                 key={opt.value} 
                                 className={`d-flex align-items-center mb-2 p-2 multiselect-item ${isChecked ? 'is-selected' : ''}`}
+                                role={isSingleSelect ? "radio" : "checkbox"}
+                                aria-checked={isChecked}
+                                tabIndex={loading ? -1 : 0}
                                 style={{ 
                                     cursor: loading ? 'not-allowed' : 'pointer'
                                 }}
                                 onClick={() => {
                                     if (!loading) {
+                                        handleStudentToggle(opt.value, !isChecked);
+                                    }
+                                }}
+                                onKeyDown={(e) => {
+                                    if (!loading && (e.key === ' ' || e.key === 'Enter')) {
+                                        e.preventDefault();
                                         handleStudentToggle(opt.value, !isChecked);
                                     }
                                 }}

@@ -104,13 +104,13 @@ const TableContent = ({
                                         </td>
                                     ))}
                                     <td>
-                                        <div className="d-flex">
+                                        <div className="action-buttons-cell">
                                             <Button
                                                 variant="outline-primary"
                                                 size="sm"
                                                 onClick={() => onEdit(item)}
-                                                className="me-2"
                                                 title="Редактировать"
+                                                aria-label="Редактировать запись"
                                             >
                                                 <i className="bi-pencil-square"></i>
                                             </Button>
@@ -119,6 +119,7 @@ const TableContent = ({
                                                 size="sm"
                                                 onClick={() => onDelete(item)}
                                                 title="Удалить"
+                                                aria-label="Удалить запись"
                                             >
                                                 <i className="bi-trash"></i>
                                             </Button>
