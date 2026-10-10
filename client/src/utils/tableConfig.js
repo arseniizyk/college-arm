@@ -4,26 +4,26 @@ import { statusOptions } from './requestStatus'
 // Конфигурация колонок для таблиц.
 export const TABLE_COLUMNS = {
     users: [
-        { key: 'id', label: '№' },
+        { key: 'id', label: '№', className: 'col-id' },
         { key: 'email', label: 'Email', sortable: false },
         { key: 'role', label: 'Роль', render: 'role', sortable: false },
         { key: 'createdAt', label: 'Создан' }
     ],
     documents: [
-        { key: 'id', label: '№', sortable: false },
+        { key: 'id', label: '№', sortable: false, className: 'col-id' },
         { key: 'document_name', label: 'Название', sortable: false },
         { key: 'createdAt', label: 'Создан', sortable: false }
     ],
     requests: [
-        { key: 'id', label: '№' },
+        { key: 'id', label: '№', className: 'col-id' },
         { key: 'documentId', label: 'Документ', render: 'reference' },
-        { key: 'description', label: 'Описание', sortable: false },
-        { key: 'students', label: 'Студенты', render: 'students', sortable: false },
+        { key: 'description', label: 'Описание', sortable: false, className: 'cell-wrap' },
+        { key: 'students', label: 'Студенты', render: 'students', sortable: false, className: 'cell-wrap' },
         { key: 'status', label: 'Статус', render: 'status' },
         { key: 'createdAt', label: 'Создана' }
     ],
     students: [
-        { key: 'id', label: '№' },
+        { key: 'id', label: '№', className: 'col-id' },
         { key: 'last_name', label: 'Фамилия' },
         { key: 'name', label: 'Имя' },
         { key: 'father_name', label: 'Отчество' },
@@ -34,22 +34,22 @@ export const TABLE_COLUMNS = {
         { key: 'userId', label: 'Аккаунт', render: 'reference', sortable: false }
     ],
     groups: [
-        { key: 'id', label: '№' },
-        { key: 'group_number', label: 'Номер группы' },
-        { key: 'specialtyId', label: 'Специальность', render: 'reference' },
-        { key: 'supervisor', label: 'Куратор', render: 'supervisor' },
+        { key: 'id', label: '№', className: 'col-id' },
+        { key: 'group_number', label: 'Номер группы', className: 'col-group-number' },
+        { key: 'specialtyId', label: 'Специальность', render: 'reference', className: 'cell-wrap' },
+        { key: 'supervisor', label: 'Куратор', render: 'supervisor', className: 'cell-wrap' },
         { key: 'enroll_date', label: 'Дата зачисления' },
         { key: 'payment_type', label: 'Основа обучения' },
-        { key: 'course', label: 'Курс', render: 'course' }
+        { key: 'course', label: 'Курс', render: 'course', className: 'col-center' }
     ],
     specialties: [
-        { key: 'id', label: '№', sortable: false },
+        { key: 'id', label: '№', sortable: false, className: 'col-id' },
         { key: 'name', label: 'Название', sortable: false },
         { key: 'qualification', label: 'Квалификация', sortable: false },
         { key: 'duration', label: 'Длительность обучения', render: 'duration', sortable: false }
     ],
     teachers: [
-        { key: 'id', label: '№' },
+        { key: 'id', label: '№', className: 'col-id' },
         { key: 'last_name', label: 'Фамилия' },
         { key: 'name', label: 'Имя' },
         { key: 'father_name', label: 'Отчество' },

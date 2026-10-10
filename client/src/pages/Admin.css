@@ -7,18 +7,14 @@
 .admin-header {
   background: var(--mgkct-dark);
   color: white;
-  padding: 2.5rem 0;
-  margin-bottom: 2rem;
+  padding: 0.85rem 2rem;
+  margin-bottom: 1.5rem;
   border-bottom: 1px solid var(--mgkct-border);
 }
 
 .admin-header h1 {
   font-weight: 700;
-  margin-bottom: 0.5rem;
-}
-
-.admin-header p {
-  opacity: 0.9;
+  font-size: 1.25rem;
   margin-bottom: 0;
 }
 
@@ -225,6 +221,7 @@
 }
 
 .admin-table th.col-center,
+.admin-table td.col-center,
 .admin-table td.text-center {
   text-align: center;
 }
@@ -330,7 +327,7 @@
   }
   
   .admin-header {
-    padding: 1.5rem 0;
+    padding: 0.75rem 1rem;
   }
   
   .admin-tabs .nav-link {
@@ -537,11 +534,11 @@
     }
     
     .admin-header {
-        padding: 1.5rem 1rem;
+        padding: 0.75rem 1rem;
     }
     
     .admin-header h1 {
-        font-size: 1.5rem;
+        font-size: 1.15rem;
     }
     
     .nav-tabs {
@@ -684,15 +681,11 @@
     }
     
     .admin-header {
-        padding: 1rem 0.5rem;
+        padding: 0.65rem 0.75rem;
     }
     
     .admin-header h1 {
-        font-size: 1.25rem;
-    }
-    
-    .admin-header p {
-        font-size: 0.875rem;
+        font-size: 1.1rem;
     }
     
     .tab-content {

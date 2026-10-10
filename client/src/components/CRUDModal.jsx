@@ -260,14 +260,16 @@ const CRUDModal = ({
                         <p className="text-muted">Это действие нельзя отменить.</p>
                         {renderDeleteSummary()}
                         <div className="mt-4 pt-3 border-top text-start">
-                            <Form.Check
-                                type="checkbox"
-                                id="confirm-delete-checkbox"
-                                label="Подтверждаю безвозвратное удаление записи"
-                                checked={deleteConfirmed}
-                                onChange={(e) => setDeleteConfirmed(e.target.checked)}
-                                className="fw-semibold text-danger"
-                            />
+                            <div className="delete-confirm-box p-3 rounded-3 d-flex align-items-center">
+                                <Form.Check
+                                    type="checkbox"
+                                    id="confirm-delete-checkbox"
+                                    label="Подтверждаю безвозвратное удаление записи"
+                                    checked={deleteConfirmed}
+                                    onChange={(e) => setDeleteConfirmed(e.target.checked)}
+                                    className="fw-semibold text-danger m-0"
+                                />
+                            </div>
                         </div>
                     </div>
                 ) : (

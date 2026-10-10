@@ -141,45 +141,42 @@ const Admin = observer(() => {
 
     return (
         <Container fluid className="admin-panel">
-            <div className="admin-header text-center mb-4">
-                <h1 className="mb-2">
-                    <i className="bi-gear me-3"></i>
+            <div className="admin-header d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <h1 className="d-flex align-items-center mb-0">
+                    <i className="bi-gear me-2"></i>
                     Административная панель
                 </h1>
-                <p className="text-white fs-5 mb-2">Управление данными системы и обработка заявок</p>
-                <div className="d-flex justify-content-center">
-                    <span
-                        className="badge bg-white text-dark bg-opacity-75 shadow-sm fw-normal py-1 px-3 d-inline-flex align-items-center"
-                        title="Периодическая фоновая проверка каждые 60 секунд"
-                    >
-                        <i className={`bi bi-arrow-repeat me-1 ${isSyncing ? 'spin-icon text-primary' : 'text-muted'}`}></i>
-                        {isSyncing ? 'Синхронизация данных...' : 'Данные синхронизированы'}
-                    </span>
-                </div>
+                <span
+                    className="badge bg-white text-dark bg-opacity-75 shadow-sm fw-normal py-1 px-3 d-inline-flex align-items-center"
+                    title="Периодическая фоновая проверка каждые 60 секунд"
+                >
+                    <i className={`bi bi-arrow-repeat me-1 ${isSyncing ? 'spin-icon text-primary' : 'text-muted'}`}></i>
+                    {isSyncing ? 'Синхронизация данных...' : 'Данные синхронизированы'}
+                </span>
             </div>
 
-            {error && (
-                <Alert variant="danger" onClose={() => setError(null)} dismissible>
-                    <i className="bi-exclamation-circle me-2"></i>
-                    {error}
-                </Alert>
-            )}
-
-            {success && (
-                <Alert variant="success" onClose={() => setSuccess(null)} dismissible>
-                    <i className="bi-check-circle me-2"></i>
-                    {success}
-                </Alert>
-            )}
-
-            {tableError && (
-                <Alert variant="warning" onClose={() => data.clearError(activeTab)} dismissible>
-                    <i className="bi-exclamation-triangle me-2"></i>
-                    {tableError}
-                </Alert>
-            )}
-
             <div className="admin-content">
+                {error && (
+                    <Alert variant="danger" onClose={() => setError(null)} dismissible>
+                        <i className="bi-exclamation-circle me-2"></i>
+                        {error}
+                    </Alert>
+                )}
+
+                {success && (
+                    <Alert variant="success" onClose={() => setSuccess(null)} dismissible>
+                        <i className="bi-check-circle me-2"></i>
+                        {success}
+                    </Alert>
+                )}
+
+                {tableError && (
+                    <Alert variant="warning" onClose={() => data.clearError(activeTab)} dismissible>
+                        <i className="bi-exclamation-triangle me-2"></i>
+                        {tableError}
+                    </Alert>
+                )}
+
                 <Breadcrumbs items={breadcrumbItems} />
                 <Tabs
                     activeKey={mainTab}

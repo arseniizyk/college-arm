@@ -91,16 +91,16 @@ const TableContent = ({
                             const isSorted = isSortable && sortConfig?.key === col.key;
                             const direction = isSorted ? sortConfig.direction : null;
                             const ariaSort = !isSortable ? undefined : direction === 'asc' ? 'ascending' : direction === 'desc' ? 'descending' : 'none';
-                            const isIdCol = col.key === 'id';
-                            const isCenterCol = col.key === 'course';
-                            const isGroupNumberCol = col.key === 'group_number';
+                            const colClass = col.className || '';
+                            const colStyle = col.minWidth ? { minWidth: col.minWidth } : undefined;
 
                             if (!isSortable) {
                                 return (
                                     <th
                                         key={col.key}
                                         scope="col"
-                                        className={`non-sortable-header ${isIdCol ? 'col-id' : ''} ${isCenterCol ? 'col-center' : ''} ${isGroupNumberCol ? 'col-group-number' : ''}`}
+                                        className={`non-sortable-header ${colClass}`.trim()}
+                                        style={colStyle}
                                     >
                                         <span>{col.label}</span>
                                     </th>
@@ -112,7 +112,8 @@ const TableContent = ({
                                     key={col.key}
                                     scope="col"
                                     aria-sort={ariaSort}
-                                    className={`sortable-header ${isIdCol ? 'col-id' : ''} ${isCenterCol ? 'col-center' : ''} ${isGroupNumberCol ? 'col-group-number' : ''} ${isSorted ? 'sorted-active' : ''}`}
+                                    className={`sortable-header ${colClass} ${isSorted ? 'sorted-active' : ''}`.trim()}
+                                    style={colStyle}
                                     onClick={() => onSort && onSort(col.key)}
                                 >
                                     <button
@@ -189,19 +190,11 @@ const TableContent = ({
                             return (
                                 <tr key={item.id}>
                                     {columns.map(col => {
-                                        const isWrapCol = col.key === 'specialtyId' || col.key === 'description' || col.key === 'students' || col.key === 'supervisor';
-                                        const isIdCol = col.key === 'id';
-                                        const isCenterCol = col.key === 'course';
-                                        const isGroupNumberCol = col.key === 'group_number';
-                                        const cellClasses = [
-                                            isWrapCol ? 'cell-wrap' : '',
-                                            isIdCol ? 'col-id text-center' : '',
-                                            isCenterCol ? 'text-center' : '',
-                                            isGroupNumberCol ? 'col-group-number' : ''
-                                        ].filter(Boolean).join(' ');
+                                        const colClass = col.className || undefined;
+                                        const colStyle = col.minWidth ? { minWidth: col.minWidth } : undefined;
 
                                         return (
-                                            <td key={col.key} className={cellClasses || undefined}>
+                                            <td key={col.key} className={colClass} style={colStyle}>
                                                 <TableCell
                                                     column={col}
                                                     item={item}

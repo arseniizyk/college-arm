@@ -73,7 +73,7 @@ export const useAdminLogic = (data, user) => {
         try {
             await data.fetchAll(tableName, searchParams);
         } catch (err) {
-            setError(err.response?.data?.message || 'Ошибка загрузки данных');
+            setError(errorMessage(err, 'Ошибка загрузки данных'));
         } finally {
             setLoading(false);
         }
@@ -259,7 +259,7 @@ export const useAdminLogic = (data, user) => {
             setShowModal(false);
 
         } catch (err) {
-            setError(err.response?.data?.message || 'Ошибка операции');
+            setError(errorMessage(err, 'Ошибка операции'));
         } finally {
             setLoading(false);
         }
