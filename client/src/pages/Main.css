@@ -346,3 +346,34 @@
         font-size: 1.1rem;
     }
 }
+
+/* Панель быстрого доступа авторизованного пользователя */
+.user-dashboard {
+  animation: fadeIn 0.4s ease-out;
+}
+
+.status-widget-card {
+  transition: var(--transition);
+  cursor: pointer;
+  border-radius: var(--radius-md) !important;
+  border: 1px solid var(--mgkct-border) !important;
+}
+
+.status-widget-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover) !important;
+}
+
+.status-widget-card:focus-visible {
+  outline: 2px solid var(--mgkct-blue) !important;
+  outline-offset: 2px;
+}
+
+.widget-icon-box {
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}

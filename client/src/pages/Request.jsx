@@ -4,9 +4,10 @@ import { Context } from '../index';
 import { observer } from 'mobx-react-lite';
 import MultiselectStudents from '../components/MultiselectStudents';
 import { getMe } from '../http/userAPI';
-import { canSelectMultipleStudents } from '../utils/consts';
+import { canSelectMultipleStudents, MAIN_ROUTE } from '../utils/consts';
 import { allowedStudentIds } from '../utils/requestStudents';
 import { notify } from '../context/ToastContext';
+import Breadcrumbs from '../components/Breadcrumbs';
 import './Request.css';
 
 const Request = observer(() => {
@@ -154,6 +155,12 @@ const Request = observer(() => {
             <Container className="py-4">
                 <div className="row justify-content-center">
                     <div className="col-lg-8">
+                        <Breadcrumbs
+                            items={[
+                                { label: 'Главная', path: MAIN_ROUTE, icon: 'bi-house-door' },
+                                { label: 'Подача заявки на документ', icon: 'bi-file-earmark-plus' }
+                            ]}
+                        />
                         <Card className="request-card shadow-lg border-0">
                             <Card.Body className="p-4">
                                 {error && (

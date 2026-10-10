@@ -360,4 +360,27 @@ html, body {
   display: inline-block;
 }
 
+/* Навигационная цепочка (хлебные крошки) */
+.breadcrumbs-nav .breadcrumb {
+  background-color: #ffffff;
+  border: 1px solid var(--mgkct-border);
+  font-size: 0.9rem;
+}
+
+.breadcrumbs-nav .breadcrumb-item a {
+  color: var(--mgkct-blue);
+  font-weight: 500;
+  transition: var(--transition-fast);
+}
+
+.breadcrumbs-nav .breadcrumb-item a:hover {
+  color: var(--mgkct-blue-dark);
+  text-decoration: underline !important;
+}
+
+.breadcrumbs-nav .breadcrumb-item.active {
+  color: var(--mgkct-gray);
+  font-weight: 500;
+}
+
 

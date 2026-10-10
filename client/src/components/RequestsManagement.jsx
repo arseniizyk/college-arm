@@ -20,7 +20,8 @@ const RequestsManagement = ({
     getNameById,
     error,
     success,
-    onViewUpdate
+    onViewUpdate,
+    onSwitchToTable
 }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
@@ -89,10 +90,24 @@ const RequestsManagement = ({
         <div className="requests-management">
             {/* Заголовок и статистика */}
             <div className="mb-4">
-                <h4 className="mb-3">
-                    <i className="bi-clipboard-check me-2"></i>
-                    Обработка заявок
-                </h4>
+                <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                    <h4 className="mb-0">
+                        <i className="bi-clipboard-check me-2"></i>
+                        Обработка заявок
+                    </h4>
+                    {onSwitchToTable && (
+                        <Button
+                            variant="outline-secondary"
+                            size="sm"
+                            onClick={onSwitchToTable}
+                            className="d-flex align-items-center"
+                            title="Перейти к просмотру таблицы базы данных заявок"
+                        >
+                            <i className="bi bi-table me-1"></i>
+                            Табличный вид (БД)
+                        </Button>
+                    )}
+                </div>
                 
                 {/* Статистика */}
                 <Row className="mb-4">

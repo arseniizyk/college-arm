@@ -9,7 +9,16 @@ import RequestsManagement from '../components/RequestsManagement';
 import RequestStatistics from '../components/RequestStatistics';
 import DocumentsGeneration from '../components/DocumentsGeneration';
 import CRUDModal from '../components/CRUDModal';
+import Breadcrumbs from '../components/Breadcrumbs';
+import { MAIN_ROUTE } from '../utils/consts';
 import { notify } from '../context/ToastContext';
+
+const MAIN_TAB_TITLES = {
+    data: 'Управление данными',
+    requests: 'Обработка заявок',
+    statistics: 'Статистика',
+    documents: 'Генерация приказов'
+};
 
 const Admin = observer(() => {
     const { data, user } = useContext(Context);
@@ -102,6 +111,32 @@ const Admin = observer(() => {
         getNameByIdWithData
     } = useAdminLogic(data, user);
 
+    const handleSwitchToRequestsCards = () => {
+        setMainTab('requests');
+    };
+
+    const handleSwitchToRequestsTable = () => {
+        setMainTab('data');
+        handleTabChange('requests');
+    };
+
+    const breadcrumbItems = [
+        { label: 'Главная', path: MAIN_ROUTE, icon: 'bi-house-door' },
+        {
+            label: 'Административная панель',
+            icon: 'bi-gear',
+            onClick: mainTab !== 'data' ? () => setMainTab('data') : undefined,
+            active: mainTab === 'data'
+        }
+    ];
+
+    if (mainTab !== 'data') {
+        breadcrumbItems.push({
+            label: MAIN_TAB_TITLES[mainTab] || 'Раздел',
+            active: true
+        });
+    }
+
     return (
         <Container fluid className="admin-panel">
             <div className="admin-header text-center mb-4">
@@ -143,6 +178,7 @@ const Admin = observer(() => {
             )}
 
             <div className="admin-content">
+                <Breadcrumbs items={breadcrumbItems} />
                 <Tabs
                     activeKey={mainTab}
                     onSelect={(k) => setMainTab(k)}
@@ -186,6 +222,7 @@ const Admin = observer(() => {
                             handleCreate={handleCreate}
                             loadTableData={loadTableData}
                             itemsPerPage={itemsPerPage}
+                            onSwitchToRequestsCards={handleSwitchToRequestsCards}
                         />
                     </Tab>
 
@@ -210,6 +247,7 @@ const Admin = observer(() => {
                             getNameById={getNameByIdWithData}
                             error={error}
                             success={success}
+                            onSwitchToTable={handleSwitchToRequestsTable}
                             onViewUpdate={(requestId) => {
                                 data.updateLocal('requests', requestId, { isViewed: true });
                                 // Сохраняем в localStorage

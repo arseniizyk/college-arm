@@ -7,9 +7,10 @@ import RequestCard from '../components/RequestCard';
 import { getNameById as getNameByIdForField } from '../utils/dataHelpers';
 import { $authHost, errorMessage } from '../http';
 import Pagination from '../components/Pagination';
-import { ITEMS_PER_PAGE, MIN_PASSWORD_LENGTH, REQUEST_ROUTE } from '../utils/consts';
+import { ITEMS_PER_PAGE, MIN_PASSWORD_LENGTH, REQUEST_ROUTE, MAIN_ROUTE } from '../utils/consts';
 import { REQUEST_STATUSES, STATUS_KEYS, statusLabelPlural } from '../utils/requestStatus';
 import { notify } from '../context/ToastContext';
+import Breadcrumbs from '../components/Breadcrumbs';
 import './Profile.css';
 
 const Profile = observer(() => {
@@ -357,6 +358,13 @@ const Profile = observer(() => {
 
             {/* Основной контент */}
             <Container className="py-4">
+                <Breadcrumbs
+                    items={[
+                        { label: 'Главная', path: MAIN_ROUTE, icon: 'bi-house-door' },
+                        { label: 'Личный кабинет', icon: 'bi-person-circle' }
+                    ]}
+                />
+
                 {error && (
                     <Alert variant="danger" dismissible onClose={() => setError(null)} className="mb-4">
                         <i className="bi bi-exclamation-circle me-2"></i>

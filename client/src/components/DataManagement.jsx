@@ -105,6 +105,28 @@ const DataManagement = (props) => {
                             </div>
                         }
                     >
+                        {tab.key === 'requests' && (
+                            <div className="alert alert-info border-info d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+                                <div className="d-flex align-items-center">
+                                    <i className="bi bi-info-circle-fill fs-5 text-primary me-2"></i>
+                                    <div>
+                                        <strong>Табличный режим базы данных.</strong> Для оперативной обработки заявок, смены статусов и скачивания справок об обучении рекомендуем использовать специализированный карточный режим.
+                                    </div>
+                                </div>
+                                {props.onSwitchToRequestsCards && (
+                                    <Button
+                                        variant="primary"
+                                        size="sm"
+                                        onClick={props.onSwitchToRequestsCards}
+                                        className="d-flex align-items-center flex-shrink-0"
+                                    >
+                                        <i className="bi bi-clipboard-check me-2"></i>
+                                        Перейти в «Обработку заявок»
+                                        <i className="bi bi-arrow-right ms-2"></i>
+                                    </Button>
+                                )}
+                            </div>
+                        )}
                         <TableContent
                             data={currentItems}
                             columns={getTableColumns}

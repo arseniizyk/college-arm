@@ -1,11 +1,19 @@
 import React from 'react';
 import { Container } from 'react-bootstrap';
+import Breadcrumbs from '../components/Breadcrumbs';
+import { MAIN_ROUTE } from '../utils/consts';
 import './Privacy.css';
 
 const Privacy = () => {
     return (
         <div className="privacy-page">
             <Container className="privacy-container">
+                <Breadcrumbs
+                    items={[
+                        { label: 'Главная', path: MAIN_ROUTE, icon: 'bi-house-door' },
+                        { label: 'Политика конфиденциальности', icon: 'bi-shield-check' }
+                    ]}
+                />
                 <div className="privacy-header">
                     <h1>
                         <i className="bi-shield me-3"></i>
