@@ -1,11 +1,19 @@
 import React from 'react';
 import { Container } from 'react-bootstrap';
+import Breadcrumbs from '../components/Breadcrumbs';
+import { MAIN_ROUTE } from '../utils/consts';
 import './Privacy.css';
 
 const Privacy = () => {
     return (
         <div className="privacy-page">
             <Container className="privacy-container">
+                <Breadcrumbs
+                    items={[
+                        { label: 'Главная', path: MAIN_ROUTE, icon: 'bi-house-door' },
+                        { label: 'Политика конфиденциальности', icon: 'bi-shield-check' }
+                    ]}
+                />
                 <div className="privacy-header">
                     <h1>
                         <i className="bi-shield me-3"></i>
@@ -188,8 +196,8 @@ const Privacy = () => {
                         </p>
                         <div className="contact-info">
                             <p><strong>Адрес:</strong> 220024, г. Минск, ул. Казинца, 91</p>
-                            <p><strong>Телефон:</strong> +375 (17) 358-45-07</p>
-                            <p><strong>Email:</strong> mgkct@mgkct.by</p>
+                            <p><strong>Телефон:</strong> <a href="tel:+375173584507">+375 (17) 358-45-07</a></p>
+                            <p><strong>Email:</strong> <a href="mailto:mgkct@mgkct.by">mgkct@mgkct.by</a></p>
                             <p><strong>Режим работы:</strong> Понедельник - Пятница, 8:00 - 17:00</p>
                         </div>
                         <p className="mt-3">
@@ -206,7 +214,7 @@ const Privacy = () => {
 
                     <section className="privacy-section agreement-section">
                         <h2>
-                            <i className="bi-check-lg-circle me-2"></i>
+                            <i className="bi-check-circle me-2"></i>
                             12. Согласие на обработку персональных данных
                         </h2>
                         <p>

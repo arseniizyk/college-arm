@@ -8,6 +8,7 @@ import { orderUrl } from '../utils/consts';
 import OrderStudentSelector from './OrderStudentSelector';
 import BaseOrderModal from './BaseOrderModal';
 import OrderSignaturesSection from './OrderSignaturesSection';
+import { formatRuDate, toIsoDate } from '../utils/dateFormatters';
 
 const INITIAL = {
     groupId: '',
@@ -171,13 +172,17 @@ const StudentDirectionOrderModal = observer(({ show, onHide }) => {
                     <Form.Group>
                         <Form.Label>Дата <span className="text-danger">*</span></Form.Label>
                         <Form.Control
-                            type="text"
+                            type="date"
                             name="eventDate"
-                            value={form.eventDate}
-                            onChange={handleChange}
-                            placeholder="05 февраля 2026"
+                            value={toIsoDate(form.eventDate)}
+                            onChange={(e) => setForm(prev => ({ ...prev, eventDate: formatRuDate(e.target.value) }))}
                             required
                         />
+                        {form.eventDate && (
+                            <Form.Text className="text-muted">
+                                {form.eventDate} года
+                            </Form.Text>
+                        )}
                     </Form.Group>
                 </Col>
                 <Col md={3}>

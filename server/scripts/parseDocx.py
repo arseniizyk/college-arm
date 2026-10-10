@@ -5,6 +5,9 @@ import xml.etree.ElementTree as ET
 import re
 import json
 
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8')
+
 def parse_date(date_str):
     if not date_str:
         return None

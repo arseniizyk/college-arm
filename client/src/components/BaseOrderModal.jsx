@@ -20,7 +20,7 @@ const BaseOrderModal = ({
     ...props
 }) => {
     return (
-        <Modal show={show} onHide={onHide} size={size} centered={centered} {...props}>
+        <Modal show={show} onHide={onHide} size={size} centered={centered} scrollable {...props}>
             <Modal.Header closeButton>
                 <Modal.Title>
                     {icon && <i className={`${icon} me-2`}></i>}
@@ -28,7 +28,7 @@ const BaseOrderModal = ({
                 </Modal.Title>
             </Modal.Header>
 
-            <Form onSubmit={onSubmit}>
+            <Form onSubmit={onSubmit} className="d-flex flex-column flex-grow-1 overflow-hidden" style={{ minHeight: 0 }}>
                 <Modal.Body>
                     {error && (
                         <Alert
@@ -38,6 +38,15 @@ const BaseOrderModal = ({
                         >
                             <i className="bi bi-exclamation-circle me-2"></i>
                             {error}
+                        </Alert>
+                    )}
+                    {loading && (
+                        <Alert variant="info" className="d-flex align-items-center mb-3 py-2">
+                            <Spinner animation="border" size="sm" className="me-2 flex-shrink-0" />
+                            <div>
+                                <strong>Формирование документа Word...</strong>
+                                <div className="small text-muted">Пожалуйста, подождите, файл формируется и загрузится автоматически.</div>
+                            </div>
                         </Alert>
                     )}
                     {children}

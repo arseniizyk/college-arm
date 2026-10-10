@@ -7,6 +7,7 @@ import { orderUrl } from '../utils/consts';
 import OrderStudentSelector from './OrderStudentSelector';
 import BaseOrderModal from './BaseOrderModal';
 import OrderSignaturesSection from './OrderSignaturesSection';
+import { formatDotDate, toIsoDate } from '../utils/dateFormatters';
 
 const INITIAL_GROUP = { groupId: '', date: '', responsible: '', selectedStudentIds: [] };
 
@@ -186,10 +187,9 @@ const SnowCleaningOrderModal = observer(({ show, onHide }) => {
                                     <Form.Group>
                                         <Form.Label>Дата <span className="text-danger">*</span></Form.Label>
                                         <Form.Control
-                                            type="text"
-                                            value={g.date}
-                                            onChange={(e) => handleGroupChange(index, 'date', e.target.value)}
-                                            placeholder="08.01.2026"
+                                            type="date"
+                                            value={toIsoDate(g.date)}
+                                            onChange={(e) => handleGroupChange(index, 'date', formatDotDate(e.target.value))}
                                             required
                                         />
                                     </Form.Group>

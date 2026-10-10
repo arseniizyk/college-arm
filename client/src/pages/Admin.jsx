@@ -9,10 +9,21 @@ import RequestsManagement from '../components/RequestsManagement';
 import RequestStatistics from '../components/RequestStatistics';
 import DocumentsGeneration from '../components/DocumentsGeneration';
 import CRUDModal from '../components/CRUDModal';
+import Breadcrumbs from '../components/Breadcrumbs';
+import { MAIN_ROUTE } from '../utils/consts';
+import { notify } from '../context/ToastContext';
+
+const MAIN_TAB_TITLES = {
+    data: 'Управление данными',
+    requests: 'Обработка заявок',
+    statistics: 'Статистика',
+    documents: 'Генерация приказов'
+};
 
 const Admin = observer(() => {
     const { data, user } = useContext(Context);
     const [mainTab, setMainTab] = useState('data');
+    const [isSyncing, setIsSyncing] = useState(false);
     
     // Подсчитываем количество новых заявок (в обработке и ещё не просмотренные)
     const newRequestsCount = (data.getEntities('requests') || []).filter(req => req.status === 'pending' && !req.isViewed).length;
@@ -21,6 +32,8 @@ const Admin = observer(() => {
     useEffect(() => {
         const intervalId = setInterval(async () => {
             try {
+                setIsSyncing(true);
+                const prevCount = (data.getEntities('requests') || []).length;
                 // Получаем просмотренные заявки из localStorage
                 const viewedRequestsStr = localStorage.getItem('viewedRequests');
                 const viewedRequestIds = viewedRequestsStr ? JSON.parse(viewedRequestsStr) : [];
@@ -31,8 +44,20 @@ const Admin = observer(() => {
                 viewedRequestIds.forEach(id => {
                     data.updateLocal('requests', id, { isViewed: true });
                 });
+
+                const newCount = (data.getEntities('requests') || []).length;
+                if (newCount > prevCount) {
+                    const diff = newCount - prevCount;
+                    notify({
+                        title: 'Новые заявки',
+                        message: `Поступили новые заявки (${diff} шт.)`,
+                        variant: 'info'
+                    });
+                }
             } catch (err) {
                 console.error('Ошибка автообновления заявок:', err);
+            } finally {
+                setTimeout(() => setIsSyncing(false), 1200);
             }
         }, 60000); // 60000 мс = 1 минута
 
@@ -83,45 +108,80 @@ const Admin = observer(() => {
         handleSpecialtyFilterChange,
         handleRequestStatusChange,
         loadTableData,
-        getNameByIdWithData
+        getNameByIdWithData,
+        sortConfig,
+        handleSort
     } = useAdminLogic(data, user);
+
+    const handleSwitchToRequestsCards = () => {
+        setMainTab('requests');
+    };
+
+    const handleSwitchToRequestsTable = () => {
+        setMainTab('data');
+        handleTabChange('requests');
+    };
+
+    const breadcrumbItems = [
+        { label: 'Главная', path: MAIN_ROUTE, icon: 'bi-house-door' },
+        {
+            label: 'Административная панель',
+            icon: 'bi-gear',
+            onClick: mainTab !== 'data' ? () => setMainTab('data') : undefined,
+            active: mainTab === 'data'
+        }
+    ];
+
+    if (mainTab !== 'data') {
+        breadcrumbItems.push({
+            label: MAIN_TAB_TITLES[mainTab] || 'Раздел',
+            active: true
+        });
+    }
 
     return (
         <Container fluid className="admin-panel">
-            <div className="admin-header text-center mb-4">
-                <h1 className="mb-2">
-                    <i className="bi-gear me-3"></i>
+            <div className="admin-header d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <h1 className="d-flex align-items-center mb-0">
+                    <i className="bi-gear me-2"></i>
                     Административная панель
                 </h1>
-                <p className="text-white fs-5">Управление данными системы и обработка заявок</p>
+                <span
+                    className="badge bg-white text-dark bg-opacity-75 shadow-sm fw-normal py-1 px-3 d-inline-flex align-items-center"
+                    title="Периодическая фоновая проверка каждые 60 секунд"
+                >
+                    <i className={`bi bi-arrow-repeat me-1 ${isSyncing ? 'spin-icon text-primary' : 'text-muted'}`}></i>
+                    {isSyncing ? 'Синхронизация данных...' : 'Данные синхронизированы'}
+                </span>
             </div>
 
-            {error && (
-                <Alert variant="danger" onClose={() => setError(null)} dismissible>
-                    <i className="bi-exclamation-circle me-2"></i>
-                    {error}
-                </Alert>
-            )}
-
-            {success && (
-                <Alert variant="success" onClose={() => setSuccess(null)} dismissible>
-                    <i className="bi-check-lg-circle me-2"></i>
-                    {success}
-                </Alert>
-            )}
-
-            {tableError && (
-                <Alert variant="warning" onClose={() => data.clearError(activeTab)} dismissible>
-                    <i className="bi-exclamation-triangle me-2"></i>
-                    {tableError}
-                </Alert>
-            )}
-
             <div className="admin-content">
+                {error && (
+                    <Alert variant="danger" onClose={() => setError(null)} dismissible>
+                        <i className="bi-exclamation-circle me-2"></i>
+                        {error}
+                    </Alert>
+                )}
+
+                {success && (
+                    <Alert variant="success" onClose={() => setSuccess(null)} dismissible>
+                        <i className="bi-check-circle me-2"></i>
+                        {success}
+                    </Alert>
+                )}
+
+                {tableError && (
+                    <Alert variant="warning" onClose={() => data.clearError(activeTab)} dismissible>
+                        <i className="bi-exclamation-triangle me-2"></i>
+                        {tableError}
+                    </Alert>
+                )}
+
+                <Breadcrumbs items={breadcrumbItems} />
                 <Tabs
                     activeKey={mainTab}
                     onSelect={(k) => setMainTab(k)}
-                    className="mb-4"
+                    className="mb-4 main-admin-tabs"
                     variant="pills"
                 >
                     <Tab 
@@ -161,6 +221,9 @@ const Admin = observer(() => {
                             handleCreate={handleCreate}
                             loadTableData={loadTableData}
                             itemsPerPage={itemsPerPage}
+                            onSwitchToRequestsCards={handleSwitchToRequestsCards}
+                            sortConfig={sortConfig}
+                            handleSort={handleSort}
                         />
                     </Tab>
 
@@ -185,6 +248,7 @@ const Admin = observer(() => {
                             getNameById={getNameByIdWithData}
                             error={error}
                             success={success}
+                            onSwitchToTable={handleSwitchToRequestsTable}
                             onViewUpdate={(requestId) => {
                                 data.updateLocal('requests', requestId, { isViewed: true });
                                 // Сохраняем в localStorage

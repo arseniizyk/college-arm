@@ -7,6 +7,7 @@ import { observer } from 'mobx-react-lite';
 import { Context } from './index';
 import { check } from '../src/http/userAPI'
 import { Spinner } from 'react-bootstrap';
+import { ToastProvider } from './context/ToastContext';
 
 const App = () => {
     const { user, data } = useContext(Context)
@@ -59,11 +60,13 @@ const App = () => {
     }
 
     return (
-        <BrowserRouter>
-            <NavBar />
-            <AppRouter />
-            <Footer />
-        </BrowserRouter>
+        <ToastProvider>
+            <BrowserRouter>
+                <NavBar />
+                <AppRouter />
+                <Footer />
+            </BrowserRouter>
+        </ToastProvider>
     );
 };
 

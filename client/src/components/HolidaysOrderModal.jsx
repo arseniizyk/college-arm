@@ -8,6 +8,7 @@ import { orderUrl } from '../utils/consts';
 import OrderStudentSelector from './OrderStudentSelector';
 import BaseOrderModal from './BaseOrderModal';
 import OrderSignaturesSection from './OrderSignaturesSection';
+import { formatDotDate, toIsoDate } from '../utils/dateFormatters';
 
 const INITIAL = {
     groupId: '',
@@ -200,11 +201,10 @@ const HolidaysOrderModal = observer(({ show, onHide }) => {
                     <Form.Group>
                         <Form.Label>С <span className="text-danger">*</span></Form.Label>
                         <Form.Control
-                            type="text"
+                            type="date"
                             name="dateFrom"
-                            value={form.dateFrom}
-                            onChange={handleChange}
-                            placeholder="напр. 29.01.2026"
+                            value={toIsoDate(form.dateFrom)}
+                            onChange={(e) => setForm(prev => ({ ...prev, dateFrom: formatDotDate(e.target.value) }))}
                             required
                         />
                     </Form.Group>
@@ -213,11 +213,10 @@ const HolidaysOrderModal = observer(({ show, onHide }) => {
                     <Form.Group>
                         <Form.Label>По <span className="text-danger">*</span></Form.Label>
                         <Form.Control
-                            type="text"
+                            type="date"
                             name="dateTo"
-                            value={form.dateTo}
-                            onChange={handleChange}
-                            placeholder="напр. 11.02.2026"
+                            value={toIsoDate(form.dateTo)}
+                            onChange={(e) => setForm(prev => ({ ...prev, dateTo: formatDotDate(e.target.value) }))}
                             required
                         />
                     </Form.Group>

@@ -14,14 +14,6 @@ const Footer = () => {
                             <NavLink 
                                 to={PRIVACY_ROUTE} 
                                 className="footer-link"
-                                style={{ 
-                                    color: 'rgba(255, 255, 255, 0.8)', 
-                                    textDecoration: 'none',
-                                    fontSize: '0.9rem',
-                                    transition: 'color 0.3s ease'
-                                }}
-                                onMouseEnter={(e) => e.target.style.color = 'white'}
-                                onMouseLeave={(e) => e.target.style.color = 'rgba(255, 255, 255, 0.8)'}
                             >
                                 <i className="bi bi-shield-check me-1"></i>
                                 Политика обработки персональных данных
@@ -29,8 +21,11 @@ const Footer = () => {
                         </div>
                         <div className="col-md-6 text-md-end">
                             <p className="mb-0">
-                                <i className="bi bi-telephone me-1"></i> 358 45 07 •
-                                <i className="bi bi-geo-alt-fill ms-3 me-1"></i> ул. Казинца, 91
+                                <a href="tel:+375173584507" className="footer-link text-decoration-none">
+                                    <i className="bi bi-telephone me-1"></i> +375 (17) 358-45-07
+                                </a>
+                                <span className="mx-2">•</span>
+                                <i className="bi bi-geo-alt-fill me-1"></i> ул. Казинца, 91
                             </p>
                         </div>
                     </div>

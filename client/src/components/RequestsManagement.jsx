@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Form, InputGroup, Row, Col, Alert, Spinner } from 'react-bootstrap';
+import { Form, InputGroup, Row, Col, Alert, Spinner, Button } from 'react-bootstrap';
 import RequestCard from './RequestCard';
 import Pagination from './Pagination';
 import { formatFio } from '../utils/dataHelpers';
@@ -20,7 +20,8 @@ const RequestsManagement = ({
     getNameById,
     error,
     success,
-    onViewUpdate
+    onViewUpdate,
+    onSwitchToTable
 }) => {
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
@@ -89,10 +90,24 @@ const RequestsManagement = ({
         <div className="requests-management">
             {/* Заголовок и статистика */}
             <div className="mb-4">
-                <h4 className="mb-3">
-                    <i className="bi-clipboard-check me-2"></i>
-                    Обработка заявок
-                </h4>
+                <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                    <h4 className="mb-0">
+                        <i className="bi-clipboard-check me-2"></i>
+                        Обработка заявок
+                    </h4>
+                    {onSwitchToTable && (
+                        <Button
+                            variant="outline-secondary"
+                            size="sm"
+                            onClick={onSwitchToTable}
+                            className="d-flex align-items-center"
+                            title="Перейти к просмотру таблицы базы данных заявок"
+                        >
+                            <i className="bi bi-table me-1"></i>
+                            Табличный вид (БД)
+                        </Button>
+                    )}
+                </div>
                 
                 {/* Статистика */}
                 <Row className="mb-4">
@@ -124,7 +139,7 @@ const RequestsManagement = ({
 
                 {success && (
                     <Alert variant="success" dismissible>
-                        <i className="bi-check-lg-circle me-2"></i>
+                        <i className="bi-check-circle me-2"></i>
                         {success}
                     </Alert>
                 )}
@@ -196,14 +211,27 @@ const RequestsManagement = ({
                     </>
                 ) : (
                     <div className="text-center py-5">
-                        <i className="bi-inbox fa-3x text-muted mb-3"></i>
+                        <i className="bi bi-inbox fs-1 text-muted mb-3 d-block"></i>
                         <h5 className="text-muted">Заявки не найдены</h5>
-                        <p className="text-muted">
+                        <p className="text-muted mb-3">
                             {searchTerm || statusFilter 
                                 ? 'Попробуйте изменить условия поиска или фильтрации'
-                                : 'Нет заявок для отображения'
+                                : 'В системе пока нет заявок'
                             }
                         </p>
+                        {(searchTerm || statusFilter) && (
+                            <Button
+                                variant="outline-secondary"
+                                size="sm"
+                                onClick={() => {
+                                    setSearchTerm('');
+                                    setStatusFilter('');
+                                }}
+                            >
+                                <i className="bi bi-x-circle me-1"></i>
+                                Сбросить фильтры
+                            </Button>
+                        )}
                     </div>
                 )}
             </div>

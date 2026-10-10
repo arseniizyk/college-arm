@@ -1,3 +1,52 @@
+:root {
+  /* Brand & Neutral Palette */
+  --mgkct-blue: #0d6efd;
+  --mgkct-blue-dark: #0a58ca;
+  --mgkct-blue-light: #e7f1ff;
+  --mgkct-indigo: #6610f2;
+  --mgkct-green: #198754;
+  --mgkct-red: #dc3545;
+  --mgkct-yellow: #ffc107;
+  --mgkct-orange: #fd7e14;
+  --mgkct-cyan: #0dcaf0;
+  --mgkct-gray: #6c757d;
+  --mgkct-gray-light: #f1f5f9;
+  --mgkct-light: #f8f9fa;
+  --mgkct-dark: #1e293b;
+  --mgkct-dark-slate: #0f172a;
+  --mgkct-body-bg: #f8fafc;
+  --mgkct-surface: #ffffff;
+  --mgkct-border: rgba(0, 0, 0, 0.08);
+
+  /* Status Colors */
+  --status-pending-bg: #eff6ff;
+  --status-pending-text: #1d4ed8;
+  --status-pending-border: #bfdbfe;
+  --status-completed-bg: #f0fdf4;
+  --status-completed-text: #15803d;
+  --status-completed-border: #bbf7d0;
+  --status-cancelled-bg: #fef2f2;
+  --status-cancelled-text: #b91c1c;
+  --status-cancelled-border: #fecaca;
+
+  /* Elevation & Shadows */
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+  --shadow-hover: 0 12px 20px -3px rgba(0, 0, 0, 0.09), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+
+  /* Border Radii */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  /* Transitions */
+  --transition: all 0.2s ease-in-out;
+  --transition-fast: all 0.15s ease-in-out;
+}
+
 /* Базовые стили */
 * {
   box-sizing: border-box;
@@ -10,6 +59,8 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: var(--mgkct-body-bg);
+  color: var(--mgkct-dark);
 }
 
 code {
@@ -185,3 +236,211 @@ html, body {
         font-size: 0.85rem;
     }
 }
+
+/* Карточки генерации документов */
+.doc-card {
+  transition: var(--transition);
+  border: 1px solid var(--mgkct-border) !important;
+  border-radius: var(--radius-md) !important;
+}
+
+.doc-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover) !important;
+}
+
+/* Элементы множественного выбора студентов */
+.multiselect-item {
+  cursor: pointer;
+  transition: var(--transition-fast);
+  border: 1px solid #dee2e6;
+  border-radius: var(--radius-md);
+  background-color: #ffffff;
+}
+
+.multiselect-item:hover {
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.multiselect-item.is-selected {
+  background-color: var(--status-pending-bg) !important;
+  border-color: var(--status-pending-border) !important;
+}
+
+.multiselect-item.is-selected:hover {
+  background-color: #dbeafe !important;
+}
+
+/* Ссылка в футере */
+.footer-link {
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: var(--transition-fast);
+}
+
+.footer-link:hover {
+  color: #ffffff !important;
+  text-decoration: underline;
+}
+
+/* Стабилизация вкладок: предотвращение горизонтального сдвига при переключении */
+.nav-tabs .nav-link,
+.nav-pills .nav-link,
+.admin-tabs .nav-link,
+.main-tabs .nav-link {
+  font-weight: 500 !important;
+}
+
+/* WCAG 2.1 AA доступность: контраст вторичного текста (≥ 4.5:1 на светлых фонах) */
+.text-muted {
+  color: #475569 !important;
+}
+
+/* Четкий фокус при навигации с клавиатуры */
+.multiselect-item:focus-visible,
+.request-card-header-content:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid var(--mgkct-blue) !important;
+  outline-offset: 2px !important;
+}
+
+/* Модальные окна: надежный скролл формы и предотвращение прокрутки фоновой страницы */
+.modal-dialog-scrollable {
+  max-height: calc(100vh - 2rem);
+}
+
+.modal-dialog-scrollable .modal-content {
+  max-height: calc(100vh - 2rem);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-dialog-scrollable .modal-content > form {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.modal-dialog-scrollable .modal-body {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+@media (max-width: 576px) {
+  .modal-dialog-scrollable {
+    max-height: calc(100vh - 1rem);
+    margin: 0.5rem;
+  }
+
+  .modal-dialog-scrollable .modal-content {
+    max-height: calc(100vh - 1rem);
+  }
+}
+
+/* Анимация вращения индикаторов фоновой синхронизации */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.spin-icon {
+  animation: spin 1s linear infinite;
+  display: inline-block;
+}
+
+/* Навигационная цепочка (хлебные крошки) */
+.breadcrumbs-nav .breadcrumb {
+  background-color: #ffffff;
+  border: 1px solid var(--mgkct-border);
+  font-size: 0.9rem;
+}
+
+.breadcrumbs-nav .breadcrumb-item a {
+  color: var(--mgkct-blue);
+  font-weight: 500;
+  transition: var(--transition-fast);
+}
+
+.breadcrumbs-nav .breadcrumb-item a:hover {
+  color: var(--mgkct-blue-dark);
+  text-decoration: underline !important;
+}
+
+.breadcrumbs-nav .breadcrumb-item.active {
+  color: var(--mgkct-gray);
+  font-weight: 500;
+}
+
+/* Контрастность элементов форм (чекбоксы и радиокнопки) */
+.form-check-input {
+  border: 1.5px solid #64748b;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.form-check-input:hover {
+  border-color: #334155;
+}
+
+.form-check-input:focus {
+  border-color: var(--mgkct-blue);
+  box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.form-check-input:checked {
+  background-color: var(--mgkct-blue);
+  border-color: var(--mgkct-blue);
+}
+
+/* Выделение блока подтверждения удаления */
+.delete-confirm-box {
+  background-color: #fff5f5;
+  border: 1.5px solid #fecaca;
+  transition: var(--transition-fast);
+}
+
+.delete-confirm-box:hover {
+  background-color: #fee2e2;
+  border-color: #fca5a5;
+}
+
+.delete-confirm-box .form-check {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.delete-confirm-box .form-check-input {
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: 0;
+  border: 2px solid #dc3545 !important;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.delete-confirm-box .form-check-input:focus {
+  box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+  border-color: #dc3545 !important;
+}
+
+.delete-confirm-box .form-check-input:checked {
+  background-color: #dc3545;
+  border-color: #dc3545 !important;
+}
+
+
+

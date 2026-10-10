@@ -1,31 +1,21 @@
-:root {
-  --mgkct-blue: #0d6efd;
-  --mgkct-blue-dark: #0a58ca;
-  --mgkct-blue-light: #e7f1ff;
-  --shadow-md: 0 4px 12px rgba(0,0,0,0.15);
-  --shadow-lg: 0 8px 24px rgba(0,0,0,0.2);
-  --radius-lg: 16px;
-  --radius-md: 12px;
-  --transition: all 0.3s ease;
-}
-
 .request-page {
     min-height: 100vh;
-    background-color: #f5f7fa;
+    background-color: var(--mgkct-body-bg);
 }
 
 /* Карточка формы */
 .request-card {
     background: white;
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-lg);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--mgkct-border);
     transition: var(--transition);
     overflow: hidden;
 }
 
 .request-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 12px 32px rgba(0,0,0,0.2);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
 }
 
 /* Лейблы форм */
@@ -46,11 +36,11 @@
 .form-control-custom,
 .form-select {
     border-radius: var(--radius-md);
-    border: 2px solid #e9ecef;
-    padding: 0.875rem 1rem;
+    border: 1px solid #ced4da;
+    padding: 0.75rem 1rem;
     font-size: 1rem;
     transition: var(--transition);
-    background-color: #f8f9fa;
+    background-color: #ffffff;
 }
 
 .form-control-custom:focus,
@@ -74,8 +64,8 @@
 
 /* Информационный блок */
 .info-box {
-    background: linear-gradient(135deg, #fff3cd, #ffeaa7);
-    border-left: 4px solid #ffc107;
+    background: #fffbeb;
+    border-left: 4px solid var(--mgkct-yellow);
     border-radius: var(--radius-md);
     padding: 1rem 1.25rem;
     display: flex;
@@ -84,7 +74,7 @@
 }
 
 .info-box i {
-    color: #fd7e14;
+    color: var(--mgkct-orange);
     font-size: 1.2rem;
     flex-shrink: 0;
     margin-top: 0.2rem;
@@ -96,8 +86,8 @@
 
 /* Кнопки */
 .btn-custom {
-    border-radius: 50px;
-    padding: 0.875rem 2.5rem;
+    border-radius: var(--radius-md);
+    padding: 0.75rem 2rem;
     font-weight: 600;
     font-size: 1rem;
     transition: var(--transition);
@@ -108,15 +98,15 @@
 }
 
 .btn-custom-primary {
-    background: linear-gradient(135deg, var(--mgkct-blue), var(--mgkct-blue-dark));
+    background: var(--mgkct-blue);
     color: white;
-    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+    box-shadow: var(--shadow-sm);
 }
 
 .btn-custom-primary:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 16px rgba(13, 110, 253, 0.4);
-    background: linear-gradient(135deg, var(--mgkct-blue-dark), var(--mgkct-blue));
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+    background: var(--mgkct-blue-dark);
 }
 
 .btn-custom-primary:disabled {
@@ -126,39 +116,28 @@
 
 .btn-custom-secondary {
     background: white;
-    color: var(--mgkct-blue);
-    border: 2px solid var(--mgkct-blue);
+    color: var(--mgkct-dark);
+    border: 1px solid #ced4da;
 }
 
 .btn-custom-secondary:hover:not(:disabled) {
-    background: var(--mgkct-blue);
-    color: white;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2);
+    background: #f8f9fa;
+    color: var(--mgkct-dark);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
 }
 
 /* Алерты */
 .alert {
     border-radius: var(--radius-md);
-    border: none;
     padding: 1rem 1.25rem;
     display: flex;
     align-items: center;
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-sm);
 }
 
 .alert i {
     font-size: 1.2rem;
-}
-
-.alert-danger {
-    background: linear-gradient(135deg, #f8d7da, #f5c2c7);
-    color: #842029;
-}
-
-.alert-success {
-    background: linear-gradient(135deg, #d1e7dd, #badbcc);
-    color: #0f5132;
 }
 
 /* Multiple select */

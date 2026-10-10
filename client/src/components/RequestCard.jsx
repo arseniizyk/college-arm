@@ -27,8 +27,17 @@ const StudentDetailsItem = ({ student, index, getNameById }) => {
                 <div className="flex-grow-1">
                     {/* Заголовок - кликабельный */}
                     <div 
-                        className="fw-bold text-dark mb-1"
+                        className="fw-bold text-dark mb-1 d-inline-block"
+                        role="button"
+                        tabIndex={0}
+                        aria-expanded={showDetails}
                         onClick={toggleDetails}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                toggleDetails(e);
+                            }
+                        }}
                         style={{ cursor: 'pointer' }}
                     >
                         <i className="bi-person-fill me-2"></i>
@@ -37,7 +46,8 @@ const StudentDetailsItem = ({ student, index, getNameById }) => {
 
                     {/* Сворачиваемая дополнительная информация */}
                     <Collapse in={showDetails}>
-                        <div className="mt-2 pt-2 border-top">
+                        <div>
+                            <div className="mt-2 pt-2 border-top">
                             {/* Группа и курс */}
                             <div className="mb-2">
                                 <small className="text-muted">
@@ -131,7 +141,8 @@ const StudentDetailsItem = ({ student, index, getNameById }) => {
                                 </div>
                             )}
                         </div>
-                    </Collapse>
+                    </div>
+                </Collapse>
                 </div>
 
                 {/* Кнопка раскрытия */}
@@ -215,8 +226,6 @@ const RequestCard = ({ request, onStatusChange, getNameById, onViewUpdate }) => 
     const handleGenerateDocument = async () => {
         setGenerating(true);
         try {
-            // downloadDoc разбирает тело ответа, поэтому в alert попадает текст
-            // сервера, а не общее «Ошибка при генерации».
             await downloadDoc(`/api/generate/study-certificate/${request.id}`, {
                 method: 'GET',
                 fileName: 'Справка_об_обучении',
@@ -224,7 +233,6 @@ const RequestCard = ({ request, onStatusChange, getNameById, onViewUpdate }) => 
             });
         } catch (error) {
             console.error('Ошибка при генерации документа:', error);
-            alert(error.message || 'Ошибка при генерации документа');
         } finally {
             setGenerating(false);
         }
@@ -244,7 +252,17 @@ const RequestCard = ({ request, onStatusChange, getNameById, onViewUpdate }) => 
             >
                 <div 
                     className="request-card-header-content"
+                    role="button"
+                    tabIndex={0}
+                    aria-expanded={expanded}
+                    aria-label={`Заявка №${request.id}, ${expanded ? 'свернуть' : 'развернуть'}`}
                     onClick={handleToggleExpand}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            handleToggleExpand();
+                        }
+                    }}
                     style={{ cursor: 'pointer' }}
                 >
                     <div className="request-card-title-section">
@@ -287,7 +305,8 @@ const RequestCard = ({ request, onStatusChange, getNameById, onViewUpdate }) => 
             </Card.Header>
 
             <Collapse in={expanded}>
-                <Card.Body className="request-card-body">
+                <div>
+                    <Card.Body className="request-card-body">
                     <Row>
                         {/* Информация о заявке */}
                         <Col md={6} className="mb-3 mb-md-0">
@@ -373,7 +392,7 @@ const RequestCard = ({ request, onStatusChange, getNameById, onViewUpdate }) => 
                         {/* Информация о студентах */}
                         <Col md={6}>
                             <h6 className="text-primary mb-3">
-                                <i className="bi-person-graduate me-2"></i>
+                                <i className="bi-mortarboard me-2"></i>
                                 Студенты ({request.students?.length || 0})
                             </h6>
                             
@@ -390,7 +409,7 @@ const RequestCard = ({ request, onStatusChange, getNameById, onViewUpdate }) => 
                                 </ListGroup>
                             ) : (
                                 <div className="text-center text-muted py-3">
-                                    <i className="bi-person-slash fa-2x mb-2"></i>
+                                    <i className="bi-person-x fs-2 mb-2"></i>
                                     <p>Нет студентов в заявке</p>
                                 </div>
                             )}
@@ -429,6 +448,7 @@ const RequestCard = ({ request, onStatusChange, getNameById, onViewUpdate }) => 
                         </div>
                     )}
                 </Card.Body>
+                </div>
             </Collapse>
         </Card>
     );

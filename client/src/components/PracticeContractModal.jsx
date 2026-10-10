@@ -5,13 +5,9 @@ import { observer } from 'mobx-react-lite';
 import { practiceContractUrl } from '../utils/consts';
 import { downloadDoc } from '../http';
 import { validatePracticeContract, PRACTICE_TYPES } from '../utils/practiceContract';
+import { splitDateToContractParts, formatRuDate, toIsoDate } from '../utils/dateFormatters';
 import OrderStudentSelector from './OrderStudentSelector';
 import BaseOrderModal from './BaseOrderModal';
-
-const MONTH_NAMES = [
-    'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
-    'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'
-];
 
 const INITIAL = {
     contractDay: '',
@@ -69,6 +65,37 @@ const PracticeContractModal = observer(({ show, onHide }) => {
 
     const handleStudentsChange = (ids) => {
         setForm(prev => ({ ...prev, studentIds: ids }));
+        setError(null);
+    };
+
+    const handleContractDateChange = (e) => {
+        const iso = e.target.value;
+        const parts = splitDateToContractParts(iso);
+        if (parts) {
+            setForm(prev => ({
+                ...prev,
+                contractDay: parts.contractDay,
+                contractMonth: parts.contractMonth,
+                contractYear: parts.contractYear
+            }));
+        } else {
+            setForm(prev => ({
+                ...prev,
+                contractDay: '',
+                contractMonth: '',
+                contractYear: ''
+            }));
+        }
+        setError(null);
+    };
+
+    const getContractDateIso = () => {
+        if (!form.contractDay || !form.contractMonth || !form.contractYear) return '';
+        return toIsoDate(`${form.contractDay} ${form.contractMonth} ${form.contractYear}`);
+    };
+
+    const handlePeriodChange = (field, isoDate) => {
+        setForm(prev => ({ ...prev, [field]: formatRuDate(isoDate) }));
         setError(null);
     };
 
@@ -147,53 +174,23 @@ const PracticeContractModal = observer(({ show, onHide }) => {
                 <i className="bi bi-file-earmark-text me-2"></i>Реквизиты договора
             </h6>
             <Row className="mb-3">
-                <Col md={2}>
+                <Col md={6}>
                     <Form.Group>
-                        <Form.Label>Число <span className="text-danger">*</span></Form.Label>
+                        <Form.Label>Дата договора <span className="text-danger">*</span></Form.Label>
                         <Form.Control
-                            type="number"
-                            name="contractDay"
-                            value={form.contractDay}
-                            onChange={handleChange}
-                            min={1}
-                            max={31}
-                            placeholder="1"
+                            type="date"
+                            value={getContractDateIso()}
+                            onChange={handleContractDateChange}
                             required
                         />
+                        {form.contractDay && form.contractMonth && form.contractYear && (
+                            <Form.Text className="text-muted">
+                                «{form.contractDay}» {form.contractMonth} {form.contractYear} г.
+                            </Form.Text>
+                        )}
                     </Form.Group>
                 </Col>
-                <Col md={4}>
-                    <Form.Group>
-                        <Form.Label>Месяц <span className="text-danger">*</span></Form.Label>
-                        <Form.Select
-                            name="contractMonth"
-                            value={form.contractMonth}
-                            onChange={handleChange}
-                            required
-                        >
-                            <option value="">— Выберите месяц —</option>
-                            {MONTH_NAMES.map(m => (
-                                <option key={m} value={m}>{m}</option>
-                            ))}
-                        </Form.Select>
-                    </Form.Group>
-                </Col>
-                <Col md={3}>
-                    <Form.Group>
-                        <Form.Label>Год <span className="text-danger">*</span></Form.Label>
-                        <Form.Control
-                            type="number"
-                            name="contractYear"
-                            value={form.contractYear}
-                            onChange={handleChange}
-                            min={2000}
-                            max={2100}
-                            placeholder={new Date().getFullYear()}
-                            required
-                        />
-                    </Form.Group>
-                </Col>
-                <Col md={3}>
+                <Col md={6}>
                     <Form.Group>
                         <Form.Label>Номер договора <span className="text-danger">*</span></Form.Label>
                         <Form.Control
@@ -283,45 +280,54 @@ const PracticeContractModal = observer(({ show, onHide }) => {
                 <i className="bi bi-calendar-range me-2"></i>Сроки проведения практики
             </h6>
             <Row className="mb-3">
-                <Col md={4}>
+                <Col md={6}>
                     <Form.Group>
                         <Form.Label>Сроки: с <span className="text-danger">*</span></Form.Label>
                         <Form.Control
-                            type="text"
-                            name="periodFrom"
-                            value={form.periodFrom}
-                            onChange={handleChange}
-                            placeholder="напр. 30 января 2023 г."
+                            type="date"
+                            value={toIsoDate(form.periodFrom)}
+                            onChange={(e) => handlePeriodChange('periodFrom', e.target.value)}
                             required
                         />
+                        {form.periodFrom && (
+                            <Form.Text className="text-muted">
+                                {form.periodFrom} г.
+                            </Form.Text>
+                        )}
                     </Form.Group>
                 </Col>
-                <Col md={4}>
+                <Col md={6}>
                     <Form.Group>
                         <Form.Label>по <span className="text-danger">*</span></Form.Label>
                         <Form.Control
-                            type="text"
-                            name="periodTo"
-                            value={form.periodTo}
-                            onChange={handleChange}
-                            placeholder="напр. 25 февраля 2023 г."
+                            type="date"
+                            value={toIsoDate(form.periodTo)}
+                            onChange={(e) => handlePeriodChange('periodTo', e.target.value)}
                             required
                         />
+                        {form.periodTo && (
+                            <Form.Text className="text-muted">
+                                {form.periodTo} г.
+                            </Form.Text>
+                        )}
                     </Form.Group>
                 </Col>
             </Row>
             <Row className="mb-3">
-                <Col md={5}>
+                <Col md={6}>
                     <Form.Group>
                         <Form.Label>Договор действует до <span className="text-danger">*</span></Form.Label>
                         <Form.Control
-                            type="text"
-                            name="contractEndDate"
-                            value={form.contractEndDate}
-                            onChange={handleChange}
-                            placeholder="напр. 26 февраля 2023"
+                            type="date"
+                            value={toIsoDate(form.contractEndDate)}
+                            onChange={(e) => handlePeriodChange('contractEndDate', e.target.value)}
                             required
                         />
+                        {form.contractEndDate && (
+                            <Form.Text className="text-muted">
+                                {form.contractEndDate} г.
+                            </Form.Text>
+                        )}
                     </Form.Group>
                 </Col>
             </Row>

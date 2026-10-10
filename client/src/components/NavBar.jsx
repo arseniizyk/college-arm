@@ -8,6 +8,7 @@ import { markNotificationAsRead, markAllNotificationsAsRead } from '../http/noti
 import NotificationList, { UnreadBadge } from './NotificationList';
 import { $authHost, errorMessage } from '../http';
 import Alert from 'react-bootstrap/Alert';
+import { notify } from '../context/ToastContext';
 import './NavBar.css';
 
 const NavBar = observer(() => {
@@ -27,10 +28,24 @@ const NavBar = observer(() => {
     useEffect(() => {
         if (!isAuth) return;
 
-        const intervalId = setInterval(() => {
-            data.fetchAll('notifications').catch(err => {
+        let prevUnread = (data.notifications || []).filter(n => !n.isRead).length;
+
+        const intervalId = setInterval(async () => {
+            try {
+                await data.fetchAll('notifications');
+                const currUnread = (data.notifications || []).filter(n => !n.isRead).length;
+                if (currUnread > prevUnread) {
+                    const diff = currUnread - prevUnread;
+                    notify({
+                        title: 'Новые уведомления',
+                        message: `Получено новых уведомлений: ${diff}`,
+                        variant: 'info'
+                    });
+                }
+                prevUnread = currUnread;
+            } catch (err) {
                 console.error('Ошибка автообновления уведомлений:', err);
-            });
+            }
         }, 60000); // 60000 мс = 1 минута
 
         return () => clearInterval(intervalId);
