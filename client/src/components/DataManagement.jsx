@@ -77,7 +77,9 @@ const DataManagement = (props) => {
         getNameByIdWithData,
         handleCreate,
         loadTableData,
-        itemsPerPage
+        itemsPerPage,
+        sortConfig,
+        handleSort
     } = props;
 
     const getTableColumns = TABLE_COLUMNS[activeTab] || [];
@@ -143,6 +145,8 @@ const DataManagement = (props) => {
                             getNameById={getNameByIdWithData}
                             tableType={tab.key}
                             onAdd={handleCreate}
+                            sortConfig={sortConfig}
+                            onSort={handleSort}
                             {...(tab.getExtraProps ? tab.getExtraProps(props) : {})}
                         />
                     </Tab>

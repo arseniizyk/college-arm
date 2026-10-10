@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { getTableData, filterData, prepareFormData, getNameById, toGroupFormData, toStudentFormData } from '../utils/dataHelpers';
 import { getDefaultFormData } from '../utils/tableConfig';
+import { sortTableData } from '../utils/tableSorting';
 import { ITEMS_PER_PAGE } from '../utils/consts';
 import { statusLabel } from '../utils/requestStatus';
 import { errorMessage } from '../http';
@@ -31,6 +32,7 @@ export const useAdminLogic = (data, user) => {
     const [selectedRoleFilter, setSelectedRoleFilter] = useState('');
     const [selectedStatusFilter, setSelectedStatusFilter] = useState('');
     const [selectedSpecialtyFilter, setSelectedSpecialtyFilter] = useState('');
+    const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
 
     // Загружаем данные при монтировании компонента
     useEffect(() => {
@@ -106,6 +108,22 @@ export const useAdminLogic = (data, user) => {
     // Функция для обновления фильтра специальности (клиентская фильтрация)
     const handleSpecialtyFilterChange = useCallback((specialtyId) => {
         setSelectedSpecialtyFilter(specialtyId);
+        setCurrentPage(1);
+    }, []);
+
+    // Функция для интерактивной сортировки по клику на заголовок (asc -> desc -> сброс)
+    const handleSort = useCallback((columnKey) => {
+        setSortConfig(prev => {
+            if (prev.key === columnKey) {
+                if (prev.direction === 'asc') {
+                    return { key: columnKey, direction: 'desc' };
+                }
+                if (prev.direction === 'desc') {
+                    return { key: null, direction: null };
+                }
+            }
+            return { key: columnKey, direction: 'asc' };
+        });
         setCurrentPage(1);
     }, []);
 
@@ -256,13 +274,19 @@ export const useAdminLogic = (data, user) => {
         setSelectedRoleFilter('');
         setSelectedStatusFilter('');
         setSelectedSpecialtyFilter('');
+        setSortConfig({ key: null, direction: null });
     }, []);
+
+    // Функция для получения названия по ID с привязкой к data
+    const getNameByIdWithData = useCallback((fieldName, id) => {
+        return getNameById(fieldName, id, data);
+    }, [data]);
 
     // Получение данных таблицы
     const tableData = getTableData(activeTab, data);
 
-    // Фильтрация и сортировка данных.
-    const filteredData = [...filterData(
+    // Фильтрация данных
+    const rawFilteredData = filterData(
         tableData,
         searchTerm,
         activeTab,
@@ -270,36 +294,15 @@ export const useAdminLogic = (data, user) => {
         selectedRoleFilter,
         selectedStatusFilter,
         selectedSpecialtyFilter
-    )].sort((a, b) => {
-        switch (activeTab) {
-            case 'students':
-            case 'teachers':
-                // Сортировка по фамилии
-                return (a.last_name || '').localeCompare(b.last_name || '', 'ru');
+    );
 
-            case 'users':
-                // Сортировка по email
-                return (a.email || '').localeCompare(b.email || '', 'ru');
-
-            case 'groups':
-                // Сортировка по номеру группы
-                return (a.group_number || '').localeCompare(b.group_number || '', 'ru');
-
-            case 'specialties':
-            case 'documents':
-                // Сортировка по названию
-                const nameA = a.name || a.document_name || '';
-                const nameB = b.name || b.document_name || '';
-                return nameA.localeCompare(nameB, 'ru');
-
-            case 'requests':
-                // Сортировка по дате создания (новые сверху)
-                return new Date(b.createdAt) - new Date(a.createdAt);
-
-            default:
-                return 0;
-        }
-    });
+    // Сортировка данных таблицы (с поддержкой пользовательской и дефолтной)
+    const filteredData = sortTableData(
+        rawFilteredData,
+        sortConfig,
+        activeTab,
+        getNameByIdWithData
+    );
 
     // Пагинация
     const totalPages = Math.max(1, Math.ceil(filteredData.length / itemsPerPage));
@@ -316,11 +319,6 @@ export const useAdminLogic = (data, user) => {
 
     const isLoading = data.isLoading(activeTab) || loading;
     const tableError = data.getError(activeTab);
-
-    // Функция для получения названия по ID с привязкой к data
-    const getNameByIdWithData = useCallback((fieldName, id) => {
-        return getNameById(fieldName, id, data);
-    }, [data]);
 
     return {
         // Состояния
@@ -368,6 +366,8 @@ export const useAdminLogic = (data, user) => {
         handleSpecialtyFilterChange,
         handleRequestStatusChange,
         loadTableData,
-        getNameByIdWithData
+        getNameByIdWithData,
+        sortConfig,
+        handleSort
     };
 };

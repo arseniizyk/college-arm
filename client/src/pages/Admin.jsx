@@ -108,7 +108,9 @@ const Admin = observer(() => {
         handleSpecialtyFilterChange,
         handleRequestStatusChange,
         loadTableData,
-        getNameByIdWithData
+        getNameByIdWithData,
+        sortConfig,
+        handleSort
     } = useAdminLogic(data, user);
 
     const handleSwitchToRequestsCards = () => {
@@ -223,6 +225,8 @@ const Admin = observer(() => {
                             loadTableData={loadTableData}
                             itemsPerPage={itemsPerPage}
                             onSwitchToRequestsCards={handleSwitchToRequestsCards}
+                            sortConfig={sortConfig}
+                            handleSort={handleSort}
                         />
                     </Tab>
 

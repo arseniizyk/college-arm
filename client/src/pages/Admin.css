@@ -157,11 +157,87 @@
   border-bottom: 2px solid #dee2e6;
   font-weight: 600;
   color: var(--mgkct-dark);
-  padding: 1rem;
+  padding: 0.65rem 0.75rem;
+}
+
+.admin-table thead th.non-sortable-header {
+  cursor: default;
+  user-select: text;
+}
+
+.admin-table thead th.sortable-header {
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.admin-table thead th.sortable-header:hover {
+  background-color: #e9ecef;
+  color: var(--mgkct-blue);
+}
+
+.admin-table thead th.sortable-header:focus-visible {
+  outline: 2px solid var(--mgkct-blue) !important;
+  outline-offset: -2px;
+}
+
+.admin-table thead th.sortable-header.sorted-active {
+  color: var(--mgkct-blue);
+  background-color: #f1f5f9;
+}
+
+.sort-indicator {
+  transition: transform 0.15s ease, opacity 0.15s ease;
+  font-size: 0.85em;
+}
+
+.admin-table thead th.sortable-header:hover .sort-indicator {
+  opacity: 1 !important;
+}
+
+.admin-table thead th .sort-button {
+  color: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.admin-table thead th .sort-button:focus-visible {
+  outline: 2px solid var(--mgkct-blue) !important;
+  outline-offset: 2px;
+  border-radius: var(--radius-xs);
+}
+
+.admin-table th.col-id,
+.admin-table td.col-id {
+  width: 60px;
+  min-width: 60px;
+  text-align: center;
+}
+
+.admin-table th.col-id .sort-button {
+  justify-content: center;
+}
+
+.admin-table th.col-group-number,
+.admin-table td.col-group-number {
+  width: 140px;
+  min-width: 135px;
+}
+
+.admin-table th.col-center,
+.admin-table td.text-center {
+  text-align: center;
+}
+
+.admin-table td.cell-wrap {
+  white-space: normal;
+  max-width: 280px;
+  min-width: 160px;
+  line-height: 1.35;
 }
 
 .admin-table tbody td {
-  padding: 1rem;
+  padding: 0.65rem 0.75rem;
   vertical-align: middle;
   border-color: #f1f3f4;
 }
@@ -183,6 +259,7 @@
 .action-buttons-cell {
   display: flex;
   gap: 0.5rem;
+  justify-content: center;
 }
 
 .action-buttons-cell .btn {

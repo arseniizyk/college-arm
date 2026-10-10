@@ -4,37 +4,37 @@ import { statusOptions } from './requestStatus'
 // Конфигурация колонок для таблиц.
 export const TABLE_COLUMNS = {
     users: [
-        { key: 'id', label: '№', render: 'rowNumber' },
-        { key: 'email', label: 'Email' },
-        { key: 'role', label: 'Роль', render: 'role' },
+        { key: 'id', label: '№' },
+        { key: 'email', label: 'Email', sortable: false },
+        { key: 'role', label: 'Роль', render: 'role', sortable: false },
         { key: 'createdAt', label: 'Создан' }
     ],
     documents: [
-        { key: 'id', label: '№', render: 'rowNumber' },
-        { key: 'document_name', label: 'Название' },
-        { key: 'createdAt', label: 'Создан' }
+        { key: 'id', label: '№', sortable: false },
+        { key: 'document_name', label: 'Название', sortable: false },
+        { key: 'createdAt', label: 'Создан', sortable: false }
     ],
     requests: [
-        { key: 'id', label: '№', render: 'rowNumber' },
+        { key: 'id', label: '№' },
         { key: 'documentId', label: 'Документ', render: 'reference' },
-        { key: 'description', label: 'Описание' },
-        { key: 'students', label: 'Студенты', render: 'students' },
+        { key: 'description', label: 'Описание', sortable: false },
+        { key: 'students', label: 'Студенты', render: 'students', sortable: false },
         { key: 'status', label: 'Статус', render: 'status' },
         { key: 'createdAt', label: 'Создана' }
     ],
     students: [
-        { key: 'id', label: '№', render: 'rowNumber' },
+        { key: 'id', label: '№' },
         { key: 'last_name', label: 'Фамилия' },
         { key: 'name', label: 'Имя' },
         { key: 'father_name', label: 'Отчество' },
-        { key: 'order_number', label: 'Приказ' },
+        { key: 'order_number', label: 'Приказ', sortable: false },
         { key: 'enroll_date', label: 'Зачислен' },
         { key: 'expell_date', label: 'Отчислен' },
         { key: 'groupId', label: 'Группа', render: 'reference' },
-        { key: 'userId', label: 'Аккаунт', render: 'reference' }
+        { key: 'userId', label: 'Аккаунт', render: 'reference', sortable: false }
     ],
     groups: [
-        { key: 'id', label: '№', render: 'rowNumber' },
+        { key: 'id', label: '№' },
         { key: 'group_number', label: 'Номер группы' },
         { key: 'specialtyId', label: 'Специальность', render: 'reference' },
         { key: 'supervisor', label: 'Куратор', render: 'supervisor' },
@@ -43,17 +43,17 @@ export const TABLE_COLUMNS = {
         { key: 'course', label: 'Курс', render: 'course' }
     ],
     specialties: [
-        { key: 'id', label: '№', render: 'rowNumber' },
-        { key: 'name', label: 'Название' },
-        { key: 'qualification', label: 'Квалификация' },
-        { key: 'duration', label: 'Длительность обучения', render: 'duration' }
+        { key: 'id', label: '№', sortable: false },
+        { key: 'name', label: 'Название', sortable: false },
+        { key: 'qualification', label: 'Квалификация', sortable: false },
+        { key: 'duration', label: 'Длительность обучения', render: 'duration', sortable: false }
     ],
     teachers: [
-        { key: 'id', label: '№', render: 'rowNumber' },
+        { key: 'id', label: '№' },
         { key: 'last_name', label: 'Фамилия' },
         { key: 'name', label: 'Имя' },
         { key: 'father_name', label: 'Отчество' },
-        { key: 'userId', label: 'Аккаунт', render: 'reference' }
+        { key: 'userId', label: 'Аккаунт', render: 'reference', sortable: false }
     ]
 };
 
