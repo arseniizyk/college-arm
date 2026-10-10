@@ -237,8 +237,29 @@
 /* Mobile Notifications */
 .mobile-notifications {
     background-color: #f8f9fa;
-    border-radius: 8px;
-    padding: 1rem;
+    border-radius: var(--radius-md, 8px);
+    padding: 0.75rem;
+    border: 1px solid #dee2e6;
+}
+
+.mobile-notifications .notification-list {
+    max-height: 220px;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.mobile-notifications .notification-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.mobile-notifications .notification-list::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.mobile-notifications .notification-list::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
 }
 
 /* Адаптивность */

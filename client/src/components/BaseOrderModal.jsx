@@ -20,7 +20,7 @@ const BaseOrderModal = ({
     ...props
 }) => {
     return (
-        <Modal show={show} onHide={onHide} size={size} centered={centered} {...props}>
+        <Modal show={show} onHide={onHide} size={size} centered={centered} scrollable {...props}>
             <Modal.Header closeButton>
                 <Modal.Title>
                     {icon && <i className={`${icon} me-2`}></i>}
@@ -28,7 +28,7 @@ const BaseOrderModal = ({
                 </Modal.Title>
             </Modal.Header>
 
-            <Form onSubmit={onSubmit}>
+            <Form onSubmit={onSubmit} className="d-flex flex-column flex-grow-1 overflow-hidden" style={{ minHeight: 0 }}>
                 <Modal.Body>
                     {error && (
                         <Alert

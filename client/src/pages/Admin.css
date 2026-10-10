@@ -57,6 +57,84 @@
   font-weight: 500;
 }
 
+/* Main Admin Tabs (Pills) */
+.main-admin-tabs {
+  background-color: var(--mgkct-light, #f8f9fa);
+  padding: 0.5rem;
+  border-radius: var(--radius-md, 12px);
+  border: 1px solid var(--mgkct-border, #dee2e6);
+  gap: 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.main-admin-tabs .nav-item {
+  flex: 1 1 0;
+  min-width: 140px;
+}
+
+.main-admin-tabs .nav-link {
+  width: 100%;
+  text-align: center;
+  border-radius: var(--radius-sm, 8px);
+  font-weight: 500;
+  padding: 0.65rem 1rem;
+  color: var(--mgkct-dark, #212529);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.main-admin-tabs .nav-link:hover {
+  background-color: rgba(13, 110, 253, 0.08);
+  color: var(--mgkct-blue, #0d6efd);
+}
+
+.main-admin-tabs .nav-link.active {
+  background-color: var(--mgkct-blue, #0d6efd);
+  color: white;
+  box-shadow: 0 2px 4px rgba(13, 110, 253, 0.25);
+}
+
+.main-admin-tabs .nav-link span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 991.98px) {
+  .main-admin-tabs {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+  }
+
+  .main-admin-tabs .nav-item {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .main-admin-tabs .nav-link {
+    padding: 0.6rem 0.5rem;
+    font-size: 0.9rem;
+    white-space: nowrap;
+  }
+
+  .main-admin-tabs .nav-link span {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+}
+
+@media (max-width: 576px) {
+  .main-admin-tabs {
+    grid-template-columns: 1fr;
+    gap: 0.4rem;
+    padding: 0.4rem;
+  }
+}
+
 /* Table */
 .table-container {
   background: white;
@@ -66,6 +144,12 @@
 
 .admin-table {
   margin-bottom: 0;
+  min-width: 650px;
+}
+
+.admin-table th,
+.admin-table td {
+  white-space: nowrap;
 }
 
 .admin-table thead th {
@@ -112,7 +196,7 @@
 
 /* Search Box */
 .search-box {
-  max-width: 400px;
+  width: 100%;
 }
 
 /* Выравнивание высоты полей поиска и фильтров */
@@ -133,7 +217,9 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 1.5rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 1.25rem 1rem;
   background: var(--mgkct-light);
   border-top: 1px solid #dee2e6;
 }
@@ -384,6 +470,7 @@
     .nav-tabs {
         flex-wrap: nowrap;
         overflow-x: auto;
+        overflow-y: hidden !important;
         -webkit-overflow-scrolling: touch;
         border-bottom: 1px solid #dee2e6;
     }
@@ -433,47 +520,16 @@
     }
     
     .action-buttons-cell {
-        flex-direction: column;
-        gap: 0.25rem;
-    }
-    
-    .action-buttons-cell .btn {
-        width: 100%;
-        height: auto;
-        padding: 0.5rem;
-    }
-    
-    /* Адаптивность для поиска и фильтров */
-    .search-controls {
-        flex-direction: column !important;
-        width: 100% !important;
-        gap: 0.75rem !important;
-    }
-    
-    .search-box,
-    .group-filter,
-    .role-filter,
-    .status-filter,
-    .specialty-filter {
-        width: 100% !important;
-        flex: none !important;
-    }
-    
-    .d-flex.justify-content-between.align-items-center.mb-4 {
-        flex-direction: column;
-        align-items: stretch !important;
-        gap: 1rem;
-    }
-    
-    .d-flex.justify-content-between.align-items-center.mb-4 > div:last-child {
-        justify-content: space-between;
-        width: 100%;
+        display: flex;
+        flex-direction: row;
+        gap: 0.5rem;
     }
     
     .pagination-controls {
-        flex-direction: column;
-        gap: 1rem;
-        padding: 1rem;
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        padding: 0.75rem 0.5rem;
     }
     
     .pagination {
@@ -572,27 +628,17 @@
     }
     
     .table {
-        font-size: 0.75rem;
+        font-size: 0.85rem;
     }
     
     .admin-table thead th {
-        padding: 0.5rem 0.25rem;
-        font-size: 0.75rem;
+        padding: 0.6rem 0.5rem;
+        font-size: 0.85rem;
     }
     
     .admin-table tbody td {
-        padding: 0.5rem 0.25rem;
-        font-size: 0.75rem;
-    }
-    
-    .btn-sm {
-        font-size: 0.7rem;
-        padding: 0.25rem 0.4rem;
-    }
-    
-    .action-buttons-cell .btn {
-        font-size: 0.75rem;
-        padding: 0.4rem;
+        padding: 0.6rem 0.5rem;
+        font-size: 0.85rem;
     }
     
     .modal-dialog {

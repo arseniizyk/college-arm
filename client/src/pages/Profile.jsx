@@ -776,7 +776,7 @@ const Profile = observer(() => {
             </Container>
 
             {/* Модальное окно подтверждения удаления аккаунта */}
-            <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
+            <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered scrollable>
                 <Modal.Header closeButton className="border-0">
                     <Modal.Title className="text-danger">
                         <i className="bi bi-exclamation-triangle me-2"></i>

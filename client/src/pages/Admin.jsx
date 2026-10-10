@@ -121,7 +121,7 @@ const Admin = observer(() => {
                 <Tabs
                     activeKey={mainTab}
                     onSelect={(k) => setMainTab(k)}
-                    className="mb-4"
+                    className="mb-4 main-admin-tabs"
                     variant="pills"
                 >
                     <Tab 

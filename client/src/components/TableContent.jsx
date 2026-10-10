@@ -70,7 +70,7 @@ const TableContent = ({
                         {columns.map(col => (
                             <th key={col.key}>{col.label}</th>
                         ))}
-                        <th width="150">Действия</th>
+                        <th style={{ minWidth: '110px', width: '110px' }}>Действия</th>
                     </tr>
                 </thead>
                 <tbody>

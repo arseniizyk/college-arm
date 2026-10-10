@@ -240,7 +240,7 @@ const CRUDModal = ({
     };
 
     return (
-        <Modal show={show} onHide={onHide} size={type === 'delete' ? 'md' : 'lg'} centered>
+        <Modal show={show} onHide={onHide} size={type === 'delete' ? 'md' : 'lg'} centered scrollable>
             <Modal.Header closeButton>
                 <Modal.Title>
                     {type === 'delete' ? (
