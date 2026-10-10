@@ -76,7 +76,10 @@ async function main() {
 
     // 1. Вызов Python-парсера
     const pythonScript = path.join(__dirname, 'parseDocx.py')
-    const py = spawnSync('python', [pythonScript, docxPath], { encoding: 'utf-8', maxBuffer: 50 * 1024 * 1024 })
+    let py = spawnSync('python', [pythonScript, docxPath], { encoding: 'utf-8', maxBuffer: 50 * 1024 * 1024, env: { ...process.env, PYTHONIOENCODING: 'utf-8' } })
+    if (py.error && py.error.code === 'ENOENT') {
+        py = spawnSync('py', [pythonScript, docxPath], { encoding: 'utf-8', maxBuffer: 50 * 1024 * 1024, env: { ...process.env, PYTHONIOENCODING: 'utf-8' } })
+    }
 
     if (py.error || py.status !== 0) {
         console.error('Ошибка выполнения Python-парсера:', py.stderr || py.error)

@@ -77,7 +77,7 @@ const TableContent = ({
                     {safeData.length === 0 ? (
                         <tr>
                             <td colSpan={columns.length + 1} className="text-center py-5">
-                                <i className="bi-database fa-3x text-muted mb-3"></i>
+                                <i className="bi-database fs-1 text-muted mb-3"></i>
                                 <p className="text-muted fs-5">Нет данных для отображения</p>
                                 <p className="text-muted">
                                     {searchTerm ? 'Попробуйте изменить условия поиска' : 'Добавьте данные через кнопку "Добавить запись"'}

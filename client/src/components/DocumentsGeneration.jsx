@@ -19,15 +19,15 @@ const DOCUMENT_CATEGORIES = [
         icon: 'bi-journal-text',
         color: 'primary',
         documents: [
-            { id: 'release', title: 'Приказ об освобождении от занятий', icon: 'bi-calendar-x', available: true },
+            { id: 'release', title: 'Приказ об освобождении от занятий', icon: 'bi-calendar-minus', available: true },
             { id: 'enrollment', title: 'Приказ о зачислении', icon: 'bi-person-plus', available: true },
             { id: 'duplicate-ticket', title: 'Приказ о выдаче дубликата билета', icon: 'bi-card-text', available: true },
             { id: 'transfer', title: 'Приказ о переводе на следующий курс', icon: 'bi-arrow-up-circle', available: true },
             { id: 'health', title: 'Приказ о оздоровлении', icon: 'bi-heart-pulse', available: true },
-            { id: 'student-direction', title: 'Приказ о направлении учащихся колледжа', icon: 'bi-send', available: true },
-            { id: 'snow-cleaning', title: 'Приказ о субботнике/уборка снега', icon: 'bi-snow', available: true },
+            { id: 'student-direction', title: 'Приказ о направлении учащихся колледжа', icon: 'bi-geo-alt', available: true },
+            { id: 'snow-cleaning', title: 'Приказ о субботнике/уборка снега', icon: 'bi-tools', available: true },
             { id: 'stipend', title: 'Приказ о стипендии', icon: 'bi-cash-coin', available: true },
-            { id: 'exam-admission', title: 'Приказ о допуске к экзаменам', icon: 'bi-pencil-square', available: true },
+            { id: 'exam-admission', title: 'Приказ о допуске к экзаменам', icon: 'bi-file-earmark-check', available: true },
             { id: 'holidays', title: 'Приказ об установлении каникул', icon: 'bi-calendar-heart', available: true },
         ]
     },
@@ -57,12 +57,7 @@ const MODAL_MAP = {
 };
 
 const DocumentCard = ({ doc, onGenerate }) => (
-    <Card
-        className="h-100 border-0 shadow-sm"
-        style={{ transition: 'transform 0.2s' }}
-        onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-3px)'}
-        onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
-    >
+    <Card className="h-100 doc-card shadow-sm">
         <Card.Body className="d-flex flex-column p-3">
             <div className="d-flex align-items-center mb-3 gap-3">
                 <i className={`bi ${doc.icon} fs-3 ${doc.available ? 'text-primary' : 'text-secondary'}`}></i>

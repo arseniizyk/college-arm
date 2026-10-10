@@ -141,7 +141,7 @@ const CRUDModal = ({
             <Modal.Body>
                 {type === 'delete' ? (
                     <div className="text-center py-4">
-                        <i className="bi-trash-alt fa-3x text-danger mb-3"></i>
+                        <i className="bi-trash fs-1 text-danger mb-3"></i>
                         <h5>Вы уверены, что хотите удалить эту запись?</h5>
                         <p className="text-muted">Это действие нельзя отменить.</p>
                         {item && (

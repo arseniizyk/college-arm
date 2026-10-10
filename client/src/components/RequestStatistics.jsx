@@ -153,7 +153,7 @@ const RequestStatistics = ({ requests }) => {
             <Card className="mb-4">
                 <Card.Body>
                     <h6 className="mb-3">
-                        <i className="bi-calendar-alt me-2"></i>
+                        <i className="bi-calendar3 me-2"></i>
                         Период
                     </h6>
                     
@@ -239,7 +239,7 @@ const RequestStatistics = ({ requests }) => {
                                     <Pie data={pieChartData} options={chartOptions} />
                                 ) : (
                                     <div className="text-center text-muted py-5">
-                                        <i className="bi-inbox fa-3x mb-3"></i>
+                                        <i className="bi-inbox fs-1 mb-3"></i>
                                         <p>Нет данных за выбранный период</p>
                                     </div>
                                 )}
@@ -262,7 +262,7 @@ const RequestStatistics = ({ requests }) => {
                                     <Bar data={barChartData} options={chartOptions} />
                                 ) : (
                                     <div className="text-center text-muted py-5">
-                                        <i className="bi-inbox fa-3x mb-3"></i>
+                                        <i className="bi-inbox fs-1 mb-3"></i>
                                         <p>Нет данных за выбранный период</p>
                                     </div>
                                 )}
@@ -326,7 +326,7 @@ const RequestStatistics = ({ requests }) => {
                         </Table>
                     ) : (
                         <div className="text-center text-muted py-4">
-                            <i className="bi-inbox fa-3x mb-3"></i>
+                            <i className="bi-inbox fs-1 mb-3"></i>
                             <p>Нет данных за выбранный период</p>
                         </div>
                     )}

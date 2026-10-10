@@ -61,7 +61,9 @@ const Main = () => {
                                     <i className="bi bi-telephone-fill text-primary fs-5"></i>
                                     <div>
                                         <h5>Телефон</h5>
-                                        <p className="contact-phone">358 45 07</p>
+                                        <a href="tel:+375173584507" className="contact-phone">
+                                            +375 (17) 358-45-07
+                                        </a>
                                     </div>
                                 </div>
 

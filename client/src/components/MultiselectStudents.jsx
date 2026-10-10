@@ -26,7 +26,7 @@ const MultiselectStudents = ({ field, formData, setFormData, loading, data, allo
     if (allStudents.length === 0) {
         return (
             <div className="text-center py-4 border rounded bg-light">
-                <i className="bi-persons fa-2x text-muted mb-2"></i>
+                <i className="bi-people fs-2 text-muted mb-2"></i>
                 <p className="text-muted mb-0">
                     {allowedStudentIds && allowedStudentIds.length === 0
                         ? (noStudentsMessage || 'Ваш аккаунт не привязан к студенту. Обратитесь к администратору.')
@@ -171,7 +171,7 @@ const MultiselectStudents = ({ field, formData, setFormData, loading, data, allo
                 <div className="col-md-6">
                     <div className="input-group">
                         <span className="input-group-text">
-                            <i className="bi-persons"></i>
+                            <i className="bi-people"></i>
                         </span>
                         <Form.Select
                             value={selectedGroup}
@@ -205,7 +205,7 @@ const MultiselectStudents = ({ field, formData, setFormData, loading, data, allo
                     maxHeight: '250px', 
                     overflowY: 'auto', 
                     border: '1px solid #ced4da', 
-                    borderRadius: '0.375rem', 
+                    borderRadius: 'var(--radius-md)', 
                     padding: '0.75rem',
                     backgroundColor: '#f8f9fa'
                 }}
@@ -216,23 +216,9 @@ const MultiselectStudents = ({ field, formData, setFormData, loading, data, allo
                         return (
                             <div 
                                 key={opt.value} 
-                                className="d-flex align-items-center mb-2 p-2 bg-white rounded border"
+                                className={`d-flex align-items-center mb-2 p-2 multiselect-item ${isChecked ? 'is-selected' : ''}`}
                                 style={{ 
-                                    cursor: loading ? 'not-allowed' : 'pointer',
-                                    transition: 'all 0.2s',
-                                    backgroundColor: isChecked ? '#e7f3ff' : 'white'
-                                }}
-                                onMouseEnter={(e) => {
-                                    if (!loading) {
-                                        e.currentTarget.style.backgroundColor = isChecked ? '#d0e7ff' : '#f8f9fa';
-                                        e.currentTarget.style.borderColor = '#0d6efd';
-                                    }
-                                }}
-                                onMouseLeave={(e) => {
-                                    if (!loading) {
-                                        e.currentTarget.style.backgroundColor = isChecked ? '#e7f3ff' : 'white';
-                                        e.currentTarget.style.borderColor = '#dee2e6';
-                                    }
+                                    cursor: loading ? 'not-allowed' : 'pointer'
                                 }}
                                 onClick={() => {
                                     if (!loading) {
@@ -257,7 +243,7 @@ const MultiselectStudents = ({ field, formData, setFormData, loading, data, allo
                                 <div className="flex-grow-1" style={{ pointerEvents: 'none' }}>
                                     <div className="fw-bold">{opt.student.fullName}</div>
                                     <small className="text-muted">
-                                        <i className="bi-persons me-1"></i>
+                                        <i className="bi-people me-1"></i>
                                         Группа: {opt.student.groupName}
                                     </small>
                                 </div>
@@ -266,7 +252,7 @@ const MultiselectStudents = ({ field, formData, setFormData, loading, data, allo
                     })
                 ) : (
                     <div className="text-center py-4">
-                        <i className="bi-search fa-2x text-muted mb-2"></i>
+                        <i className="bi-search fs-2 text-muted mb-2"></i>
                         <p className="text-muted mb-0">
                             {searchTerm || selectedGroup ? 
                                 'Студенты не найдены по заданным критериям' : 

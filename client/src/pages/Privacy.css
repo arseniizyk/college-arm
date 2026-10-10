@@ -1,7 +1,6 @@
-/* Privacy Page Styles */
 .privacy-page {
     min-height: 100vh;
-    background: linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%);
+    background-color: var(--mgkct-body-bg);
     padding: 2rem 0;
 }
 
@@ -11,11 +10,11 @@
 }
 
 .privacy-header {
-    background: linear-gradient(135deg, var(--mgkct-blue) 0%, var(--mgkct-blue-dark) 100%);
+    background: var(--mgkct-dark);
     color: white;
     padding: 3rem 2rem;
-    border-radius: 12px 12px 0 0;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    box-shadow: var(--shadow-sm);
     margin-bottom: 0;
 }
 
@@ -40,8 +39,10 @@
 .privacy-content {
     background: white;
     padding: 2.5rem;
-    border-radius: 0 0 12px 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    border: 1px solid var(--mgkct-border);
+    border-top: none;
 }
 
 .privacy-section {
@@ -92,8 +93,8 @@
 }
 
 .privacy-section ul li::before {
-    content: '\f00c';
-    font-family: 'Font Awesome 5 Free';
+    content: '\F26E';
+    font-family: 'bootstrap-icons';
     font-weight: 900;
     position: absolute;
     left: 0;

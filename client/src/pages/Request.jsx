@@ -170,7 +170,6 @@ const Request = observer(() => {
                                     {/* Выбор документа */}
                                     <Form.Group className="mb-4">
                                         <Form.Label className="form-label-custom">
-                                            <i className="bi bi-file-earmark-text me-2"></i>
                                             Тип документа
                                         </Form.Label>
                                         <Form.Select
@@ -194,7 +193,6 @@ const Request = observer(() => {
                                     {/* Описание */}
                                     <Form.Group className="mb-4">
                                         <Form.Label className="form-label-custom">
-                                            <i className="bi bi-chat-left-text me-2"></i>
                                             Описание документа (необязательно)
                                         </Form.Label>
                                         <Form.Control
@@ -210,8 +208,7 @@ const Request = observer(() => {
                                     {/* Выбор студентов */}
                                     <Form.Group className="mb-4">
                                         <Form.Label className="form-label-custom">
-                                            <i className="bi bi-people me-2"></i>
-                                            Студенты 
+                                            Студенты
                                         </Form.Label>
                                         <MultiselectStudents
                                             field={{

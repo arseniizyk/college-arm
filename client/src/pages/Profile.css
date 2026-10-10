@@ -1,66 +1,54 @@
 .profile-page {
     min-height: 100vh;
-    background-color: #f5f7fa;
+    background-color: var(--mgkct-body-bg);
 }
 
 .profile-header {
-    background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%);
+    background: var(--mgkct-dark);
     color: white;
-    padding: 4rem 0;
-    margin-bottom: 3rem;
-    position: relative;
-    overflow: hidden;
-}
-
-.profile-header::before {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-image: 
-        radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%),
-        radial-gradient(circle at 80% 20%, rgba(255,255,255,0.05) 0%, transparent 50%);
+    padding: 3rem 0;
+    margin-bottom: 2rem;
+    border-bottom: 1px solid var(--mgkct-border);
 }
 
 .profile-header h1 {
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-    position: relative;
-    z-index: 1;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
 }
 
 .profile-header .lead {
-    opacity: 0.95;
-    position: relative;
-    z-index: 1;
+    opacity: 0.9;
+    margin-bottom: 0;
 }
 
 .stat-card {
     background: white;
-    border-radius: 12px;
-    transition: transform 0.2s, box-shadow 0.2s;
-    border-left: 4px solid transparent;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--mgkct-border);
+    border-left-width: 4px;
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition);
 }
 
 .stat-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2) !important;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover) !important;
 }
 
 .stat-card:nth-child(1) {
-    border-left-color: #6c757d;
+    border-left-color: var(--mgkct-gray);
 }
 
 .stat-card:nth-child(2) {
-    border-left-color: #0dcaf0;
+    border-left-color: var(--mgkct-cyan);
 }
 
 .stat-card:nth-child(3) {
-    border-left-color: #198754;
+    border-left-color: var(--mgkct-green);
 }
 
 .stat-card:nth-child(4) {
-    border-left-color: #dc3545;
+    border-left-color: var(--mgkct-red);
 }
 
 .stat-card h3 {
@@ -159,7 +147,7 @@
     color: #495057;
     border: none;
     border-bottom: 3px solid transparent;
-    transition: all 0.3s;
+    transition: color 0.15s ease, border-color 0.15s ease;
     padding: 1rem 1.5rem;
     font-weight: 500;
 }
@@ -173,7 +161,7 @@
     color: #0d6efd;
     background-color: transparent;
     border-bottom-color: #0d6efd;
-    font-weight: 600;
+    font-weight: 500;
 }
 
 @media (max-width: 768px) {

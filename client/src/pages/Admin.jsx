@@ -105,7 +105,7 @@ const Admin = observer(() => {
 
             {success && (
                 <Alert variant="success" onClose={() => setSuccess(null)} dismissible>
-                    <i className="bi-check-lg-circle me-2"></i>
+                    <i className="bi-check-circle me-2"></i>
                     {success}
                 </Alert>
             )}

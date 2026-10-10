@@ -131,12 +131,12 @@ const Profile = observer(() => {
     const getNameById = (fieldName, id) => getNameByIdForField(fieldName, id, data);
 
     const statusInfo = {
-        all: { label: 'Все заявки', icon: 'fa-list', color: 'secondary' }
+        all: { label: 'Все заявки', icon: 'bi-list-ul', color: 'secondary' }
     };
     for (const key of STATUS_KEYS) {
         statusInfo[key] = {
             label: statusLabelPlural(key),
-            icon: REQUEST_STATUSES[key].icon,
+            icon: REQUEST_STATUSES[key].biIcon,
             color: REQUEST_STATUSES[key].badge
         };
     }
@@ -380,12 +380,12 @@ const Profile = observer(() => {
                                             className="mb-4"
                                         >
                                             {Object.entries(statusInfo).map(([key, info]) => (
-                                                <Tab
+                                                 <Tab
                                                     key={key}
                                                     eventKey={key}
                                                     title={
                                                         <span>
-                                                            <i className={`fas ${info.icon} me-2`}></i>
+                                                            <i className={`bi ${info.icon} me-2`}></i>
                                                             {info.label}
                                                             <Badge bg={info.color} className="ms-2">
                                                                 {requestsByStatus[key].length}
@@ -432,7 +432,7 @@ const Profile = observer(() => {
                                                             </>
                                                         ) : (
                                                             <div className="text-center py-5">
-                                                                <i className={`fas ${info.icon} fa-3x text-muted mb-3`}></i>
+                                                                <i className={`bi ${info.icon} fs-1 text-muted mb-3`}></i>
                                                                 <h5 className="text-muted">Нет заявок</h5>
                                                                 <p className="text-muted">
                                                                     {key === 'all' 

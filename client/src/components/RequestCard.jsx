@@ -373,7 +373,7 @@ const RequestCard = ({ request, onStatusChange, getNameById, onViewUpdate }) => 
                         {/* Информация о студентах */}
                         <Col md={6}>
                             <h6 className="text-primary mb-3">
-                                <i className="bi-person-graduate me-2"></i>
+                                <i className="bi-mortarboard me-2"></i>
                                 Студенты ({request.students?.length || 0})
                             </h6>
                             
@@ -390,7 +390,7 @@ const RequestCard = ({ request, onStatusChange, getNameById, onViewUpdate }) => 
                                 </ListGroup>
                             ) : (
                                 <div className="text-center text-muted py-3">
-                                    <i className="bi-person-slash fa-2x mb-2"></i>
+                                    <i className="bi-person-x fs-2 mb-2"></i>
                                     <p>Нет студентов в заявке</p>
                                 </div>
                             )}

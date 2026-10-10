@@ -1,16 +1,15 @@
 .admin-panel {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+  background-color: var(--mgkct-body-bg);
   padding: 0;
 }
 
 .admin-header {
-  background: linear-gradient(135deg, var(--mgkct-blue) 0%, var(--mgkct-blue-dark) 100%);
+  background: var(--mgkct-dark);
   color: white;
   padding: 2.5rem 0;
   margin-bottom: 2rem;
-  position: relative;
-  overflow: hidden;
+  border-bottom: 1px solid var(--mgkct-border);
 }
 
 .admin-header h1 {
@@ -25,8 +24,9 @@
 
 .admin-content {
   background: white;
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--mgkct-border);
   padding: 2rem;
   margin: 0 2rem 2rem;
 }
@@ -38,10 +38,11 @@
 
 .admin-tabs .nav-link {
   border: none;
+  border-bottom: 3px solid transparent;
   color: var(--mgkct-gray);
-  font-weight: 600;
+  font-weight: 500;
   padding: 0.75rem 1.5rem;
-  transition: var(--transition);
+  transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
 }
 
 .admin-tabs .nav-link:hover {
@@ -53,6 +54,7 @@
   color: var(--mgkct-blue);
   background: none;
   border-bottom: 3px solid var(--mgkct-blue);
+  font-weight: 500;
 }
 
 /* Table */

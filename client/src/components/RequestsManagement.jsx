@@ -124,7 +124,7 @@ const RequestsManagement = ({
 
                 {success && (
                     <Alert variant="success" dismissible>
-                        <i className="bi-check-lg-circle me-2"></i>
+                        <i className="bi-check-circle me-2"></i>
                         {success}
                     </Alert>
                 )}
@@ -196,7 +196,7 @@ const RequestsManagement = ({
                     </>
                 ) : (
                     <div className="text-center py-5">
-                        <i className="bi-inbox fa-3x text-muted mb-3"></i>
+                        <i className="bi-inbox fs-1 text-muted mb-3"></i>
                         <h5 className="text-muted">Заявки не найдены</h5>
                         <p className="text-muted">
                             {searchTerm || statusFilter 

@@ -7,7 +7,7 @@ const TABS = [
     {
         key: 'users',
         label: 'Пользователи',
-        icon: 'bi-people',
+        icon: 'bi-person-circle',
         getExtraProps: (props) => ({
             selectedRoleFilter: props.selectedRoleFilter,
             onRoleFilterChange: props.handleRoleFilterChange,
@@ -27,7 +27,7 @@ const TABS = [
     {
         key: 'groups',
         label: 'Группы',
-        icon: 'bi-people-fill',
+        icon: 'bi-collection',
         getExtraProps: (props) => ({
             selectedSpecialtyFilter: props.selectedSpecialtyFilter,
             onSpecialtyFilterChange: props.handleSpecialtyFilterChange,

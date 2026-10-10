@@ -1,3 +1,52 @@
+:root {
+  /* Brand & Neutral Palette */
+  --mgkct-blue: #0d6efd;
+  --mgkct-blue-dark: #0a58ca;
+  --mgkct-blue-light: #e7f1ff;
+  --mgkct-indigo: #6610f2;
+  --mgkct-green: #198754;
+  --mgkct-red: #dc3545;
+  --mgkct-yellow: #ffc107;
+  --mgkct-orange: #fd7e14;
+  --mgkct-cyan: #0dcaf0;
+  --mgkct-gray: #6c757d;
+  --mgkct-gray-light: #f1f5f9;
+  --mgkct-light: #f8f9fa;
+  --mgkct-dark: #1e293b;
+  --mgkct-dark-slate: #0f172a;
+  --mgkct-body-bg: #f8fafc;
+  --mgkct-surface: #ffffff;
+  --mgkct-border: rgba(0, 0, 0, 0.08);
+
+  /* Status Colors */
+  --status-pending-bg: #eff6ff;
+  --status-pending-text: #1d4ed8;
+  --status-pending-border: #bfdbfe;
+  --status-completed-bg: #f0fdf4;
+  --status-completed-text: #15803d;
+  --status-completed-border: #bbf7d0;
+  --status-cancelled-bg: #fef2f2;
+  --status-cancelled-text: #b91c1c;
+  --status-cancelled-border: #fecaca;
+
+  /* Elevation & Shadows */
+  --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+  --shadow-hover: 0 12px 20px -3px rgba(0, 0, 0, 0.09), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+
+  /* Border Radii */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+
+  /* Transitions */
+  --transition: all 0.2s ease-in-out;
+  --transition-fast: all 0.15s ease-in-out;
+}
+
 /* Базовые стили */
 * {
   box-sizing: border-box;
@@ -10,6 +59,8 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: var(--mgkct-body-bg);
+  color: var(--mgkct-dark);
 }
 
 code {
@@ -185,3 +236,60 @@ html, body {
         font-size: 0.85rem;
     }
 }
+
+/* Карточки генерации документов */
+.doc-card {
+  transition: var(--transition);
+  border: 1px solid var(--mgkct-border) !important;
+  border-radius: var(--radius-md) !important;
+}
+
+.doc-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover) !important;
+}
+
+/* Элементы множественного выбора студентов */
+.multiselect-item {
+  cursor: pointer;
+  transition: var(--transition-fast);
+  border: 1px solid #dee2e6;
+  border-radius: var(--radius-md);
+  background-color: #ffffff;
+}
+
+.multiselect-item:hover {
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.multiselect-item.is-selected {
+  background-color: var(--status-pending-bg) !important;
+  border-color: var(--status-pending-border) !important;
+}
+
+.multiselect-item.is-selected:hover {
+  background-color: #dbeafe !important;
+}
+
+/* Ссылка в футере */
+.footer-link {
+  color: rgba(255, 255, 255, 0.8);
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: var(--transition-fast);
+}
+
+.footer-link:hover {
+  color: #ffffff !important;
+  text-decoration: underline;
+}
+
+/* Стабилизация вкладок: предотвращение горизонтального сдвига при переключении */
+.nav-tabs .nav-link,
+.nav-pills .nav-link,
+.admin-tabs .nav-link,
+.main-tabs .nav-link {
+  font-weight: 500 !important;
+}
+
