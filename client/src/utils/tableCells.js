@@ -66,6 +66,17 @@ export const RENDERERS = {
             : { text: String(ctx.value) }
     },
 
+    expellDate: (column, item, ctx) => {
+        if (isEmpty(ctx.value)) return dash()
+        const formatted = formatDate(ctx.value)
+        const reason = item?.expell_reason ? `\nПричина: ${item.expell_reason}` : ''
+        return {
+            text: formatted.text,
+            variant: 'danger',
+            title: `Отчислен ${formatted.text}${reason}`
+        }
+    },
+
     // Курс считается по вложенной специальности, которой в строке группы нет.
     course: (column, item) => {
         if (!item?.enroll_date) return dash()

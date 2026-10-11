@@ -202,7 +202,8 @@ export const filterData = (
     selectedGroupFilter = '', 
     selectedRoleFilter = '',
     selectedStatusFilter = '',
-    selectedSpecialtyFilter = ''
+    selectedSpecialtyFilter = '',
+    selectedStudentStatusFilter = ''
 ) => {
     let filteredData = tableData;
 
@@ -214,6 +215,13 @@ export const filterData = (
                 filteredData = filteredData.filter(student => 
                     student.groupId === parseInt(selectedGroupFilter, 10)
                 );
+            }
+
+            // Фильтрация по статусу (обучающиеся / отчисленные)
+            if (selectedStudentStatusFilter === 'active') {
+                filteredData = filteredData.filter(student => !student.expell_date);
+            } else if (selectedStudentStatusFilter === 'expelled') {
+                filteredData = filteredData.filter(student => Boolean(student.expell_date));
             }
             
             // Фильтрация по ФИО
@@ -351,6 +359,10 @@ export const prepareFormData = (formData, activeTab) => {
         submitData.userId = submitData.userId ? parseInt(submitData.userId, 10) : null;
     }
 
+    if (activeTab === 'students' && 'expell_reason' in submitData) {
+        submitData.expell_reason = submitData.expell_reason || null;
+    }
+
     if (activeTab === 'groups') {
         delete submitData.supervisor;
         if ('teacherId' in submitData) {
@@ -368,7 +380,8 @@ export const formatDateForInput = (dateStr) => (dateStr ? String(dateStr).slice(
 export const toStudentFormData = (student) => ({
     ...student,
     enroll_date: formatDateForInput(student?.enroll_date),
-    expell_date: formatDateForInput(student?.expell_date)
+    expell_date: formatDateForInput(student?.expell_date),
+    expell_reason: student?.expell_reason || ''
 });
 
 export const toGroupFormData = (group) => ({

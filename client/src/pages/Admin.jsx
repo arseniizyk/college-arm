@@ -80,6 +80,7 @@ const Admin = observer(() => {
         selectedRoleFilter,
         selectedStatusFilter,
         selectedSpecialtyFilter,
+        selectedStudentStatusFilter,
         currentItems,
         totalPages,
         itemsPerPage,
@@ -106,6 +107,7 @@ const Admin = observer(() => {
         handleRoleFilterChange,
         handleStatusFilterChange,
         handleSpecialtyFilterChange,
+        handleStudentStatusFilterChange,
         handleRequestStatusChange,
         loadTableData,
         getNameByIdWithData,
@@ -211,6 +213,8 @@ const Admin = observer(() => {
                             selectedGroupFilter={selectedGroupFilter}
                             handleGroupFilterChange={handleGroupFilterChange}
                             groups={data.groups || []}
+                            selectedStudentStatusFilter={selectedStudentStatusFilter}
+                            handleStudentStatusFilterChange={handleStudentStatusFilterChange}
                             selectedRoleFilter={selectedRoleFilter}
                             handleRoleFilterChange={handleRoleFilterChange}
                             selectedStatusFilter={selectedStatusFilter}

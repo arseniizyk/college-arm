@@ -106,30 +106,53 @@ def extract_docx_groups(docx_path):
 
             is_expelled = bool(re.search(r'отчислен', s_clean, re.I))
             expell_date = None
+            expell_reason = None
             if is_expelled:
-                exp_m = re.search(r'отчислен[а-я]*\s+(?:с\s+|от\s+)?(\d{2}\.\d{2}\.\d{4})', s_clean, re.I)
+                parts = re.split(r'\bотчислен[а-я]*', s_clean, flags=re.I, maxsplit=1)
+                enroll_part = parts[0].strip()
+                exp_text = parts[1].strip() if len(parts) > 1 else ''
+
+                ord_m = re.search(r'\(?\s*(?:пр-з|приказ)\s*(?:от\s+\d{2}\.\d{2}\.\d{4}\s*)?(?:№\s*)?([0-9]+/[0-9]+-[0-9]+|[0-9]+/[0-9]+)\s*(?:от\s+(\d{2}\.\d{2}\.\d{4}))?\s*\)?', exp_text, re.I)
+                exp_order = ord_m.group(0).strip('() ') if ord_m else None
+
+                exp_m = re.search(r'(?:с\s+|от\s+|–\s*|-)?\s*(\d{2}\.\d{2}\.\d{4})', exp_text, re.I)
                 if exp_m:
                     expell_date = parse_date(exp_m.group(1))
+
+                clean_reason = exp_text
+                if ord_m:
+                    clean_reason = clean_reason[:ord_m.start()] + ' ' + clean_reason[ord_m.end():]
+                clean_reason = re.sub(r'(?:^|\s)(?:с\s+|от\s+)?\d{2}\.\d{2}\.\d{4}', ' ', clean_reason)
+                clean_reason = re.sub(r'\(?\s*приказ[^\)]*\)?', ' ', clean_reason, flags=re.I)
+                clean_reason = re.sub(r'[\(\)\[\];]+', ' ', clean_reason)
+                clean_reason = re.sub(r'^[,\.\s–\-]+|[,\.\s–\-]+$', '', clean_reason)
+                clean_reason = re.sub(r'\s+', ' ', clean_reason).strip()
+                clean_reason = re.sub(r'(по собственному желанию)[,\s]+по собственному желанию', r'\1', clean_reason, flags=re.I)
+                clean_reason = clean_reason.strip(' ,.-')
+
+                if exp_order:
+                    expell_reason = f"{clean_reason} ({exp_order})" if clean_reason else exp_order
                 else:
-                    exp_ord_m = re.search(r'приказ\s+(?:от\s+)?(\d{2}\.\d{2}\.\d{4})', s_clean, re.I)
-                    if exp_ord_m:
-                        expell_date = parse_date(exp_ord_m.group(1))
+                    expell_reason = clean_reason or None
+            else:
+                enroll_part = s_clean
 
             student_order = order_raw.strip()
             student_enroll_date = group_enroll_date
-            custom_ord_m = re.search(r'(?:зачисл[а-я]*|пр-з|приказ)\s*(?:на\s+вакантное\s+место)?\s*(?:с\s+(\d{2}\.\d{2}\.\d{4}))?\s*(?:№\s*|пр-з\s*№\s*|приказ\s*№\s*)?([0-9]+/[0-9]+-[0-9]+)\s*(?:от\s+(\d{2}\.\d{2}\.\d{4}))?', s_clean, re.I)
+            custom_ord_m = re.search(r'(?:зачисл[а-я]*|восстановлен[а-я]*|на\s+вакантное\s+место|пр-з|приказ)\s*(?:на\s+вакантное\s+место)?\s*(?:с\s+(\d{2}\.\d{2}\.\d{4}))?\s*(?:№\s*|пр-з\s*№\s*|приказ\s*№\s*)?([0-9]+/[0-9]+-[0-9]+)\s*(?:от\s+(\d{2}\.\d{2}\.\d{4}))?', enroll_part, re.I)
             if custom_ord_m:
                 num = custom_ord_m.group(2)
-                d = custom_ord_m.group(3) or custom_ord_m.group(1)
-                if num and d:
-                    student_order = f"Приказ о зачислении № {num} от {d}"
-                    student_enroll_date = parse_date(d)
+                effective_date = custom_ord_m.group(1) or custom_ord_m.group(3)
+                order_date = custom_ord_m.group(3) or custom_ord_m.group(1)
+                if num and order_date:
+                    student_order = f"Приказ о зачислении № {num} от {order_date}"
+                    student_enroll_date = parse_date(effective_date or order_date)
                 elif num:
                     student_order = f"Приказ о зачислении № {num}"
 
             is_target = bool(re.search(r'(\(Ц\)|[\s\(\.]Ц[\s\)\.\;]|\bЦ\b)', s_clean))
 
-            fio_clean = re.split(r'(\(|\—|\–|\-|\botчислен|\bпереведен|\bзачислен|\bакадемическ|\bв связи|\b№)', s_clean, maxsplit=1)[0].strip()
+            fio_clean = re.split(r'(\(|\—|\–|\-|\bотчислен|\bпереведен|\bзачислен|\bакадемическ|\bв связи|\b№)', s_clean, maxsplit=1, flags=re.I)[0].strip()
             fio_clean = re.sub(r'[\.\,\;\:\(\)\*Цц]+$', '', fio_clean).strip()
 
             fio_parts = fio_clean.split()
@@ -155,6 +178,7 @@ def extract_docx_groups(docx_path):
                 'order_number': student_order,
                 'enroll_date': student_enroll_date,
                 'expell_date': expell_date,
+                'expell_reason': expell_reason,
                 'is_expelled': is_expelled,
                 'is_target': is_target,
                 'raw_line': s_line

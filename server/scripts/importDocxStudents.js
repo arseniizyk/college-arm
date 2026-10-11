@@ -261,6 +261,7 @@ async function main() {
                 order_number: s.order_number,
                 enroll_date: s.enroll_date ? new Date(s.enroll_date) : new Date(g.enroll_date || '2026-09-01'),
                 expell_date: s.expell_date ? new Date(s.expell_date) : null,
+                expell_reason: s.expell_reason || null,
                 groupId: group.id,
                 userId
             })
@@ -284,7 +285,8 @@ async function main() {
                     await existingStudent.update({
                         order_number: sp.order_number,
                         enroll_date: sp.enroll_date,
-                        expell_date: sp.expell_date
+                        expell_date: sp.expell_date,
+                        expell_reason: sp.expell_reason
                     })
                 }
             }

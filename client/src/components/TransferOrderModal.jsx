@@ -70,6 +70,18 @@ const TransferOrderModal = observer(({ show, onHide }) => {
 
     const handleChange = (e) => {
         const { name, value } = e.target;
+        if (name === 'conditionalStudentId' && value) {
+            const student = groupStudents.find(s => s.id === parseInt(value, 10));
+            if (student?.expell_date) {
+                const confirmed = window.confirm(
+                    `Студент ${formatFio(student)} отчислен. Вы точно хотите выбрать его?`
+                );
+                if (!confirmed) {
+                    e.target.value = form.conditionalStudentId || '';
+                    return;
+                }
+            }
+        }
         setForm(prev => ({ ...prev, [name]: value }));
         setError(null);
     };
@@ -282,7 +294,7 @@ const TransferOrderModal = observer(({ show, onHide }) => {
                         <option value="">— Выберите студента —</option>
                         {groupStudents.map(s => (
                             <option key={s.id} value={s.id}>
-                                {formatFio(s)}
+                                {formatFio(s)}{s.expell_date ? ' (отчислен)' : ''}
                             </option>
                         ))}
                     </Form.Select>

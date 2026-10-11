@@ -32,6 +32,7 @@ export const useAdminLogic = (data, user) => {
     const [selectedRoleFilter, setSelectedRoleFilter] = useState('');
     const [selectedStatusFilter, setSelectedStatusFilter] = useState('');
     const [selectedSpecialtyFilter, setSelectedSpecialtyFilter] = useState('');
+    const [selectedStudentStatusFilter, setSelectedStudentStatusFilter] = useState('');
     const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
 
     // Загружаем данные при монтировании компонента
@@ -108,6 +109,12 @@ export const useAdminLogic = (data, user) => {
     // Функция для обновления фильтра специальности (клиентская фильтрация)
     const handleSpecialtyFilterChange = useCallback((specialtyId) => {
         setSelectedSpecialtyFilter(specialtyId);
+        setCurrentPage(1);
+    }, []);
+
+    // Функция для обновления фильтра статуса студента (все / обучающиеся / отчисленные)
+    const handleStudentStatusFilterChange = useCallback((status) => {
+        setSelectedStudentStatusFilter(status);
         setCurrentPage(1);
     }, []);
 
@@ -274,6 +281,7 @@ export const useAdminLogic = (data, user) => {
         setSelectedRoleFilter('');
         setSelectedStatusFilter('');
         setSelectedSpecialtyFilter('');
+        setSelectedStudentStatusFilter('');
         setSortConfig({ key: null, direction: null });
     }, []);
 
@@ -293,7 +301,8 @@ export const useAdminLogic = (data, user) => {
         selectedGroupFilter,
         selectedRoleFilter,
         selectedStatusFilter,
-        selectedSpecialtyFilter
+        selectedSpecialtyFilter,
+        selectedStudentStatusFilter
     );
 
     // Сортировка данных таблицы (с поддержкой пользовательской и дефолтной)
@@ -338,6 +347,7 @@ export const useAdminLogic = (data, user) => {
         selectedRoleFilter,
         selectedStatusFilter,
         selectedSpecialtyFilter,
+        selectedStudentStatusFilter,
         currentItems,
         totalPages,
         filteredData,
@@ -364,6 +374,7 @@ export const useAdminLogic = (data, user) => {
         handleRoleFilterChange,
         handleStatusFilterChange,
         handleSpecialtyFilterChange,
+        handleStudentStatusFilterChange,
         handleRequestStatusChange,
         loadTableData,
         getNameByIdWithData,

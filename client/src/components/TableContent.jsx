@@ -22,6 +22,8 @@ const TableContent = ({
     selectedGroupFilter,
     onGroupFilterChange,
     groups,
+    selectedStudentStatusFilter,
+    onStudentStatusFilterChange,
     selectedRoleFilter,
     onRoleFilterChange,
     selectedStatusFilter,
@@ -49,6 +51,7 @@ const TableContent = ({
     const hasActiveFilters = Boolean(
         searchTerm ||
         selectedGroupFilter ||
+        selectedStudentStatusFilter ||
         selectedRoleFilter ||
         selectedStatusFilter ||
         selectedSpecialtyFilter
@@ -57,6 +60,7 @@ const TableContent = ({
     const handleResetFilters = () => {
         if (onSearch) onSearch('');
         if (onGroupFilterChange) onGroupFilterChange('');
+        if (onStudentStatusFilterChange) onStudentStatusFilterChange('');
         if (onRoleFilterChange) onRoleFilterChange('');
         if (onStatusFilterChange) onStatusFilterChange('');
         if (onSpecialtyFilterChange) onSpecialtyFilterChange('');
@@ -71,6 +75,8 @@ const TableContent = ({
                 selectedGroupFilter={selectedGroupFilter}
                 onGroupFilterChange={onGroupFilterChange}
                 groups={groups}
+                selectedStudentStatusFilter={selectedStudentStatusFilter}
+                onStudentStatusFilterChange={onStudentStatusFilterChange}
                 selectedRoleFilter={selectedRoleFilter}
                 onRoleFilterChange={onRoleFilterChange}
                 selectedStatusFilter={selectedStatusFilter}

@@ -52,6 +52,14 @@ test('пустое поле даёт дефис', () => {
   expect(resolveCellContent(column('expell_date'), { expell_date: null })).toBeNull()
   expect(resolveCellContent(column('expell_date'), {})).toBeNull()
   expect(resolveCellContent(column('expell_date'), { expell_date: '' })).toBeNull()
+  expect(resolveCellContent(column('expell_date', 'expellDate'), { expell_date: null })).toBeNull()
+})
+
+test('дата отчисления подсвечивается как опасность', () => {
+  expect(resolveCellContent(column('expell_date', 'expellDate'), { expell_date: '2025-04-30' }))
+    .toEqual({ text: '30.04.2025', variant: 'danger', title: 'Отчислен 30.04.2025' })
+  expect(resolveCellContent(column('expell_date', 'expellDate'), { expell_date: '2025-04-30', expell_reason: 'по собственному желанию' }))
+    .toEqual({ text: '30.04.2025', variant: 'danger', title: 'Отчислен 30.04.2025\nПричина: по собственному желанию' })
 })
 
 test('ноль — не пустое значение', () => {

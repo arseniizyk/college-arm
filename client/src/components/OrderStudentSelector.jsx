@@ -8,19 +8,26 @@ import { formatFio } from '../utils/dataHelpers';
  * onChange - callback(newIds)
  */
 const OrderStudentSelector = ({ students, selectedIds, onChange }) => {
-    const allSelected = students.length > 0 && selectedIds.length === students.length;
+    const activeStudents = students.filter(s => !s.expell_date);
+    const allSelected = activeStudents.length > 0 && activeStudents.every(s => selectedIds.includes(String(s.id)));
 
-    const handleToggle = (id) => {
-        const sid = String(id);
+    const handleToggle = (student) => {
+        const sid = String(student.id);
         if (selectedIds.includes(sid)) {
             onChange(selectedIds.filter(s => s !== sid));
         } else {
+            if (student.expell_date) {
+                const confirmed = window.confirm(
+                    `Студент ${formatFio(student)} отчислен. Вы точно хотите выбрать его?`
+                );
+                if (!confirmed) return;
+            }
             onChange([...selectedIds, sid]);
         }
     };
 
     const handleSelectAll = () => {
-        onChange(students.map(s => String(s.id)));
+        onChange(activeStudents.map(s => String(s.id)));
     };
 
     const handleClear = () => onChange([]);
@@ -28,7 +35,7 @@ const OrderStudentSelector = ({ students, selectedIds, onChange }) => {
     return (
         <div>
             <div className="d-flex gap-2 mb-2">
-                <Button variant="outline-primary" size="sm" onClick={handleSelectAll} disabled={students.length === 0}>
+                <Button variant="outline-primary" size="sm" onClick={handleSelectAll} disabled={activeStudents.length === 0}>
                     <i className="bi-people-fill me-1"></i>
                     Вся группа
                 </Button>
@@ -38,22 +45,34 @@ const OrderStudentSelector = ({ students, selectedIds, onChange }) => {
                 </Button>
                 {selectedIds.length > 0 && (
                     <small className="text-muted align-self-center">
-                        {allSelected ? 'Полный состав' : `Выбрано: ${selectedIds.length} из ${students.length}`}
+                        {allSelected ? 'Полный состав (обучающиеся)' : `Выбрано: ${selectedIds.length} из ${students.length}`}
                     </small>
                 )}
             </div>
             <div style={{ maxHeight: '180px', overflowY: 'auto', border: '1px solid #ced4da', borderRadius: '0.375rem', padding: '0.5rem' }}>
-                {students.length > 0 ? students.map(s => (
-                    <Form.Check
-                        key={s.id}
-                        type="checkbox"
-                        id={`order-student-${s.id}`}
-                        label={formatFio(s)}
-                        checked={selectedIds.includes(String(s.id))}
-                        onChange={() => handleToggle(s.id)}
-                        className="mb-1"
-                    />
-                )) : (
+                {students.length > 0 ? students.map(s => {
+                    const isExpelled = Boolean(s.expell_date);
+                    return (
+                        <div key={s.id} className="d-flex align-items-center justify-content-between mb-1">
+                            <Form.Check
+                                type="checkbox"
+                                id={`order-student-${s.id}`}
+                                label={
+                                    <span className={isExpelled ? 'text-muted' : undefined}>
+                                        {formatFio(s)}
+                                    </span>
+                                }
+                                checked={selectedIds.includes(String(s.id))}
+                                onChange={() => handleToggle(s)}
+                            />
+                            {isExpelled && (
+                                <span className="badge bg-danger-subtle text-danger border border-danger-subtle small ms-2">
+                                    Отчислен
+                                </span>
+                            )}
+                        </div>
+                    );
+                }) : (
                     <small className="text-muted">Сначала выберите группу</small>
                 )}
             </div>

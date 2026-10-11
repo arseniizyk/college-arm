@@ -13,7 +13,7 @@ const TableCell = ({ column, item, context }) => {
     const { text, variant, muted, title } = content;
 
     if (variant) {
-        return <Badge bg={variant} title={title}>{text}</Badge>;
+        return <Badge bg={variant} title={title} style={title ? { cursor: 'help' } : undefined}>{text}</Badge>;
     }
     if (muted || title) {
         return <span className={muted ? 'text-muted' : undefined} title={title}>{text}</span>;

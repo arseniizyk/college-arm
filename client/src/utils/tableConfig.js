@@ -29,7 +29,7 @@ export const TABLE_COLUMNS = {
         { key: 'father_name', label: 'Отчество' },
         { key: 'order_number', label: 'Приказ', sortable: false },
         { key: 'enroll_date', label: 'Зачислен' },
-        { key: 'expell_date', label: 'Отчислен' },
+        { key: 'expell_date', label: 'Отчислен', render: 'expellDate' },
         { key: 'groupId', label: 'Группа', render: 'reference' },
         { key: 'userId', label: 'Аккаунт', render: 'reference', sortable: false }
     ],
@@ -81,6 +81,7 @@ export const getDefaultFormData = (table, userRole) => {
             order_number: '',
             enroll_date: '',
             expell_date: '',
+            expell_reason: '',
             groupId: '',
             userId: ''
         },
@@ -144,6 +145,7 @@ export const getFieldsConfig = (userRole, getDropdownOptions, modalType = 'creat
         { name: 'order_number', label: 'Номер приказа', type: 'text', required: true },
         { name: 'enroll_date', label: 'Дата зачисления', type: 'date', required: true },
         { name: 'expell_date', label: 'Дата отчисления', type: 'date' },
+        { name: 'expell_reason', label: 'Причина отчисления', type: 'textarea', placeholder: 'Причина и приказ об отчислении' },
         { name: 'groupId', label: 'Группа', type: 'select', options: getDropdownOptions('groupId'), required: true },
         { name: 'userId', label: 'Аккаунт', type: 'select', options: getDropdownOptions('studentUserId'),
           helpText: 'Пользователь, который сможет подавать заявки только на этого студента' }
