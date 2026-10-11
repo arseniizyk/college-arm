@@ -1,4 +1,4 @@
-import { prepareFormData, toGroupFormData, toStudentFormData, formatDateForInput, calculateCourse } from './dataHelpers'
+import { prepareFormData, toGroupFormData, toStudentFormData, formatDateForInput, calculateCourse, filterData } from './dataHelpers'
 
 // Набор кейсов повторяет server/utils/course.test.js: правило курса одно,
 // расхождение двух реализаций и есть регрессия.
@@ -111,11 +111,13 @@ test('toStudentFormData нормализует enroll_date и expell_date', () =
     id: 1,
     last_name: 'Иванов',
     enroll_date: '2025-09-01T00:00:00.000Z',
-    expell_date: '2026-06-30T12:00:00.000Z'
+    expell_date: '2026-06-30T12:00:00.000Z',
+    expell_reason: 'по собственному желанию'
   }
   const form = toStudentFormData(student)
   expect(form.enroll_date).toBe('2025-09-01')
   expect(form.expell_date).toBe('2026-06-30')
+  expect(form.expell_reason).toBe('по собственному желанию')
   expect(form.last_name).toBe('Иванов')
 })
 
@@ -128,4 +130,20 @@ test('toGroupFormData нормализует enroll_date', () => {
   const form = toGroupFormData(group)
   expect(form.enroll_date).toBe('2024-09-01')
   expect(form.teacherId).toBe(5)
+})
+
+test('filterData фильтрует студентов по статусу (active / expelled)', () => {
+  const students = [
+    { id: 1, last_name: 'Иванов', expell_date: null },
+    { id: 2, last_name: 'Петров', expell_date: '2025-04-30' },
+    { id: 3, last_name: 'Сидоров', expell_date: '' }
+  ]
+  const activeOnly = filterData(students, '', 'students', '', '', '', '', 'active')
+  expect(activeOnly.map(s => s.id)).toEqual([1, 3])
+
+  const expelledOnly = filterData(students, '', 'students', '', '', '', '', 'expelled')
+  expect(expelledOnly.map(s => s.id)).toEqual([2])
+
+  const all = filterData(students, '', 'students', '', '', '', '', '')
+  expect(all.map(s => s.id)).toEqual([1, 2, 3])
 })

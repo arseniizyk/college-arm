@@ -119,5 +119,16 @@ describe('tableSorting', () => {
             const sorted = sortTableData(requests, null, 'requests');
             expect(sorted.map(r => r.id)).toEqual([2, 3, 1]);
         });
+
+        it('places expelled students at the end in students default sort', () => {
+            const students = [
+                { id: 1, last_name: 'Яковлев', expell_date: '2025-04-30' },
+                { id: 2, last_name: 'Борисов', expell_date: null },
+                { id: 3, last_name: 'Алексеев', expell_date: null },
+                { id: 4, last_name: 'Антонов', expell_date: '2024-05-10' }
+            ];
+            const sorted = sortTableData(students, null, 'students');
+            expect(sorted.map(s => s.id)).toEqual([3, 2, 4, 1]);
+        });
     });
 });

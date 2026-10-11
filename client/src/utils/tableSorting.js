@@ -102,7 +102,14 @@ export const compareValues = (valA, valB, direction = 'asc') => {
  */
 export const defaultSort = (tableType, a, b) => {
     switch (tableType) {
-        case 'students':
+        case 'students': {
+            const aExpelled = Boolean(a.expell_date);
+            const bExpelled = Boolean(b.expell_date);
+            if (aExpelled !== bExpelled) {
+                return aExpelled ? 1 : -1;
+            }
+            return (a.last_name || '').localeCompare(b.last_name || '', 'ru', { numeric: true });
+        }
         case 'teachers':
             return (a.last_name || '').localeCompare(b.last_name || '', 'ru', { numeric: true });
         case 'users':

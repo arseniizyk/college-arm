@@ -29,6 +29,7 @@ const Student = sequelize.define('student', {
     order_number: { type: DataTypes.STRING, allowNull: false },
     enroll_date: { type: DataTypes.DATE, allowNull: false },
     expell_date: { type: DataTypes.DATE },
+    expell_reason: { type: DataTypes.TEXT },
     userId: { type: DataTypes.INTEGER, allowNull: true }
 })
  

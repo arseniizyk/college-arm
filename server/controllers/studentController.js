@@ -1,6 +1,7 @@
 const { Student, Group, Specialty, User, Supervisor, Teacher } = require('../models/models')
 const ApiError = require('../error/ApiError')
 const { Op } = require('sequelize')
+const sequelize = require('../db')
 const { resolveUserId } = require('../utils/resolveUserId')
 
 // Привязка аккаунта к студенту: аккаунт должен существовать и не быть занятым другим студентом
@@ -10,7 +11,7 @@ const resolveStudentUserId = (rawValue, excludeStudentId = null) =>
 class StudentController {
     async create(req, res, next) {
         try {
-            const { last_name, name, father_name, order_number, enroll_date, groupId, expell_date, userId } = req.body
+            const { last_name, name, father_name, order_number, enroll_date, groupId, expell_date, expell_reason, userId } = req.body
             
             // Валидация обязательных полей
             if (!last_name || !name || !order_number || !enroll_date || !groupId) {
@@ -50,6 +51,7 @@ class StudentController {
                 enroll_date: enrollDateObj, 
                 groupId, 
                 expell_date: expell_date ? new Date(expell_date) : null,
+                expell_reason: expell_reason || null,
                 userId: resolvedUser.value
             })
 
@@ -62,7 +64,7 @@ class StudentController {
     async update(req, res, next) {
         try {
             const { id } = req.params;
-            const { last_name, name, father_name, order_number, enroll_date, groupId, expell_date, userId } = req.body;
+            const { last_name, name, father_name, order_number, enroll_date, groupId, expell_date, expell_reason, userId } = req.body;
             
             if (!id) {
                 return next(ApiError.badRequest('Не указан ID студента'));
@@ -111,6 +113,9 @@ class StudentController {
             if (expell_date !== undefined) {
                 updateData.expell_date = expell_date ? new Date(expell_date) : null;
             }
+            if (expell_reason !== undefined) {
+                updateData.expell_reason = expell_reason || null;
+            }
             if (userId !== undefined) {
                 const resolvedUser = await resolveStudentUserId(userId, id);
                 if (resolvedUser.error) {
@@ -138,7 +143,7 @@ class StudentController {
                 return next(ApiError.unauthorized('Пользователь не авторизован'));
             }
 
-            const { groupId, groupNumber, search, limit, offset } = req.query;
+            const { groupId, groupNumber, search, limit, offset, status } = req.query;
 
             const sendEmpty = () => {
                 const emptyResponse = {
@@ -169,12 +174,22 @@ class StudentController {
                         ]
                     }
                 ],
-                order: [['last_name', 'ASC'], ['name', 'ASC']]
+                order: [
+                    [sequelize.literal('CASE WHEN "student"."expell_date" IS NULL THEN 0 ELSE 1 END'), 'ASC'],
+                    ['last_name', 'ASC'],
+                    ['name', 'ASC']
+                ]
             };
 
             // Условия поиска
             const whereConditions = {};
             const groupWhereConditions = {};
+
+            if (status === 'active') {
+                whereConditions.expell_date = null;
+            } else if (status === 'expelled') {
+                whereConditions.expell_date = { [Op.ne]: null };
+            }
 
             // Ограничение по роли из БД:
             // ADMIN: доступ ко всем студентам

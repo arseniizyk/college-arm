@@ -36,3 +36,5 @@ server/backups/*.sql
 Thumbs.db
 desktop.ini
 *.docx
+__pycache__/
+*.pyc

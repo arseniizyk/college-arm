@@ -22,6 +22,8 @@ const TABS = [
             selectedGroupFilter: props.selectedGroupFilter,
             onGroupFilterChange: props.handleGroupFilterChange,
             groups: props.groups,
+            selectedStudentStatusFilter: props.selectedStudentStatusFilter,
+            onStudentStatusFilterChange: props.handleStudentStatusFilterChange,
         }),
     },
     {

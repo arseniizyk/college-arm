@@ -10,6 +10,8 @@ const SearchAndFilters = ({
     selectedGroupFilter,
     onGroupFilterChange,
     groups,
+    selectedStudentStatusFilter,
+    onStudentStatusFilterChange,
     selectedRoleFilter,
     onRoleFilterChange,
     selectedStatusFilter,
@@ -51,7 +53,7 @@ const SearchAndFilters = ({
             <div className="col-12 col-lg-auto flex-grow-1">
                 <div className="row g-2 align-items-center search-controls">
                     {/* Поле поиска */}
-                    <div className={`col-12 ${hasFilters ? 'col-sm-6 col-md-7' : 'col-sm-8 col-md-6'} search-box`}>
+                    <div className={`col-12 ${tableType === 'students' ? 'col-sm-12 col-md-5' : hasFilters ? 'col-sm-6 col-md-7' : 'col-sm-8 col-md-6'} search-box`}>
                         <InputGroup>
                             <InputGroup.Text>
                                 <i className="bi-search"></i>
@@ -66,7 +68,7 @@ const SearchAndFilters = ({
                     
                     {/* Фильтр по группам (для студентов) */}
                     {tableType === 'students' && groups && (
-                        <div className="col-12 col-sm-6 col-md-5 group-filter">
+                        <div className="col-12 col-sm-6 col-md-4 group-filter">
                             <InputGroup>
                                 <InputGroup.Text>
                                     <i className="bi-people-fill"></i>
@@ -81,6 +83,25 @@ const SearchAndFilters = ({
                                             {group.group_number}
                                         </option>
                                     ))}
+                                </Form.Select>
+                            </InputGroup>
+                        </div>
+                    )}
+
+                    {/* Фильтр по статусу (для студентов) */}
+                    {tableType === 'students' && (
+                        <div className="col-12 col-sm-6 col-md-3 student-status-filter">
+                            <InputGroup>
+                                <InputGroup.Text>
+                                    <i className="bi-person-check"></i>
+                                </InputGroup.Text>
+                                <Form.Select
+                                    value={selectedStudentStatusFilter || ''}
+                                    onChange={(e) => onStudentStatusFilterChange && onStudentStatusFilterChange(e.target.value)}
+                                >
+                                    <option value="">Все студенты</option>
+                                    <option value="active">Обучающиеся</option>
+                                    <option value="expelled">Отчисленные</option>
                                 </Form.Select>
                             </InputGroup>
                         </div>

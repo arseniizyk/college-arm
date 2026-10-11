@@ -60,10 +60,12 @@ const MultiselectStudents = ({ field, formData, setFormData, loading, data, allo
     const handleSelectAll = () => {
         if (isSingleSelect) return;
         
-        const allValues = filteredOptions.map(opt => opt.value.toString());
+        const activeValues = filteredOptions
+            .filter(opt => !opt.student.expell_date)
+            .map(opt => opt.value.toString());
         setFormData(prev => ({
             ...prev,
-            [field.name]: allValues
+            [field.name]: activeValues
         }));
     };
 
@@ -77,10 +79,12 @@ const MultiselectStudents = ({ field, formData, setFormData, loading, data, allo
     const handleSelectGroup = () => {
         if (isSingleSelect || !selectedGroup) return;
 
-        const groupValues = filteredOptions.map(opt => opt.value.toString());
+        const activeGroupValues = filteredOptions
+            .filter(opt => !opt.student.expell_date)
+            .map(opt => opt.value.toString());
         setFormData(prev => ({
             ...prev,
-            [field.name]: [...new Set([...currentSelection(prev), ...groupValues])]
+            [field.name]: [...new Set([...currentSelection(prev), ...activeGroupValues])]
         }));
     };
 
@@ -93,6 +97,14 @@ const MultiselectStudents = ({ field, formData, setFormData, loading, data, allo
 
     const handleStudentToggle = (studentId, checked) => {
         const value = studentId.toString();
+        const opt = filteredOptions.find(o => o.value === studentId);
+
+        if (checked && opt?.student?.expell_date) {
+            const confirmed = window.confirm(
+                `Студент ${opt.student.fullName} отчислен. Вы точно хотите выбрать его?`
+            );
+            if (!confirmed) return;
+        }
 
         if (isSingleSelect) {
             // Для одиночного выбора просто устанавливаем значение
@@ -250,7 +262,16 @@ const MultiselectStudents = ({ field, formData, setFormData, loading, data, allo
                                     style={{ pointerEvents: 'none' }}
                                 />
                                 <div className="flex-grow-1" style={{ pointerEvents: 'none' }}>
-                                    <div className="fw-bold">{opt.student.fullName}</div>
+                                    <div className="d-flex align-items-center gap-2">
+                                        <span className={`fw-bold ${opt.student.expell_date ? 'text-muted' : ''}`}>
+                                            {opt.student.fullName}
+                                        </span>
+                                        {opt.student.expell_date && (
+                                            <span className="badge bg-danger-subtle text-danger border border-danger-subtle small">
+                                                Отчислен
+                                            </span>
+                                        )}
+                                    </div>
                                     <small className="text-muted">
                                         <i className="bi-people me-1"></i>
                                         Группа: {opt.student.groupName}
