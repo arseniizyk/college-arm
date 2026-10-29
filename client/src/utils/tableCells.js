@@ -3,9 +3,7 @@ import { calculateCourse, formatDuration, formatFio, MISSING_SPECIALTY_LABEL } f
 const EMPTY_TEXT = '-'
 
 const ROLE_BADGES = {
-    ADMIN: { label: 'Администратор', variant: 'danger' },
-    USER: { label: 'Пользователь', variant: 'primary' },
-    TEACHER: { label: 'Преподаватель', variant: 'success' }
+    ADMIN: { label: 'Администратор', variant: 'danger' }
 }
 
 const DATE_LOCALE = 'ru-RU'

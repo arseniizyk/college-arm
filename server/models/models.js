@@ -47,11 +47,6 @@ const Teacher = sequelize.define('teacher', {
     father_name: { type: DataTypes.STRING, allowNull: true, defaultValue: '' }
 })
 
-const Document = sequelize.define('document', {
-    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-    document_name: { type: DataTypes.STRING, allowNull: false },
-})
-
 const User = sequelize.define('user', {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     email: { type: DataTypes.STRING, allowNull: false },
@@ -86,7 +81,6 @@ module.exports = {
     Group,
     Supervisor,
     Teacher,
-    Document,
     Student,
     User,
     USER_WITH_PASSWORD

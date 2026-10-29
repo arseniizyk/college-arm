@@ -1,9 +1,10 @@
 module.exports = {
     async up({ db }) {
-        // 1. Удаляем таблицы уведомлений и заявок (в порядке FK зависимостей)
+        // 1. Удаляем таблицы уведомлений, заявок и документов (в порядке FK зависимостей)
         await db.query('DROP TABLE IF EXISTS notifications CASCADE')
         await db.query('DROP TABLE IF EXISTS student_requests CASCADE')
         await db.query('DROP TABLE IF EXISTS requests CASCADE')
+        await db.query('DROP TABLE IF EXISTS documents CASCADE')
 
         // 2. Удаляем enum тип статуса заявок
         await db.query('DROP TYPE IF EXISTS enum_requests_status CASCADE')
@@ -17,9 +18,7 @@ module.exports = {
         await db.query("UPDATE users SET role = 'ADMIN' WHERE role != 'ADMIN'")
     },
 
-    async down({ db }) {
-        await db.query("ALTER TABLE users ALTER COLUMN role SET DEFAULT 'USER'")
-        await db.query('ALTER TABLE students ADD COLUMN IF NOT EXISTS "userId" INTEGER REFERENCES users (id) ON UPDATE CASCADE ON DELETE SET NULL')
-        await db.query('ALTER TABLE teachers ADD COLUMN IF NOT EXISTS "userId" INTEGER REFERENCES users (id) ON UPDATE CASCADE ON DELETE SET NULL')
+    async down() {
+        throw new Error('Миграция 009 необратима: удаленные таблицы (requests, notifications, student_requests, documents) и перечисление enum_requests_status не подлежат автоматическому восстановлению')
     }
 }

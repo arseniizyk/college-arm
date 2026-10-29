@@ -1,15 +1,3 @@
-const { Teacher, Supervisor } = require('../models/models')
-
-// Ищет все группы, куратором которых назначен преподаватель с этим аккаунтом.
-// Возвращает массив groupId (пустой, если аккаунт не привязан к куратору).
-async function findSupervisorGroupIds(userId) {
-    const teacher = await Teacher.findOne({ where: { userId }, attributes: ['id'] });
-    if (!teacher) return [];
-
-    const supervisors = await Supervisor.findAll({ where: { teacherId: teacher.id }, attributes: ['groupId'] });
-    return supervisors.map(s => s.groupId).filter(Boolean);
-}
-
 // Разбирает teacherId из тела запроса в действие над связью «куратор группы».
 // undefined — поле не прислано, связь не трогаем; '' и null — снять куратора.
 // Нужно различать эти случаи: иначе снять куратора через PUT невозможно.
@@ -35,4 +23,4 @@ function formatCuratorBlockMessage(groupNumbers) {
     return `Преподаватель — куратор групп: ${groupNumbers.join(', ')}. Сначала снимите куратора с этих групп.`
 }
 
-module.exports = { findSupervisorGroupIds, parseSupervisorAssignment, formatCuratorBlockMessage }
+module.exports = { parseSupervisorAssignment, formatCuratorBlockMessage }

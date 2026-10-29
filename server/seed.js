@@ -2,7 +2,7 @@ require('dotenv').config()
 const bcrypt = require('bcrypt')
 const sequelize = require('./db')
 const {
-    User, Student, Teacher, Supervisor, Group, Specialty, Document
+    User, Student, Teacher, Supervisor, Group, Specialty
 } = require('./models/models')
 const { isSameEmail } = require('./utils/userEmail')
 
@@ -61,7 +61,6 @@ async function wipe() {
     await Teacher.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true })
     await Group.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true })
     await Specialty.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true })
-    await Document.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true })
     await User.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true })
     console.log('  все таблицы очищены')
 }
@@ -69,11 +68,11 @@ async function wipe() {
 async function countRows() {
     const counts = await Promise.all([
         User.count(), Student.count(), Teacher.count(), Group.count(),
-        Specialty.count(), Document.count(), Supervisor.count()
+        Specialty.count(), Supervisor.count()
     ])
     return {
         User: counts[0], Student: counts[1], Teacher: counts[2], Group: counts[3],
-        Specialty: counts[4], Document: counts[5], Supervisor: counts[6]
+        Specialty: counts[4], Supervisor: counts[5]
     }
 }
 
@@ -147,19 +146,6 @@ async function main() {
         specialties.push(await Specialty.create(s))
     }
     console.log(`Специальности: ${specialties.length}`)
-
-    // --- Документы ---
-    const documentNames = [
-        'Справка об обучении',
-        'Справка об окончании',
-        'Договор о практике',
-        'Приказ о зачислении'
-    ]
-    const documents = []
-    for (const name of documentNames) {
-        documents.push(await Document.create({ document_name: name }))
-    }
-    console.log(`Документы: ${documents.length}`)
 
     // --- Преподаватели ---
     const teachers = []
