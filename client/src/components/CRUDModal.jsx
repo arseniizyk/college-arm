@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Modal, Button, Form, Spinner } from 'react-bootstrap';
 import { TABLE_NAMES, ACTION_NAMES, getFieldsConfig } from '../utils/tableConfig';
 import { getDropdownOptions } from '../utils/dataHelpers';
-import MultiselectStudents from './MultiselectStudents';
 
 const CRUDModal = ({
     show,
@@ -38,10 +37,8 @@ const CRUDModal = ({
         if (inputType === 'checkbox') {
             newValue = checked;
         } else if (multiple) {
-            // Для multiselect получаем массив выбранных значений
             newValue = Array.from(selectedOptions, option => option.value);
         } else if (inputType === 'number') {
-            // Для числовых полей преобразуем в число
             newValue = value === '' ? '' : Number(value);
         } else {
             newValue = value;
@@ -54,9 +51,7 @@ const CRUDModal = ({
     };
 
     const renderFormFields = () => {
-        // excludeOwnerId — id редактируемой записи, чтобы не отфильтровать её текущий аккаунт
-        const ownedTables = ['students', 'teachers'];
-        const getDropdownOptionsForField = (fieldName) => getDropdownOptions(fieldName, data, ownedTables.includes(table) ? item?.id : null);
+        const getDropdownOptionsForField = (fieldName) => getDropdownOptions(fieldName, data);
         const fieldsConfig = getFieldsConfig(userRole, getDropdownOptionsForField, type);
         const fields = fieldsConfig[table] || [];
 
@@ -79,7 +74,6 @@ const CRUDModal = ({
                             <option value="">Выберите...</option>
                             {field.options && Array.isArray(field.options) ? (
                                 field.options.map(opt => {
-                                    // Если opt - это объект с value и label
                                     if (typeof opt === 'object' && opt.value !== undefined) {
                                         return (
                                             <option key={opt.value} value={opt.value}>
@@ -87,7 +81,6 @@ const CRUDModal = ({
                                             </option>
                                         );
                                     }
-                                    // Если opt - это простая строка
                                     return (
                                         <option key={opt} value={opt}>{opt}</option>
                                     );
@@ -96,14 +89,6 @@ const CRUDModal = ({
                         </Form.Select>
                         <Form.Control.Feedback type="invalid">Пожалуйста, выберите значение</Form.Control.Feedback>
                     </>
-                ) : field.type === 'multiselect' ? (
-                    <MultiselectStudents
-                        field={field}
-                        formData={formData}
-                        setFormData={setFormData}
-                        loading={loading}
-                        data={data}
-                    />
                 ) : field.type === 'textarea' ? (
                     <>
                         <Form.Control
@@ -192,29 +177,11 @@ const CRUDModal = ({
             );
         }
 
-        if (table === 'documents' || item.document_name) {
-            return (
-                <div className="mt-3 p-3 bg-light rounded text-start">
-                    <div><strong>Название:</strong> {item.document_name}</div>
-                </div>
-            );
-        }
-
         if (table === 'users' || item.email) {
             return (
                 <div className="mt-3 p-3 bg-light rounded text-start">
                     {item.email && <div><strong>Email:</strong> {item.email}</div>}
                     {item.role && <div><strong>Роль:</strong> {item.role}</div>}
-                </div>
-            );
-        }
-
-        if (table === 'requests') {
-            const docName = item.document?.document_name || (data?.documents && data.documents.find(d => d.id === item.documentId)?.document_name);
-            return (
-                <div className="mt-3 p-3 bg-light rounded text-start">
-                    {docName && <div><strong>Документ:</strong> {docName}</div>}
-                    {item.description && <div><strong>Описание:</strong> {item.description}</div>}
                 </div>
             );
         }

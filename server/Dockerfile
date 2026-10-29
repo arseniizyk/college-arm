@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1
-
 # ---------- deps ----------
 FROM node:20-bookworm-slim AS deps
 WORKDIR /app

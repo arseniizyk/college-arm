@@ -6,8 +6,7 @@ const { spawnSync } = require('child_process')
 const bcrypt = require('bcrypt')
 const sequelize = require('../db')
 const {
-    User, Student, Teacher, Supervisor, Group, Specialty, Document,
-    Request, Notification, StudentRequest
+    User, Student, Teacher, Supervisor, Group, Specialty, Document
 } = require('../models/models')
 const { isSameEmail } = require('../utils/userEmail')
 
@@ -43,9 +42,6 @@ function resolveDocxPath() {
 
 async function wipeDatabase() {
     console.log('Очистка базы данных (--force):')
-    await StudentRequest.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true })
-    await Notification.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true })
-    await Request.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true })
     await Supervisor.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true })
     await Student.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true })
     await Teacher.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true })
@@ -262,8 +258,7 @@ async function main() {
                 enroll_date: s.enroll_date ? new Date(s.enroll_date) : new Date(g.enroll_date || '2026-09-01'),
                 expell_date: s.expell_date ? new Date(s.expell_date) : null,
                 expell_reason: s.expell_reason || null,
-                groupId: group.id,
-                userId
+                groupId: group.id
             })
         }
 

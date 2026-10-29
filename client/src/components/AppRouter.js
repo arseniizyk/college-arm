@@ -1,21 +1,21 @@
 import React, { useContext } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { authRoutes, publicRoutes, adminRoutes } from '../routes';
+import { ADMIN_ROUTE, LOGIN_ROUTE } from '../utils/consts';
 import { Context } from '../index';
 import { observer } from 'mobx-react-lite';  
 
 const AppRouter = observer(() => { 
-    const {user} = useContext(Context)
+    const { user } = useContext(Context);
     
-    // Получаем роль пользователя
-    const currentUser = user.getUser()
-    const userRole = currentUser?.role || 'USER'
-    const isAdmin = userRole === 'ADMIN'
+    const isAuth = user.getIsAuth();
+    const currentUser = user.getUser();
+    const isAdmin = currentUser?.role === 'ADMIN';
 
     return (
-         <Routes>
+        <Routes>
             {/* Роуты только для администраторов */}
-            {user.getIsAuth() && isAdmin && adminRoutes.map(({ path, Component }) => (
+            {isAuth && isAdmin && adminRoutes.map(({ path, Component }) => (
                 <Route 
                     key={path} 
                     path={path} 
@@ -23,8 +23,8 @@ const AppRouter = observer(() => {
                 />
             ))}
             
-            {/* Роуты для всех авторизованных пользователей */}
-            {user.getIsAuth() && authRoutes.map(({ path, Component }) => (
+            {/* Роуты для авторизованных пользователей */}
+            {isAuth && authRoutes.map(({ path, Component }) => (
                 <Route 
                     key={path} 
                     path={path} 
@@ -41,7 +41,10 @@ const AppRouter = observer(() => {
                 />
             ))}
             
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route 
+                path="*" 
+                element={<Navigate to={isAuth && isAdmin ? ADMIN_ROUTE : LOGIN_ROUTE} replace />} 
+            />
         </Routes>
     );
 });

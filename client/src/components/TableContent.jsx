@@ -24,10 +24,6 @@ const TableContent = ({
     groups,
     selectedStudentStatusFilter,
     onStudentStatusFilterChange,
-    selectedRoleFilter,
-    onRoleFilterChange,
-    selectedStatusFilter,
-    onStatusFilterChange,
     selectedSpecialtyFilter,
     onSpecialtyFilterChange,
     specialties,
@@ -52,8 +48,6 @@ const TableContent = ({
         searchTerm ||
         selectedGroupFilter ||
         selectedStudentStatusFilter ||
-        selectedRoleFilter ||
-        selectedStatusFilter ||
         selectedSpecialtyFilter
     );
 
@@ -61,8 +55,6 @@ const TableContent = ({
         if (onSearch) onSearch('');
         if (onGroupFilterChange) onGroupFilterChange('');
         if (onStudentStatusFilterChange) onStudentStatusFilterChange('');
-        if (onRoleFilterChange) onRoleFilterChange('');
-        if (onStatusFilterChange) onStatusFilterChange('');
         if (onSpecialtyFilterChange) onSpecialtyFilterChange('');
     };
 
@@ -77,10 +69,6 @@ const TableContent = ({
                 groups={groups}
                 selectedStudentStatusFilter={selectedStudentStatusFilter}
                 onStudentStatusFilterChange={onStudentStatusFilterChange}
-                selectedRoleFilter={selectedRoleFilter}
-                onRoleFilterChange={onRoleFilterChange}
-                selectedStatusFilter={selectedStatusFilter}
-                onStatusFilterChange={onStatusFilterChange}
                 selectedSpecialtyFilter={selectedSpecialtyFilter}
                 onSpecialtyFilterChange={onSpecialtyFilterChange}
                 specialties={specialties}
@@ -93,7 +81,7 @@ const TableContent = ({
                 <thead className="table-dark">
                     <tr>
                         {columns.map(col => {
-                            const isSortable = tableType !== 'specialties' && tableType !== 'documents' && col.sortable !== false;
+                            const isSortable = tableType !== 'specialties' && col.sortable !== false;
                             const isSorted = isSortable && sortConfig?.key === col.key;
                             const direction = isSorted ? sortConfig.direction : null;
                             const ariaSort = !isSortable ? undefined : direction === 'asc' ? 'ascending' : direction === 'desc' ? 'descending' : 'none';
@@ -133,7 +121,7 @@ const TableContent = ({
                                     >
                                         <span>{col.label}</span>
                                         {direction === 'asc' && (
-                                            <i className="bi bi-arrow-up text-primary sort-indicator" aria-hidden="true"></i>
+                                             <i className="bi bi-arrow-up text-primary sort-indicator" aria-hidden="true"></i>
                                         )}
                                         {direction === 'desc' && (
                                             <i className="bi bi-arrow-down text-primary sort-indicator" aria-hidden="true"></i>
@@ -187,10 +175,7 @@ const TableContent = ({
                         </tr>
                     ) : (
                         safeData.map((item, index) => {
-                            // Вычисляем порядковый номер с учетом пагинации
                             const rowNumber = (currentPage - 1) * itemsPerPage + index + 1;
-                            // То, что не берётся из строки: номер для колонки «№»
-                            // и подстановка названий вместо чужих id.
                             const context = { rowNumber, names: getNameById };
 
                             return (

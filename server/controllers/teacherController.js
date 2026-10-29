@@ -1,27 +1,17 @@
 const { Teacher, Group, Supervisor } = require('../models/models')
 const ApiError = require('../error/ApiError')
-const { resolveUserId } = require('../utils/resolveUserId')
 const { formatCuratorBlockMessage } = require('../utils/supervisorGroup')
-
-// Привязка аккаунта к куратору: аккаунт должен существовать и не быть занятым другим преподавателем
-const resolveTeacherUserId = (rawValue, excludeTeacherId = null) =>
-    resolveUserId(rawValue, { ownerModel: Teacher, ownerName: 'преподавателю', excludeOwnerId: excludeTeacherId });
 
 class TeacherController {
     async create(req, res, next) {
         try {
-            const { last_name, name, father_name, userId } = req.body
+            const { last_name, name, father_name } = req.body
             
             if (!last_name || !name) {
                 return next(ApiError.badRequest('Не все обязательные поля заполнены'));
             }
-
-            const resolvedUser = await resolveTeacherUserId(userId);
-            if (resolvedUser.error) {
-                return next(resolvedUser.error);
-            }
             
-            const teacher = await Teacher.create({ last_name, name, father_name, userId: resolvedUser.value })
+            const teacher = await Teacher.create({ last_name, name, father_name })
             res.json(teacher)
         } catch (error) {
             next(ApiError.internalRequest(error.message));
@@ -31,7 +21,7 @@ class TeacherController {
     async update(req, res, next) {
         try {
             const { id } = req.params;
-            const { last_name, name, father_name, userId } = req.body;
+            const { last_name, name, father_name } = req.body;
             
             if (!id) {
                 return next(ApiError.badRequest('Не указан ID преподавателя'));
@@ -46,13 +36,6 @@ class TeacherController {
             if (last_name) updateData.last_name = last_name;
             if (name) updateData.name = name;
             if (father_name !== undefined) updateData.father_name = father_name;
-            if (userId !== undefined) {
-                const resolvedUser = await resolveTeacherUserId(userId, id);
-                if (resolvedUser.error) {
-                    return next(resolvedUser.error);
-                }
-                updateData.userId = resolvedUser.value;
-            }
             
             await teacher.update(updateData);
             
@@ -81,15 +64,11 @@ class TeacherController {
             if (!tch) {
                 return next(ApiError.badRequest('Преподаватель не найден'));
             }
-            // Без проверки FK ON DELETE SET NULL оставил бы группу без куратора
-            // и отвязал аккаунт преподавателя от его группы.
             const supervisedGroups = await Supervisor.findAll({
                 where: { teacherId: id },
                 attributes: ['groupId'],
                 include: [{ model: Group, attributes: ['group_number'] }]
             });
-            // Записи с groupId = null — сироты от удалённых групп: они не
-            // блокируют удаление, но и группы за собой не имеют.
             const groupNumbers = supervisedGroups
                 .map(s => s.group && s.group.group_number)
                 .filter(Boolean);
@@ -107,4 +86,4 @@ class TeacherController {
     }
 }
 
-module.exports = new TeacherController() 
+module.exports = new TeacherController()

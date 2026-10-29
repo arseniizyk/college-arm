@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1
-
 # ---------- build ----------
 FROM node:20-bookworm-slim AS build
 WORKDIR /app

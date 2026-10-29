@@ -1,41 +1,25 @@
 require('dotenv').config()
-
 const bcrypt = require('bcrypt')
 const sequelize = require('./db')
 const {
-    User, Student, Teacher, Supervisor, Group, Specialty, Document,
-    Request, Notification, StudentRequest
+    User, Student, Teacher, Supervisor, Group, Specialty, Document
 } = require('./models/models')
-const { statusLabelFeminine } = require('./utils/requestStatus')
 const { isSameEmail } = require('./utils/userEmail')
 
-// Количество сущностей можно переопределить аргументами:
-//   node seed.js --students=120 --requests=40
-// По умолчанию набор небольшой, но достаточный, чтобы увидеть все экраны.
-
-const args = Object.fromEntries(
-    process.argv.slice(2)
-        .filter(a => a.startsWith('--'))
-        .map(a => {
-            const [k, v] = a.replace(/^--/, '').split('=')
-            return [k, v === undefined ? true : v]
-        })
-)
-
-// Номер группы, намеренно оставленной без специальности, — на нём проверяются
-// исправления B5 (400 на справке, метки в интерфейсе).
-const ORPHAN_GROUP_NUMBER = '99-99-99'
+// Аргументы командной строки: node seed.js [--force] [--seed=N] [--specialties=N] ...
+const args = process.argv.slice(2).reduce((acc, cur) => {
+    const [k, v] = cur.replace(/^--/, '').split('=')
+    acc[k] = v === undefined ? true : v
+    return acc
+}, {})
 
 const COUNT = {
     specialties: Number(args.specialties || 5),
     groups: Number(args.groups || 10),
     students: Number(args.students || 80),
-    teachers: Number(args.teachers || 10),
-    requests: Number(args.requests || 25)
+    teachers: Number(args.teachers || 10)
 }
 
-// Безопасность: по умолчанию скрипт только дополняет базу. Полная очистка —
-// исключительно по явному --force, иначе один запуск стирает реальные данные.
 const FORCE = args.force === true || args.force === 'true'
 const KEEP_EXISTING = args.keep === true || args.keep === 'true'
 
@@ -45,9 +29,6 @@ const FEMALE = ['Анна', 'Мария', 'Ольга', 'Елена', 'Ната�
 const FATHER_M = ['Александрович', 'Дмитриевич', 'Сергеевич', 'Андреевич', 'Викторович', 'Николаевич', 'Иванович', 'Павлович', 'Геннадьевич', 'Борисович']
 const FATHER_F = ['Александровна', 'Дмитриевна', 'Сергеевна', 'Андреевна', 'Викторовна', 'Николаевна', 'Ивановна', 'Павловна', 'Геннадьевна', 'Борисовна']
 
-// Детерминированный псевдослучайный выбор: при --seed=N повторный запуск
-// даёт тот же набор, иначе каждый прогон даёт новые данные и сравнивать
-// скриншоты админки между прогонами бесполезно.
 let seedState = Number(args.seed || 20260930) >>> 0
 function seededRandom() {
     seedState = (seedState * 1664525 + 1013904223) >>> 0
@@ -59,19 +40,15 @@ const pickInt = (min, max) => min + Math.floor(seededRandom() * (max - min + 1))
 function makePerson() {
     const isMale = seededRandom() < 0.5
     return {
-        last_name: pick(LAST),
-        name: pick(isMale ? MALE : FEMALE),
-        father_name: pick(isMale ? FATHER_M : FATHER_F),
-        isMale
+        last_name: pick(LAST) + (isMale ? '' : 'а'),
+        name: isMale ? pick(MALE) : pick(FEMALE),
+        father_name: isMale ? pick(FATHER_M) : pick(FATHER_F)
     }
 }
 
-// Дата в прошлом — чтобы calculateCourse в клиенте возвращал осмысленный курс.
+const ORPHAN_GROUP_NUMBER = '99-БЕЗ-СПЕЦ'
 const daysAgo = (n) => new Date(Date.now() - n * 24 * 60 * 60 * 1000)
 
-// Формат order_number разбирается в server/utils/orderParser.js:
-// "<номер> от <дд.мм.гггг>". Регулярка ожидает префикс "Приказ," —
-// повторяем его, иначе дата не извлечётся и справка соберётся без неё.
 const makeOrderNumber = (n, date) => {
     const dd = String(date.getDate()).padStart(2, '0')
     const mm = String(date.getMonth() + 1).padStart(2, '0')
@@ -79,10 +56,6 @@ const makeOrderNumber = (n, date) => {
 }
 
 async function wipe() {
-    // Порядок важен: сначала связи-таблицы, потом владельцы.
-    await StudentRequest.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true })
-    await Notification.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true })
-    await Request.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true })
     await Supervisor.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true })
     await Student.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true })
     await Teacher.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true })
@@ -96,13 +69,11 @@ async function wipe() {
 async function countRows() {
     const counts = await Promise.all([
         User.count(), Student.count(), Teacher.count(), Group.count(),
-        Specialty.count(), Document.count(), Request.count(), Notification.count(),
-        Supervisor.count(), StudentRequest.count()
+        Specialty.count(), Document.count(), Supervisor.count()
     ])
     return {
         User: counts[0], Student: counts[1], Teacher: counts[2], Group: counts[3],
-        Specialty: counts[4], Document: counts[5], Request: counts[6],
-        Notification: counts[7], Supervisor: counts[8], StudentRequest: counts[9]
+        Specialty: counts[4], Document: counts[5], Supervisor: counts[6]
     }
 }
 
@@ -110,13 +81,10 @@ async function main() {
     await sequelize.authenticate()
     console.log(`Подключение к ${process.env.DB_NAME} @ ${process.env.DB_HOST}:${process.env.DB_PORT} — ок`)
 
-    // Схему создаёт `npm run migrate`, а не скрипт данных: sync() здесь был бы
-    // вторым источником правды о структуре и маскировал бы неприменённые миграции.
-    // Имя SequelizeMeta в to_regclass требует кавычек: без них литерал
-    // приводится к нижнему регистру и таблица не находится.
     const [schema] = await sequelize.query(
-        `SELECT to_regclass('public.specialties') AS specialties,
-                to_regclass('public."SequelizeMeta"') AS meta`
+        `SELECT
+            to_regclass('public.specialties') IS NOT NULL AS specialties,
+            to_regclass('public."SequelizeMeta"') IS NOT NULL AS meta;`
     )
     if (!schema[0].specialties || !schema[0].meta) {
         console.error('В базе нет схемы — сначала выполните: npm run migrate')
@@ -147,13 +115,11 @@ async function main() {
 
     const passwordHash = await bcrypt.hash('password123', 5)
 
-    // --- Пользователи ---
-    // email уникален без учёта регистра (функциональный индекс, миграция 005),
-    // поэтому и поиск здесь тоже регистронезависимый.
+    // --- Пользователи (только ADMIN) ---
     const existingUsers = await User.findAll({ attributes: ['id', 'email', 'role'] })
     const findUser = (email) => existingUsers.find(u => isSameEmail(u.email, email))
 
-    const ensureUser = async (email, role) => {
+    const ensureUser = async (email, role = 'ADMIN') => {
         const found = findUser(email)
         if (found) return found
         const created = await User.create({ email, password: passwordHash, role })
@@ -162,17 +128,8 @@ async function main() {
     }
 
     const admin = await ensureUser('admin@test.ru', 'ADMIN')
-    const teacherUsers = []
-    for (let i = 0; i < COUNT.teachers; i++) {
-        teacherUsers.push(await ensureUser(`teacher${i + 1}@test.ru`, 'TEACHER'))
-    }
-    const userAccounts = []
-    for (let i = 0; i < Math.max(3, Math.floor(COUNT.students / 5)); i++) {
-        userAccounts.push(await ensureUser(`user${i + 1}@test.ru`, 'USER'))
-    }
-    const unboundUser = await ensureUser('user.no-link@test.ru', 'USER')
-    const unboundTeacherUser = await ensureUser('teacher.no-link@test.ru', 'TEACHER')
-    console.log(`Пользователи: ${COUNT.teachers + userAccounts.length + 3} (пароль у всех: password123)`)
+    await ensureUser('director@test.ru', 'ADMIN')
+    console.log(`Пользователи: администраторы созданы (пароль: password123)`)
 
     // --- Специальности ---
     const specialtyData = [
@@ -208,18 +165,11 @@ async function main() {
     const teachers = []
     for (let i = 0; i < COUNT.teachers; i++) {
         const p = makePerson()
-        // Первому преподавателю аккаунт не привязываем намеренно: его нельзя
-        // назначить куратором, это проверка сообщения в Request.jsx.
-        const userId = i === 0 ? null : teacherUsers[i - 1].id
-        teachers.push(await Teacher.create({ ...p, userId }))
+        teachers.push(await Teacher.create({ ...p }))
     }
-    console.log(`Преподаватели: ${teachers.length} (у 1-го нет аккаунта — для проверки B12)`)
+    console.log(`Преподаватели: ${teachers.length}`)
 
     // --- Группы и кураторы ---
-    // group_number уникален, а набор небольшой, поэтому слепо генерировать
-    // номера нельзя: при повторном запуске (--keep) почти наверняка придут
-    // дубли и INSERT упадёт на groups_group_number_key. Держим множество
-    // занятых номеров и добираем следующий свободный.
     const takenGroupNumbers = new Set((await Group.findAll({ attributes: ['group_number'] })).map(g => g.group_number))
     const nextFreeGroupNumber = () => {
         for (let attempt = 0; attempt < 200; attempt++) {
@@ -229,44 +179,41 @@ async function main() {
                 return n
             }
         }
-        // Фолбэк на случай исчерпания пространства имён
-        let n
-        do { n = `T-${String(takenGroupNumbers.size + 1).padStart(3, '0')}` } while (takenGroupNumbers.has(n))
-        takenGroupNumbers.add(n)
-        return n
+        return `Г-${Date.now().toString().slice(-4)}`
     }
 
     const groups = []
+    const paymentTypes = ['платной', 'бесплатной']
     for (let i = 0; i < COUNT.groups; i++) {
-        const specialty = specialties[i % specialties.length]
-        const g = await Group.create({
-            group_number: nextFreeGroupNumber(),
-            enroll_date: daysAgo(pickInt(200, 1000)),
-            specialtyId: specialty.id,
-            payment_type: seededRandom() < 0.7 ? 'платной' : 'бесплатной'
+        const groupNumber = nextFreeGroupNumber()
+        const specialty = pick(specialties)
+        const enrollDate = daysAgo(pickInt(60, 1000))
+        const paymentType = pick(paymentTypes)
+        const group = await Group.create({
+            group_number: groupNumber,
+            enroll_date: enrollDate,
+            payment_type: paymentType,
+            specialtyId: specialty.id
         })
-        groups.push(g)
+        groups.push(group)
+    }
 
-        // Куратор: одна группа = один куратор (Group.hasOne(Supervisor)).
-        // Берём id из объекта, а не позицию в массиве: id не обязан совпадать
-        // с индексом, особенно после truncate без restartIdentity.
-        if (i % 2 === 0) {
-            const withAccount = teachers.filter(t => t.userId)
-            const teacher = withAccount[(i / 2) % withAccount.length]
+    let curatorsCount = 0
+    for (let i = 0; i < groups.length; i++) {
+        const g = groups[i]
+        const teacher = teachers[i % teachers.length]
+        if (teacher) {
             await Supervisor.create({ groupId: g.id, teacherId: teacher.id })
+            curatorsCount++
         }
     }
-    console.log(`Группы: ${groups.length} (у части нет куратора)`)
+    console.log(`Группы: ${groups.length}, назначено кураторов: ${curatorsCount}`)
 
     // --- Студенты ---
     const students = []
-    const linkableGroups = groups.filter(g => g.specialtyId)
     for (let i = 0; i < COUNT.students; i++) {
         const p = makePerson()
-        const group = linkableGroups[i % linkableGroups.length]
-        // Первые N студентов привязываем к аккаунтам (B1), остальных — нет:
-        // без привязки они не могут подать заявку, это проверка сообщения.
-        const userId = i < userAccounts.length ? userAccounts[i].id : null
+        const group = pick(groups)
         const enrollDate = daysAgo(pickInt(100, 1100))
         const expelled = seededRandom() < 0.15
         students.push(await Student.create({
@@ -276,68 +223,12 @@ async function main() {
             order_number: makeOrderNumber(pickInt(1, 400), enrollDate),
             enroll_date: enrollDate,
             expell_date: expelled ? daysAgo(pickInt(1, 80)) : null,
-            groupId: group.id,
-            userId
+            groupId: group.id
         }))
     }
-    console.log(`Студенты: ${students.length} (${userAccounts.length} с привязкой к аккаунту)`)
+    console.log(`Студенты: ${students.length}`)
 
-    // --- Заявки ---
-    const statuses = ['pending', 'completed', 'cancelled']
-    const descriptions = [
-        'Прошу выдать справку об обучении для поступления в вуз.',
-        'Нужна справка для оформления документов в банк.',
-        'Прошу подготовить договор о прохождении практики.',
-        'Справка для военкомата, заказчик — курсант.'
-    ]
-    let requestsCount = 0
-    let notificationsCount = 0
-    for (let i = 0; i < COUNT.requests; i++) {
-        // Заявку отдаём только привязанному к аккаунту студенту — иначе
-        // сервер (B1) отклонит её с 403, а такие заявки в базе не появятся
-        // легитимным путём.
-        const bound = students.filter(s => s.userId)
-        const author = bound[i % bound.length]
-        const doc = pick(documents)
-        const status = pick(statuses)
-        const req = await Request.create({
-            documentId: doc.id,
-            userId: author.userId,
-            description: pick(descriptions),
-            status,
-            isViewed: status !== 'pending' ? true : seededRandom() < 0.5
-        })
-        requestsCount++
-
-        // Несколько студентов на одну заявку (как для ролей ADMIN/TEACHER).
-        const extra = seededRandom() < 0.3 ? 1 : 0
-        const linked = [author]
-        if (extra) {
-            const other = bound[(i + 1) % bound.length]
-            if (other.id !== author.id) linked.push(other)
-        }
-        await req.addStudents(linked)
-
-        // Уведомление получает автор заявки — Notification.userId тоже
-        // ON DELETE SET NULL, но у живого пользователя получатель есть.
-        await Notification.create({
-            userId: author.userId,
-            title: `Заявка №${req.id} — ${doc.document_name}`,
-            // Текст выводится из статуса, а не выбирается случайно:
-            // иначе заявка «в обработке» получает «Заявка отклонена».
-            body: `Ваша заявка ${statusLabelFeminine(status)}`,
-            isRead: status === 'pending' ? false : true
-        })
-        notificationsCount++
-    }
-    console.log(`Заявки: ${requestsCount}, уведомления: ${notificationsCount}`)
-
-    // --- Намеренно «сломанные» записи ---
-    // Одна группа без специальности: так как delete в БД делает ON DELETE SET NULL,
-    // это ровно то состояние, которое даёт удаление специальности из UI.
-    // Нужно, чтобы проверить исправления B5: 400 на справке и метки в интерфейсе.
-    // При повторном запуске группа без специальности уже есть — переиспользуем
-    // её, чтобы не плодить дубли и не падать на groups_group_number_key.
+    // --- Намеренно «сломанные» записи (для проверки справок B5) ---
     let orphanGroup = await Group.findOne({ where: { specialtyId: null, group_number: ORPHAN_GROUP_NUMBER } })
     if (!orphanGroup) {
         orphanGroup = await Group.create({
@@ -360,25 +251,6 @@ async function main() {
     }
     console.log(`Группа без специальности: ${ORPHAN_GROUP_NUMBER} + 3 студента (для проверки B5)`)
 
-    // Заявка на справку об обучении по этим студентам: ровно тот случай,
-    // который раньше приводил к пустому .docx с кодом 200.
-    const certDoc = documents.find(d => d.document_name.includes('обучени'))
-    if (certDoc) {
-        const orphanReq = await Request.create({
-            documentId: certDoc.id,
-            userId: admin.id,
-            description: 'Справка для группы без специальности — проверка B5.',
-            status: 'pending'
-        })
-        await orphanReq.addStudents(orphanStudents)
-        console.log(`Заявка №${orphanReq.id} на справку для группы без специальности (ожидается 400)`)
-    }
-
-    // Аккаунты без привязки — их заявки должны отклоняться (B1/B12).
-    console.log('')
-    console.log('Аккаунты БЕЗ привязки (заявку подать не смогут, ожидается сообщение в UI):')
-    console.log(`  ${unboundUser.email} — роль USER, нет привязанного студента`)
-    console.log(`  ${unboundTeacherUser.email} — роль TEACHER, не назначен куратором группы`)
     console.log('')
     console.log('Вход в систему: admin@test.ru / password123 (роль ADMIN)')
 }

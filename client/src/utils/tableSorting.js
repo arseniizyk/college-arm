@@ -1,5 +1,4 @@
 import { calculateCourse } from './dataHelpers';
-import { statusLabel } from './requestStatus';
 
 const isDateKey = (key) => key.toLowerCase().includes('date') || key === 'createdAt';
 
@@ -16,7 +15,7 @@ export const getSortValue = (item, columnKey, tableType, getNameById) => {
     }
 
     // Внешние ключи (ссылочные сущности)
-    if (getNameById && (columnKey === 'groupId' || columnKey === 'specialtyId' || columnKey === 'documentId' || columnKey === 'userId')) {
+    if (getNameById && (columnKey === 'groupId' || columnKey === 'specialtyId')) {
         const resolved = getNameById(columnKey, item[columnKey]);
         if (resolved && resolved !== '-') return resolved;
     }
@@ -26,15 +25,6 @@ export const getSortValue = (item, columnKey, tableType, getNameById) => {
         const teacher = item?.supervisor?.teacher;
         if (teacher) {
             return [teacher.last_name, teacher.name, teacher.father_name].filter(Boolean).join(' ');
-        }
-        return '';
-    }
-
-    // Студенты (в заявке)
-    if (columnKey === 'students') {
-        if (Array.isArray(item.students) && item.students.length > 0) {
-            const first = item.students[0];
-            return [first.last_name, first.name, first.father_name].filter(Boolean).join(' ');
         }
         return '';
     }
@@ -54,11 +44,6 @@ export const getSortValue = (item, columnKey, tableType, getNameById) => {
             specialty?.duration_months || 0
         );
         return course === 'Выпускник' ? 999 : Number(course) || 0;
-    }
-
-    // Статус заявки
-    if (columnKey === 'status') {
-        return statusLabel(item.status);
     }
 
     // Даты
@@ -117,10 +102,7 @@ export const defaultSort = (tableType, a, b) => {
         case 'groups':
             return (a.group_number || '').localeCompare(b.group_number || '', 'ru', { numeric: true });
         case 'specialties':
-        case 'documents':
             return (Number(a.id) || 0) - (Number(b.id) || 0);
-        case 'requests':
-            return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
         default:
             return 0;
     }
@@ -133,8 +115,8 @@ export const sortTableData = (items, sortConfig, tableType, getNameById) => {
     if (!Array.isArray(items)) return [];
     const copy = [...items];
 
-    // Для специальностей и документов пользовательская сортировка отключена
-    if (tableType === 'specialties' || tableType === 'documents' || !sortConfig || !sortConfig.key || !sortConfig.direction) {
+    // Для специальностей пользовательская сортировка отключена
+    if (tableType === 'specialties' || !sortConfig || !sortConfig.key || !sortConfig.direction) {
         return copy.sort((a, b) => defaultSort(tableType, a, b));
     }
 

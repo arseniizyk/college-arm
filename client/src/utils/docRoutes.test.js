@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 
-import { ORDER_DOC_TYPES, orderUrl, practiceContractUrl } from './consts'
+import { ORDER_DOC_TYPES, orderUrl, practiceContractUrl, studyCertificateUrl } from './consts'
 
 // DocumentsGeneration импортировать нельзя: он тянет за собой axios, MobX и
 // все модалки, поэтому проверяем его как исходник — по тексту файла.
@@ -9,8 +9,8 @@ import { ORDER_DOC_TYPES, orderUrl, practiceContractUrl } from './consts'
 
 // Пути генерации документов — контракт с сервером.
 // Сервер отдаёт приказы по POST /api/generate/admin/orders/:docType,
-// а договор практики — по отдельному маршруту: у него две копии договора
-// на каждого студента, из-за чего он не идёт через общий обработчик.
+// договор практики — по отдельному маршруту: /api/generate/admin/practice-contract,
+// а справку об обучении — по /api/generate/study-certificate.
 
 test('docType приказа попадает в путь без изменений', () => {
   expect(orderUrl('release')).toBe('/api/generate/admin/orders/release')
@@ -21,9 +21,11 @@ test('у договора практики отдельный путь', () => {
   expect(practiceContractUrl()).toBe('/api/generate/admin/practice-contract')
 })
 
+test('у справки об обучении отдельный путь', () => {
+  expect(studyCertificateUrl()).toBe('/api/generate/study-certificate')
+})
+
 test('список типов приказов совпадает с реестром сервера', () => {
-  // Реестр живёт в server/templates/registry.js. Список здесь нужен,
-  // чтобы лишний тип в UI не выглядел как рабочий: сервер вернёт 404.
   expect(ORDER_DOC_TYPES.sort()).toEqual([
     'duplicate-ticket',
     'enrollment',
@@ -42,13 +44,11 @@ test('уникальных типов ровно столько же, сколь
   expect(new Set(ORDER_DOC_TYPES).size).toBe(ORDER_DOC_TYPES.length)
 })
 
-test('в типах приказов нет договора практики', () => {
+test('в типах приказов нет договора практики и справки об обучении', () => {
   expect(ORDER_DOC_TYPES).not.toContain('practice-contract')
+  expect(ORDER_DOC_TYPES).not.toContain('study-certificate')
 })
 
-// handleGenerate открывает модалку по id карточки. Если id разойдётся с
-// docType, кнопка «Создать» просто ничего не откроет — без ошибки в консоли,
-// поэтому сверяем список id в компоненте с ORDER_DOC_TYPES.
 const documentsGeneration = fs.readFileSync(
   path.join(__dirname, '..', 'components', 'DocumentsGeneration.jsx'),
   'utf8'
@@ -58,8 +58,8 @@ const cardIds = [
   ...documentsGeneration.matchAll(/\{\s*id:\s*'([a-z-]+)',\s*(?:icon|title):/g),
 ]
   .map((m) => m[1])
-  .filter((id) => id !== 'orders' && id !== 'contracts')
-const orderIds = cardIds.filter((id) => id !== 'practice-contract')
+  .filter((id) => id !== 'orders' && id !== 'contracts' && id !== 'certificates')
+const orderIds = cardIds.filter((id) => id !== 'practice-contract' && id !== 'study-certificate')
 
 test('id карточек приказов совпадают с типами для сервера', () => {
   expect(orderIds.sort()).toEqual([...ORDER_DOC_TYPES].sort())

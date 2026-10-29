@@ -1,5 +1,4 @@
 import { calculateCourse, formatDuration, formatFio, MISSING_SPECIALTY_LABEL } from './dataHelpers'
-import { statusBadge, statusLabel } from './requestStatus'
 
 const EMPTY_TEXT = '-'
 
@@ -54,11 +53,6 @@ export const RENDERERS = {
     // Ссылки на другие сущности: ctx.names подставляет название вместо id.
     reference: (column, item, ctx) => ({ text: ctx.names(column.key, ctx.value) }),
 
-    status: (column, item, ctx) => ({
-        text: statusLabel(ctx.value),
-        variant: statusBadge(ctx.value)
-    }),
-
     role: (column, item, ctx) => {
         const badge = ROLE_BADGES[ctx.value]
         return badge
@@ -82,8 +76,7 @@ export const RENDERERS = {
         if (!item?.enroll_date) return dash()
 
         const specialty = item.specialty
-        // Без специальности срок обучения неизвестен. Раньше фолбэк 4 года давал
-        // правдоподобный, но выдуманный курс — в том числе «Выпускник» не по сроку.
+        // Без специальности срок обучения неизвестен.
         if (!specialty) return dash(MISSING_SPECIALTY_LABEL)
 
         const course = calculateCourse(
@@ -105,12 +98,6 @@ export const RENDERERS = {
     supervisor: (column, item) => {
         const teacher = item?.supervisor?.teacher
         return teacher ? { text: formatFio(teacher) } : dash()
-    },
-
-    students: (column, item) => {
-        const students = item?.students
-        if (!Array.isArray(students) || students.length === 0) return dash()
-        return plainText(students.map(student => formatFio(student)).join(', '))
     }
 }
 

@@ -7,14 +7,12 @@ const authMiddleware = require('../middleware/authMiddleware');
 const checkRoleMiddleware = require('../middleware/checkRoleMiddleware');
 
 // Генерация справки об обучении (только для администраторов)
-router.get(
-    '/study-certificate/:requestId',
+router.post(
+    '/study-certificate',
     authMiddleware,
     checkRoleMiddleware('ADMIN'),
     documentGeneratorController.generateStudyCertificate
 );
-
-// Генерация административных документов (только для администраторов)
 
 // Договор практики: две копии на каждого студента и свои отступы страницы,
 // поэтому общий обработчик приказов к нему неприменим.

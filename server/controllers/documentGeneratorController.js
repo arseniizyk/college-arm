@@ -1,5 +1,5 @@
 const { Document, Packer } = require('docx');
-const { Request, Student, Group, Specialty, Document: DocumentModel } = require('../models/models');
+const { Student, Group, Specialty } = require('../models/models');
 const { declineFullName, detectGender } = require('../utils/declension');
 const { parseOrderNumber } = require('../utils/orderParser');
 const { courseTextGenitive } = require('../utils/course');
@@ -7,63 +7,46 @@ const { createStudyCertificateTemplate } = require('../templates/studyCertificat
 const ApiError = require('../error/ApiError');
 
 class DocumentGeneratorController {
-    // Генерация справки об обучении
+    // Генерация справки об обучении (административная выписка)
     async generateStudyCertificate(req, res, next) {
         try {
-            const { requestId } = req.params;
-            
-            // Получаем заявку с полной информацией
-            const request = await Request.findByPk(requestId, {
+            const rawIds = req.body?.studentIds ?? req.body?.studentId;
+            const idList = (Array.isArray(rawIds) ? rawIds : [rawIds])
+                .map(Number)
+                .filter(id => !isNaN(id) && id > 0);
+
+            if (idList.length === 0) {
+                return next(ApiError.badRequest('Не выбран ни один студент'));
+            }
+
+            const students = await Student.findAll({
+                where: { id: idList },
+                attributes: ['id', 'last_name', 'name', 'father_name', 'order_number', 'enroll_date'],
                 include: [
                     {
-                        model: DocumentModel,
-                        attributes: ['id', 'document_name']
-                    },
-                    {
-                        model: Student,
-                        through: { attributes: [] },
-                        attributes: ['id', 'last_name', 'name', 'father_name', 'order_number', 'enroll_date'],
+                        model: Group,
+                        attributes: ['id', 'group_number', 'enroll_date', 'payment_type'],
                         include: [
                             {
-                                model: Group,
-                                attributes: ['id', 'group_number', 'enroll_date', 'payment_type'],
-                                include: [
-                                    {
-                                        model: Specialty,
-                                        attributes: ['id', 'name', 'qualification', 'duration_years', 'duration_months']
-                                    }
-                                ]
+                                model: Specialty,
+                                attributes: ['id', 'name', 'qualification', 'duration_years', 'duration_months']
                             }
                         ]
                     }
-                ]
+                ],
+                order: [['last_name', 'ASC'], ['name', 'ASC']]
             });
-            
-            if (!request) {
-                return next(ApiError.badRequest('Заявка не найдена'));
+
+            if (!students || students.length === 0) {
+                return next(ApiError.badRequest('Студенты не найдены'));
             }
-            
-            // Проверяем, что это справка об обучении
-            if (!request.document || !request.document.document_name.toLowerCase().includes('обучени')) {
-                return next(ApiError.badRequest('Данная заявка не относится к справкам об обучении'));
-            }
-            
-            if (!request.students || request.students.length === 0) {
-                return next(ApiError.badRequest('В заявке нет студентов'));
-            }
-            
+
             // Создаем секции для документа
             const sections = [];
-
-            // Группы, у которых удалена специальность (FK groups.specialtyId = ON DELETE SET NULL),
-            // раньше молча пропускались через continue: справка приходила неполной, а если
-            // таких студентов были все — приходил пустой валидный .docx с кодом 200.
-            // Собираем их и отказываем до формирования документа.
             const skipped = [];
 
-            // Генерируем справку для каждого студента
-            for (let i = 0; i < request.students.length; i++) {
-                const student = request.students[i];
+            for (let i = 0; i < students.length; i++) {
+                const student = students[i];
                 const group = student.group;
                 const specialty = group?.specialty;
 
@@ -76,14 +59,13 @@ class DocumentGeneratorController {
                     });
                     continue;
                 }
-                
+
                 // Подготавливаем данные для шаблона
                 const templateData = prepareStudyCertificateData(student, group, specialty);
-                
+
                 // Создаем параграфы из шаблона
                 const paragraphs = createStudyCertificateTemplate(templateData);
-                
-                // Добавляем секцию
+
                 sections.push({
                     properties: {
                         page: {
@@ -98,35 +80,33 @@ class DocumentGeneratorController {
                     children: paragraphs
                 });
             }
-            
-            // Создаем документ
+
             if (skipped.length > 0) {
                 const list = skipped.map(s => `${s.fio} (${s.reason})`).join(', ');
                 return next(ApiError.badRequest(
-                    `Не удалось сформировать справку: у ${skipped.length} из ${request.students.length} студентов ` +
+                    `Не удалось сформировать справку: у ${skipped.length} из ${students.length} студентов ` +
                     `отсутствует группа или специальность. Укажите специальность в группе — после этого справка соберётся полностью. ${list}`
                 ));
             }
 
             const doc = new Document({
-                sections: sections
+                sections
             });
-            
-            // Генерируем буфер документа
+
             const buffer = await Packer.toBuffer(doc);
-            
-            // Отправляем файл
-            const fileName = `Справка_об_обучении_${requestId}_${Date.now()}.docx`;
+
+            const fileName = students.length === 1
+                ? `Справка_об_обучении_${students[0].last_name}_${Date.now()}.docx`
+                : `Справки_об_обучении_${Date.now()}.docx`;
+
             res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
             res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(fileName)}"`);
             res.send(buffer);
-            
         } catch (error) {
             console.error('Ошибка генерации документа:', error);
             next(ApiError.internalRequest(error.message));
         }
     }
-
 }
 
 const GENITIVE_MONTHS = [

@@ -3,7 +3,6 @@ import { getTableData, filterData, prepareFormData, getNameById, toGroupFormData
 import { getDefaultFormData } from '../utils/tableConfig';
 import { sortTableData } from '../utils/tableSorting';
 import { ITEMS_PER_PAGE } from '../utils/consts';
-import { statusLabel } from '../utils/requestStatus';
 import { errorMessage } from '../http';
 import { notify } from '../context/ToastContext';
 
@@ -12,11 +11,11 @@ export const useAdminLogic = (data, user) => {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(null);
-    const dataLoadedRef = useRef(false); // Используем ref вместо state для предотвращения ре-рендеров
+    const dataLoadedRef = useRef(false);
 
     // Получаем информацию о текущем пользователе
     const currentUser = user.getUser();
-    const userRole = currentUser?.role || 'USER';
+    const userRole = currentUser?.role || 'ADMIN';
 
     // Состояния для модальных окон
     const [showModal, setShowModal] = useState(false);
@@ -29,15 +28,12 @@ export const useAdminLogic = (data, user) => {
     const itemsPerPage = ITEMS_PER_PAGE;
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedGroupFilter, setSelectedGroupFilter] = useState('');
-    const [selectedRoleFilter, setSelectedRoleFilter] = useState('');
-    const [selectedStatusFilter, setSelectedStatusFilter] = useState('');
     const [selectedSpecialtyFilter, setSelectedSpecialtyFilter] = useState('');
     const [selectedStudentStatusFilter, setSelectedStudentStatusFilter] = useState('');
     const [sortConfig, setSortConfig] = useState({ key: null, direction: null });
 
     // Загружаем данные при монтировании компонента
     useEffect(() => {
-        // Проверяем, не загружены ли уже данные
         if (dataLoadedRef.current) {
             return;
         }
@@ -51,9 +47,7 @@ export const useAdminLogic = (data, user) => {
                     data.fetchAll('groups'),
                     data.fetchAll('students'),
                     data.fetchAll('specialties'),
-                    data.fetchAll('teachers'),
-                    data.fetchAll('documents'),
-                    data.fetchAll('requests')
+                    data.fetchAll('teachers')
                 ]);
             } catch (err) {
                 setError('Ошибка загрузки данных');
@@ -65,7 +59,7 @@ export const useAdminLogic = (data, user) => {
 
         loadAllData();
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []); // Пустой массив зависимостей - выполняется только при монтировании
+    }, []);
 
     // Загрузка данных для текущей вкладки
     const loadTableData = useCallback(async (tableName, searchParams = {}) => {
@@ -80,7 +74,7 @@ export const useAdminLogic = (data, user) => {
         }
     }, [data]);
 
-    // Функция для обновления поискового термина (клиентская фильтрация для всех таблиц)
+    // Функция для обновления поискового термина
     const handleSearch = useCallback((searchValue) => {
         setSearchTerm(searchValue);
         setCurrentPage(1);
@@ -88,25 +82,13 @@ export const useAdminLogic = (data, user) => {
 
     const handleStudentSearch = handleSearch;
 
-    // Функция для обновления фильтра группы (клиентская фильтрация)
+    // Функция для обновления фильтра группы
     const handleGroupFilterChange = useCallback((groupId) => {
         setSelectedGroupFilter(groupId);
         setCurrentPage(1);
     }, []);
 
-    // Функция для обновления фильтра роли (клиентская фильтрация)
-    const handleRoleFilterChange = useCallback((role) => {
-        setSelectedRoleFilter(role);
-        setCurrentPage(1);
-    }, []);
-
-    // Функция для обновления фильтра статуса (клиентская фильтрация)
-    const handleStatusFilterChange = useCallback((status) => {
-        setSelectedStatusFilter(status);
-        setCurrentPage(1);
-    }, []);
-
-    // Функция для обновления фильтра специальности (клиентская фильтрация)
+    // Функция для обновления фильтра специальности
     const handleSpecialtyFilterChange = useCallback((specialtyId) => {
         setSelectedSpecialtyFilter(specialtyId);
         setCurrentPage(1);
@@ -134,46 +116,6 @@ export const useAdminLogic = (data, user) => {
         setCurrentPage(1);
     }, []);
 
-    // Функция для изменения статуса заявки. Возвращает признак успеха:
-    // карточка по нему решает, стоит ли себя свернуть — при откате статуса
-    // заявка остаётся открытой, чтобы не прятать её от админа
-    const handleRequestStatusChange = useCallback(async (requestId, newStatus) => {
-        setError(null);
-        setSuccess(null);
-
-        const request = data.requests.find(r => r.id === requestId);
-        if (!request) {
-            setError('Заявка не найдена');
-            return false;
-        }
-
-        data.updateLocal('requests', requestId, { status: newStatus });
-
-        try {
-            await data.update('requests', requestId, {
-                documentId: request.documentId,
-                description: request.description,
-                studentIds: request.students?.map(s => s.id) || [],
-                status: newStatus
-            }, { silent: true });
-
-            data.fetchAll('notifications').catch(() => {});
-
-            const msg = `Статус заявки #${requestId} изменен на "${statusLabel(newStatus)}"`;
-            setSuccess(msg);
-            notify({
-                title: 'Статус заявки',
-                message: msg,
-                variant: 'success'
-            });
-            return true;
-        } catch (err) {
-            data.updateLocal('requests', requestId, { status: request.status });
-            setError(errorMessage(err, 'Ошибка изменения статуса'));
-            return false;
-        }
-    }, [data]);
-
     // Открытие модальных окон
     const handleCreate = () => {
         setModalType('create');
@@ -186,14 +128,7 @@ export const useAdminLogic = (data, user) => {
         setModalType('edit');
         setCurrentItem(item);
         
-        // Специальная обработка для заявок - преобразуем students в studentIds
-        if (activeTab === 'requests' && item.students) {
-            const formDataWithIds = {
-                ...item,
-                studentIds: item.students.map(student => student.id.toString())
-            };
-            setFormData(formDataWithIds);
-        } else if (activeTab === 'groups') {
+        if (activeTab === 'groups') {
             setFormData(toGroupFormData(item));
         } else if (activeTab === 'students') {
             setFormData(toStudentFormData(item));
@@ -224,32 +159,14 @@ export const useAdminLogic = (data, user) => {
         setSuccess(null);
 
         try {
-            // Подготавливаем данные для отправки
             const submitData = prepareFormData(formData, activeTab);
-
-            // Валидация для заявок - проверяем наличие студентов (только для create и edit)
-            if (activeTab === 'requests' && modalType !== 'delete') {
-                if (!submitData.studentIds || submitData.studentIds.length === 0) {
-                    setError('Необходимо выбрать хотя бы одного студента');
-                    setLoading(false);
-                    return;
-                }
-            }
 
             let actionMsg = 'Операция выполнена успешно';
             if (modalType === 'create') {
                 await data.create(activeTab, submitData);
-                // Перезагружаем заявки после создания, чтобы получить полные данные
-                if (activeTab === 'requests') {
-                    await data.fetchAll('requests');
-                }
                 actionMsg = 'Запись успешно создана';
             } else if (modalType === 'edit') {
                 await data.update(activeTab, currentItem.id, submitData);
-                // Перезагружаем заявки после обновления
-                if (activeTab === 'requests') {
-                    await data.fetchAll('requests');
-                }
                 actionMsg = 'Запись успешно обновлена';
             } else if (modalType === 'delete') {
                 await data.delete(activeTab, currentItem.id);
@@ -278,8 +195,6 @@ export const useAdminLogic = (data, user) => {
         setCurrentPage(1);
         setSearchTerm('');
         setSelectedGroupFilter('');
-        setSelectedRoleFilter('');
-        setSelectedStatusFilter('');
         setSelectedSpecialtyFilter('');
         setSelectedStudentStatusFilter('');
         setSortConfig({ key: null, direction: null });
@@ -299,8 +214,6 @@ export const useAdminLogic = (data, user) => {
         searchTerm,
         activeTab,
         selectedGroupFilter,
-        selectedRoleFilter,
-        selectedStatusFilter,
         selectedSpecialtyFilter,
         selectedStudentStatusFilter
     );
@@ -344,8 +257,6 @@ export const useAdminLogic = (data, user) => {
         itemsPerPage,
         searchTerm,
         selectedGroupFilter,
-        selectedRoleFilter,
-        selectedStatusFilter,
         selectedSpecialtyFilter,
         selectedStudentStatusFilter,
         currentItems,
@@ -371,11 +282,8 @@ export const useAdminLogic = (data, user) => {
         handleSearch,
         handleStudentSearch,
         handleGroupFilterChange,
-        handleRoleFilterChange,
-        handleStatusFilterChange,
         handleSpecialtyFilterChange,
         handleStudentStatusFilterChange,
-        handleRequestStatusChange,
         loadTableData,
         getNameByIdWithData,
         sortConfig,

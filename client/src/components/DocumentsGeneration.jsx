@@ -11,6 +11,7 @@ import TransferOrderModal from './TransferOrderModal';
 import DuplicateTicketOrderModal from './DuplicateTicketOrderModal';
 import EnrollmentOrderModal from './EnrollmentOrderModal';
 import ReleaseOrderModal from './ReleaseOrderModal';
+import StudyCertificateModal from './StudyCertificateModal';
 
 const DOCUMENT_CATEGORIES = [
     {
@@ -40,6 +41,15 @@ const DOCUMENT_CATEGORIES = [
             { id: 'practice-contract', title: 'Договор на учебную практику', icon: 'bi-briefcase', available: true },
         ]
     },
+    {
+        id: 'certificates',
+        title: 'Справки',
+        icon: 'bi-file-earmark-person',
+        color: 'success',
+        documents: [
+            { id: 'study-certificate', title: 'Справка об обучении', icon: 'bi-file-earmark-text', available: true },
+        ]
+    },
 ];
 
 const MODAL_MAP = {
@@ -54,6 +64,7 @@ const MODAL_MAP = {
     'duplicate-ticket': DuplicateTicketOrderModal,
     'enrollment': EnrollmentOrderModal,
     'release': ReleaseOrderModal,
+    'study-certificate': StudyCertificateModal,
 };
 
 const DocumentCard = ({ doc, onGenerate }) => (
@@ -100,6 +111,7 @@ const DocumentsGeneration = () => {
         if (docId === 'duplicate-ticket') setActiveDocType(docId);
         if (docId === 'enrollment') setActiveDocType(docId);
         if (docId === 'release') setActiveDocType(docId);
+        if (docId === 'study-certificate') setActiveDocType(docId);
     };
 
     const visibleCategories = activeCategory === 'all'

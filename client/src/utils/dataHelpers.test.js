@@ -40,35 +40,6 @@ test('без даты зачисления курс неизвестен', () =>
   expect(calculateCourse('', 4, 0, september)).toBe('-')
 })
 
-test('одиночный id приходит массивом чисел', () => {
-  expect(prepareFormData({ studentIds: '7' }, 'requests').studentIds).toEqual([7])
-})
-
-test('массив строк не схлопывается в первый элемент', () => {
-  expect(prepareFormData({ studentIds: ['7', '8'] }, 'requests').studentIds).toEqual([7, 8])
-})
-
-test('пустой массив не превращается в [NaN]', () => {
-  expect(prepareFormData({ studentIds: [] }, 'requests').studentIds).toEqual([])
-})
-
-test('documentId приводится к числу', () => {
-  expect(prepareFormData({ studentIds: ['7'], documentId: '3' }, 'requests').documentId).toBe(3)
-})
-
-test('пустой documentId превращается в null', () => {
-  expect(prepareFormData({ studentIds: ['7'], documentId: '' }, 'requests').documentId).toBeNull()
-  expect(prepareFormData({ studentIds: ['7'], documentId: null }, 'requests').documentId).toBeNull()
-})
-
-test('для остальных вкладок studentIds не трогается', () => {
-  expect(prepareFormData({ studentIds: '7' }, 'students').studentIds).toBe('7')
-})
-
-test('userId приводится к числу или null', () => {
-  expect(prepareFormData({ userId: '4' }, 'students').userId).toBe(4)
-  expect(prepareFormData({ userId: '' }, 'teachers').userId).toBeNull()
-})
 test('teacherId группы приводится к числу', () => {
   expect(prepareFormData({ teacherId: '4' }, 'groups').teacherId).toBe(4)
 })
@@ -138,12 +109,12 @@ test('filterData фильтрует студентов по статусу (acti
     { id: 2, last_name: 'Петров', expell_date: '2025-04-30' },
     { id: 3, last_name: 'Сидоров', expell_date: '' }
   ]
-  const activeOnly = filterData(students, '', 'students', '', '', '', '', 'active')
+  const activeOnly = filterData(students, '', 'students', '', '', 'active')
   expect(activeOnly.map(s => s.id)).toEqual([1, 3])
 
-  const expelledOnly = filterData(students, '', 'students', '', '', '', '', 'expelled')
+  const expelledOnly = filterData(students, '', 'students', '', '', 'expelled')
   expect(expelledOnly.map(s => s.id)).toEqual([2])
 
-  const all = filterData(students, '', 'students', '', '', '', '', '')
+  const all = filterData(students, '', 'students', '', '', '')
   expect(all.map(s => s.id)).toEqual([1, 2, 3])
 })

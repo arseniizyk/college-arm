@@ -29,12 +29,6 @@ const App = () => {
                 if (token) {
                     const userData = await check()
                     user.login(userData)
-                    // Загружаем уведомления после успешной проверки токена
-                    try {
-                        await data.fetchAll('notifications')
-                    } catch (err) {
-                        console.error('Ошибка загрузки уведомлений:', err)
-                    }
                 } else {
                     user.logout()
                     data.reset()
