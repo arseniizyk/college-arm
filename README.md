@@ -54,13 +54,52 @@ docker compose down -v
 SERVER_UID=$(id -u) SERVER_GID=$(id -g) docker compose up -d
 ```
 
-## Тестовые данные
+## Заполнение базы данных
 
-Скрипт `server/seed.js` создаёт специальности, группы, кураторов, студентов и
-аккаунт администратора `ADMIN`.
+Предусмотрено два способа заполнения базы данных:
+1. **Импорт реальных данных из `.docx`** (скрипт `server/scripts/importDocxStudents.js`) — парсит учебные группы, специальности, квалификации, кураторов и учащихся (включая приказы, отчисления и целевиков) напрямую из файла документа.
+2. **Генератор синтетических тестовых данных** (скрипт `server/seed.js`) — создает псевдослучайный набор специальностей, групп и студентов.
 
+---
+
+### Вариант 1. Импорт реальных данных из `students.docx`
+
+Скрипт написан на чистом Node.js (без сторонних зависимостей и без Python) и автоматически создает учетную запись администратора.
+
+#### Локально:
+```bash
+cd server && node scripts/importDocxStudents.js ../students.docx --force
+# или через npm script
+cd server && npm run import:students -- ../students.docx --force
+```
+
+#### В Docker-контейнере:
+```bash
+# 1. Скопировать файл со студентами в работающий контейнер
+docker cp students.docx college-arm-server:/app/students.docx
+
+# 2. Выполнить импорт
+docker compose exec server node scripts/importDocxStudents.js students.docx --force
+```
+
+| Опция | Описание |
+|---|---|
+| `--force` | Полная очистка существующих таблиц перед импортом |
+| `--admin-email=<email>` | Email создаваемого администратора (по умолчанию `admin@test.ru`) |
+| `--admin-password=<password>` | Пароль администратора (по умолчанию `password123`) |
+
+---
+
+### Вариант 2. Генератор синтетических тестовых данных
+
+#### В Docker-контейнере:
 ```bash
 docker compose exec server node seed.js --force
+```
+
+#### Локально:
+```bash
+cd server && node seed.js --force
 ```
 
 | Команда | Что делает |
@@ -71,7 +110,7 @@ docker compose exec server node seed.js --force
 | `node seed.js --students=200 --groups=20` | Свой объём данных |
 | `node seed.js --seed=42` | Другой набор псевдослучайных данных (по умолчанию `20260930`) |
 
-Без флагов скрипт ничего не удаляет. Логин и пароль созданного администратора —
+Без флагов скрипт ничего не удаляет. Логин и пароль администратора по умолчанию —
 `admin@test.ru` / `password123`.
 
 ## Миграции
