@@ -2,13 +2,13 @@ require('dotenv').config()
 
 const fs = require('fs')
 const path = require('path')
-const { spawnSync } = require('child_process')
 const bcrypt = require('bcrypt')
 const sequelize = require('../db')
 const {
     User, Student, Teacher, Supervisor, Group, Specialty
 } = require('../models/models')
 const { isSameEmail } = require('../utils/userEmail')
+const { extractDocxGroups } = require('./parseDocx')
 
 // Разбор аргументов командной строки:
 // node scripts/importDocxStudents.js [путь_к_docx] [--force] [--admin-email=admin@test.ru] [--admin-password=pass]
@@ -67,23 +67,8 @@ async function main() {
 
     console.log(`Запуск импорта из файла: ${docxPath}`)
 
-    // 1. Вызов Python-парсера
-    const pythonScript = path.join(__dirname, 'parseDocx.py')
-    let py = null
-    for (const cmd of ['python3', 'python', 'py']) {
-        const res = spawnSync(cmd, [pythonScript, docxPath], { encoding: 'utf-8', maxBuffer: 50 * 1024 * 1024, env: { ...process.env, PYTHONIOENCODING: 'utf-8' } })
-        if (!res.error && res.status === 0) {
-            py = res
-            break
-        }
-    }
-
-    if (!py || py.error || py.status !== 0) {
-        console.error('Ошибка выполнения Python-парсера:', py ? (py.stderr || py.error) : 'Python не найден')
-        process.exit(1)
-    }
-
-    const groupsData = JSON.parse(py.stdout)
+    // 1. Парсинг docx-файла
+    const groupsData = extractDocxGroups(docxPath)
     console.log(`✓ Успешно распарсено групп: ${groupsData.length}`)
 
     await sequelize.authenticate()
