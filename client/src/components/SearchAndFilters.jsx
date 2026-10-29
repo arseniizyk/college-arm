@@ -1,7 +1,6 @@
 import React from 'react';
 import { InputGroup, FormControl, Form, Badge } from 'react-bootstrap';
 import { MISSING_SPECIALTY_FILTER, MISSING_SPECIALTY_LABEL } from '../utils/dataHelpers';
-import { STATUS_KEYS, statusLabel } from '../utils/requestStatus';
 
 const SearchAndFilters = ({
     searchTerm,
@@ -12,10 +11,6 @@ const SearchAndFilters = ({
     groups,
     selectedStudentStatusFilter,
     onStudentStatusFilterChange,
-    selectedRoleFilter,
-    onRoleFilterChange,
-    selectedStatusFilter,
-    onStatusFilterChange,
     selectedSpecialtyFilter,
     onSpecialtyFilterChange,
     specialties,
@@ -31,22 +26,17 @@ const SearchAndFilters = ({
                 return 'Поиск по ФИО...';
             case 'users':
                 return 'Поиск по email...';
-            case 'documents':
-                return 'Поиск по названию...';
             case 'groups':
                 return 'Поиск по номеру группы...';
             case 'specialties':
                 return 'Поиск по названию...';
-            case 'requests':
-                return 'Поиск по описанию...';
             default:
                 return 'Поиск...';
         }
     };
 
     // Определяем нужны ли фильтры для текущей таблицы
-    const hasFilters = tableType === 'students' || tableType === 'users' || 
-                       tableType === 'requests' || tableType === 'groups';
+    const hasFilters = tableType === 'students' || tableType === 'groups';
 
     return (
         <div className="row g-3 align-items-center justify-content-between mb-4 search-and-filters-container">
@@ -107,46 +97,6 @@ const SearchAndFilters = ({
                         </div>
                     )}
 
-                    {/* Фильтр по ролям (для пользователей) */}
-                    {tableType === 'users' && (
-                        <div className="col-12 col-sm-6 col-md-5 role-filter">
-                            <InputGroup>
-                                <InputGroup.Text>
-                                    <i className="bi-person-badge"></i>
-                                </InputGroup.Text>
-                                <Form.Select
-                                    value={selectedRoleFilter || ''}
-                                    onChange={(e) => onRoleFilterChange && onRoleFilterChange(e.target.value)}
-                                >
-                                    <option value="">Все роли</option>
-                                    <option value="USER">Пользователь</option>
-                                    <option value="TEACHER">Преподаватель</option>
-                                    <option value="ADMIN">Администратор</option>
-                                </Form.Select>
-                            </InputGroup>
-                        </div>
-                    )}
-
-                    {/* Фильтр по статусам (для заявок) */}
-                    {tableType === 'requests' && (
-                        <div className="col-12 col-sm-6 col-md-5 status-filter">
-                            <InputGroup>
-                                <InputGroup.Text>
-                                    <i className="bi-flag"></i>
-                                </InputGroup.Text>
-                                <Form.Select
-                                    value={selectedStatusFilter || ''}
-                                    onChange={(e) => onStatusFilterChange && onStatusFilterChange(e.target.value)}
-                                >
-                                    <option value="">Все статусы</option>
-                                    {STATUS_KEYS.map(key => (
-                                        <option key={key} value={key}>{statusLabel(key)}</option>
-                                    ))}
-                                </Form.Select>
-                            </InputGroup>
-                        </div>
-                    )}
-
                     {/* Фильтр по специальностям (для групп) */}
                     {tableType === 'groups' && specialties && (
                         <div className="col-12 col-sm-6 col-md-5 specialty-filter">
@@ -164,8 +114,7 @@ const SearchAndFilters = ({
                                             {spec.name}
                                         </option>
                                     ))}
-                                    {/* Группы с удалённой специальностью (specialtyId = null)
-                                        иначе не попадают ни под один фильтр и пропадают из таблицы */}
+                                    {/* Группы с удалённой специальностью (specialtyId = null) */}
                                     <option value={MISSING_SPECIALTY_FILTER}>
                                         {MISSING_SPECIALTY_LABEL}
                                     </option>

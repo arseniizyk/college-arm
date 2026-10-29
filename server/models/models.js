@@ -29,8 +29,7 @@ const Student = sequelize.define('student', {
     order_number: { type: DataTypes.STRING, allowNull: false },
     enroll_date: { type: DataTypes.DATE, allowNull: false },
     expell_date: { type: DataTypes.DATE },
-    expell_reason: { type: DataTypes.TEXT },
-    userId: { type: DataTypes.INTEGER, allowNull: true }
+    expell_reason: { type: DataTypes.TEXT }
 })
  
 // Куратор принадлежит группе, поэтому запись на группу одна: unique выражает
@@ -45,36 +44,14 @@ const Teacher = sequelize.define('teacher', {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     last_name: { type: DataTypes.STRING, allowNull: false },
     name: { type: DataTypes.STRING, allowNull: false },
-    father_name: { type: DataTypes.STRING, allowNull: true, defaultValue: '' },
-    userId: { type: DataTypes.INTEGER, allowNull: true }
-})
-
-const Request = sequelize.define('request', {
-    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-    status: {
-        type: DataTypes.ENUM,
-        values: ['pending', 'completed', 'cancelled'],
-        defaultValue: 'pending',
-        allowNull: false
-    },
-    description: { type: DataTypes.STRING },
-    isViewed: { type: DataTypes.BOOLEAN, defaultValue: false }
-})
-
-const Document = sequelize.define('document', {
-    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-    document_name: { type: DataTypes.STRING, allowNull: false },
-})
-
-const StudentRequest = sequelize.define('student_request', {
-    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true }
+    father_name: { type: DataTypes.STRING, allowNull: true, defaultValue: '' }
 })
 
 const User = sequelize.define('user', {
     id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
     email: { type: DataTypes.STRING, allowNull: false },
     password: { type: DataTypes.STRING, allowNull: false },
-    role: { type: DataTypes.STRING, defaultValue: "USER", allowNull: false }
+    role: { type: DataTypes.STRING, defaultValue: "ADMIN", allowNull: false }
 }, {
     defaultScope: { attributes: { exclude: ['password'] } },
     // Логин нечувствителен к регистру, поэтому уникальность функциональная.
@@ -87,22 +64,6 @@ const User = sequelize.define('user', {
 const USER_WITH_PASSWORD = 'withPassword'
 User.addScope(USER_WITH_PASSWORD, { attributes: { include: ['password'] } })
 
-const Notification = sequelize.define('notification', {
-    id: { type: DataTypes.INTEGER, primaryKey: true, autoIncrement: true },
-    title: { type: DataTypes.STRING, allowNull: false },
-    body: { type: DataTypes.STRING },
-    requestId: { type: DataTypes.INTEGER },
-    isRead: { type: DataTypes.BOOLEAN, defaultValue: false }
-}, {
-    indexes: [{ name: 'notifications_requestId_idx', fields: ['requestId'] }]
-})
-
-// Уведомление ссылается на заявку, но без ассоциации колонка оставалась
-// просто INTEGER — без внешнего ключа и без индекса. FK создаёт миграция 007.
-Request.hasMany(Notification)
-Notification.belongsTo(Request) 
-
-
 Specialty.hasMany(Group)
 Group.belongsTo(Specialty)
 
@@ -112,38 +73,15 @@ Supervisor.belongsTo(Group)
 Group.hasMany(Student)
 Student.belongsTo(Group)
 
-User.hasOne(Student)
-Student.belongsTo(User)
-
-User.hasOne(Teacher)
-Teacher.belongsTo(User)
-
 Teacher.hasOne(Supervisor)
 Supervisor.belongsTo(Teacher)
-
-Document.hasMany(Request)
-Request.belongsTo(Document)
-
-User.hasMany(Request)
-Request.belongsTo(User)
-
-User.hasMany(Notification)
-Notification.belongsTo(User)
-
-Student.belongsToMany(Request, { through: StudentRequest })
-Request.belongsToMany(Student, { through: StudentRequest })
-
 
 module.exports = {
     Specialty,
     Group,
     Supervisor,
     Teacher,
-    Document,
-    Request,
     Student,
-    StudentRequest,
     User,
-    Notification,
     USER_WITH_PASSWORD
 }

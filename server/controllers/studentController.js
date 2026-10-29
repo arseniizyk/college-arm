@@ -1,17 +1,12 @@
-const { Student, Group, Specialty, User, Supervisor, Teacher } = require('../models/models')
+const { Student, Group, Specialty, User } = require('../models/models')
 const ApiError = require('../error/ApiError')
 const { Op } = require('sequelize')
 const sequelize = require('../db')
-const { resolveUserId } = require('../utils/resolveUserId')
-
-// Привязка аккаунта к студенту: аккаунт должен существовать и не быть занятым другим студентом
-const resolveStudentUserId = (rawValue, excludeStudentId = null) =>
-    resolveUserId(rawValue, { ownerModel: Student, ownerName: 'студенту', excludeOwnerId: excludeStudentId });
 
 class StudentController {
     async create(req, res, next) {
         try {
-            const { last_name, name, father_name, order_number, enroll_date, groupId, expell_date, expell_reason, userId } = req.body
+            const { last_name, name, father_name, order_number, enroll_date, groupId, expell_date, expell_reason } = req.body
             
             // Валидация обязательных полей
             if (!last_name || !name || !order_number || !enroll_date || !groupId) {
@@ -38,11 +33,6 @@ class StudentController {
                 return next(ApiError.badRequest('Указанная группа не существует'));
             }
 
-            const resolvedUser = await resolveStudentUserId(userId);
-            if (resolvedUser.error) {
-                return next(resolvedUser.error);
-            }
-
             const student = await Student.create({ 
                 last_name, 
                 name, 
@@ -51,8 +41,7 @@ class StudentController {
                 enroll_date: enrollDateObj, 
                 groupId, 
                 expell_date: expell_date ? new Date(expell_date) : null,
-                expell_reason: expell_reason || null,
-                userId: resolvedUser.value
+                expell_reason: expell_reason || null
             })
 
             res.json(student)
@@ -64,7 +53,7 @@ class StudentController {
     async update(req, res, next) {
         try {
             const { id } = req.params;
-            const { last_name, name, father_name, order_number, enroll_date, groupId, expell_date, expell_reason, userId } = req.body;
+            const { last_name, name, father_name, order_number, enroll_date, groupId, expell_date, expell_reason } = req.body;
             
             if (!id) {
                 return next(ApiError.badRequest('Не указан ID студента'));
@@ -116,13 +105,6 @@ class StudentController {
             if (expell_reason !== undefined) {
                 updateData.expell_reason = expell_reason || null;
             }
-            if (userId !== undefined) {
-                const resolvedUser = await resolveStudentUserId(userId, id);
-                if (resolvedUser.error) {
-                    return next(resolvedUser.error);
-                }
-                updateData.userId = resolvedUser.value;
-            }
             
             await student.update(updateData);
             
@@ -143,23 +125,12 @@ class StudentController {
                 return next(ApiError.unauthorized('Пользователь не авторизован'));
             }
 
+            if (user.role !== 'ADMIN') {
+                return next(ApiError.forbiddenRequest('Нет доступа'));
+            }
+
             const { groupId, groupNumber, search, limit, offset, status } = req.query;
 
-            const sendEmpty = () => {
-                const emptyResponse = {
-                    students: [],
-                    ...( (limit || offset) && {
-                        pagination: {
-                            total: 0,
-                            limit: limit ? parseInt(limit, 10) : null,
-                            offset: offset ? parseInt(offset, 10) : 0,
-                            hasMore: false
-                        }
-                    })
-                };
-                return res.json(emptyResponse);
-            };
-            
             // Базовые опции запроса
             const queryOptions = {
                 include: [
@@ -191,46 +162,8 @@ class StudentController {
                 whereConditions.expell_date = { [Op.ne]: null };
             }
 
-            // Ограничение по роли из БД:
-            // ADMIN: доступ ко всем студентам
-            // TEACHER: только студенты групп, куратором которых является преподаватель
-            // USER: только студент, привязанный к аккаунту
-            if (user.role === 'TEACHER') {
-                const teacher = await Teacher.findOne({ where: { userId: user.id }, attributes: ['id'] });
-                if (!teacher) {
-                    return sendEmpty();
-                }
-                const supervisors = await Supervisor.findAll({
-                    where: { teacherId: teacher.id },
-                    attributes: ['groupId']
-                });
-                const groupIds = supervisors.map(s => s.groupId).filter(Boolean);
-                if (groupIds.length === 0) {
-                    return sendEmpty();
-                }
-
-                if (groupId) {
-                    const parsedGroupId = parseInt(groupId, 10);
-                    if (!groupIds.includes(parsedGroupId)) {
-                        return sendEmpty();
-                    }
-                    whereConditions.groupId = parsedGroupId;
-                } else {
-                    whereConditions.groupId = { [Op.in]: groupIds };
-                }
-            } else if (user.role !== 'ADMIN') {
-                const student = await Student.findOne({ where: { userId: user.id }, attributes: ['id', 'groupId'] });
-                if (!student) {
-                    return sendEmpty();
-                }
-                if (groupId && parseInt(groupId, 10) !== student.groupId) {
-                    return sendEmpty();
-                }
-                whereConditions.id = student.id;
-            } else {
-                if (groupId) {
-                    whereConditions.groupId = parseInt(groupId, 10);
-                }
+            if (groupId) {
+                whereConditions.groupId = parseInt(groupId, 10);
             }
 
             // Поиск по номеру группы

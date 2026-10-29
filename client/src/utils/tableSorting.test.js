@@ -100,26 +100,6 @@ describe('tableSorting', () => {
             expect(sorted.map(s => s.id)).toEqual([1, 2, 3]);
         });
 
-        it('disables custom sorting for documents and maintains default id sort', () => {
-            const docs = [
-                { id: 3, document_name: 'Б' },
-                { id: 1, document_name: 'В' },
-                { id: 2, document_name: 'А' }
-            ];
-            const sorted = sortTableData(docs, { key: 'document_name', direction: 'asc' }, 'documents');
-            expect(sorted.map(d => d.id)).toEqual([1, 2, 3]);
-        });
-
-        it('handles requests default sort by newest createdAt first', () => {
-            const requests = [
-                { id: 1, createdAt: '2026-01-01T00:00:00.000Z' },
-                { id: 2, createdAt: '2026-03-01T00:00:00.000Z' },
-                { id: 3, createdAt: '2026-02-01T00:00:00.000Z' }
-            ];
-            const sorted = sortTableData(requests, null, 'requests');
-            expect(sorted.map(r => r.id)).toEqual([2, 3, 1]);
-        });
-
         it('places expelled students at the end in students default sort', () => {
             const students = [
                 { id: 1, last_name: 'Яковлев', expell_date: '2025-04-30' },

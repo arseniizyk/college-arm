@@ -5,7 +5,6 @@ const ApiError = require('../error/ApiError')
 const teacherController = require('./teacherController')
 const userController = require('./userController')
 const studentController = require('./studentController')
-const requestController = require('./requestController')
 const { User, Teacher, Student, Supervisor, Group } = require('../models/models')
 
 test('teacherController.delete блокирует удаление, если s.group.group_number заполнен', async () => {
@@ -70,7 +69,7 @@ test('userController.login отдаёт одинаковую ошибку 400 «
                 id: 1,
                 email: 'known@test.com',
                 password: hash,
-                role: 'USER'
+                role: 'ADMIN'
             })
         })
 
@@ -90,105 +89,61 @@ test('userController.login отдаёт одинаковую ошибку 400 «
     }
 })
 
-test('requestController проверяет актуальную роль из БД, а не доверяет токену с ролью ADMIN', async () => {
+test('userController.login блокирует вход пользователю без роли ADMIN с 403', async () => {
+    const origFindOne = User.findOne
+    const origScope = User.scope
+
+    try {
+        const hash = await bcrypt.hash('correctPassword', 5)
+        User.scope = () => ({
+            findOne: async () => ({
+                id: 2,
+                email: 'user@test.com',
+                password: hash,
+                role: 'USER'
+            })
+        })
+
+        let err = null
+        await userController.login(
+            { body: { email: 'user@test.com', password: 'correctPassword' } },
+            {},
+            (e) => { err = e }
+        )
+
+        assert.ok(err instanceof ApiError)
+        assert.strictEqual(err.status, 403)
+        assert.strictEqual(err.message, 'Доступ разрешен только администраторам')
+    } finally {
+        User.findOne = origFindOne
+        User.scope = origScope
+    }
+})
+
+test('studentController.get запрещает доступ пользователям без роли ADMIN с 403', async () => {
     const origUserFindByPk = User.findByPk
 
     try {
-        // В БД у пользователя роль USER (был понижен), хотя в токене req.user.role мог быть ADMIN
-        User.findByPk = async (id) => ({
-            id: Number(id),
-            email: 'downgraded@test.com',
+        User.findByPk = async () => ({
+            id: 2,
             role: 'USER'
         })
 
         let err = null
         const req = {
-            user: { id: 5, role: 'ADMIN' }, // устаревший токен со старой ролью
+            user: { id: 2, role: 'USER' },
             query: {}
         }
         const res = { json: () => {} }
         const next = (e) => { err = e }
 
-        await requestController.get(req, res, next)
+        await studentController.get(req, res, next)
 
         assert.ok(err instanceof ApiError)
         assert.strictEqual(err.status, 403)
         assert.strictEqual(err.message, 'Нет доступа')
     } finally {
         User.findByPk = origUserFindByPk
-    }
-})
-
-test('studentController.get фильтрует студентов по роли из БД: преподаватель видит только свои группы', async () => {
-    const origUserFindByPk = User.findByPk
-    const origTeacherFindOne = Teacher.findOne
-    const origSupervisorFindAll = Supervisor.findAll
-    const origStudentFindAll = Student.findAll
-
-    try {
-        User.findByPk = async () => ({
-            id: 2,
-            role: 'TEACHER'
-        })
-        Teacher.findOne = async () => ({ id: 7 })
-        Supervisor.findAll = async () => [{ groupId: 101 }, { groupId: 102 }]
-
-        let capturedQueryOptions = null
-        Student.findAll = async (options) => {
-            capturedQueryOptions = options
-            return [{ id: 1, name: 'Студент', groupId: 101 }]
-        }
-
-        let sentData = null
-        const req = {
-            user: { id: 2, role: 'TEACHER' },
-            query: {}
-        }
-        const res = {
-            json: (data) => { sentData = data }
-        }
-        const next = () => {}
-
-        await studentController.get(req, res, next)
-
-        assert.ok(capturedQueryOptions)
-        assert.deepStrictEqual(capturedQueryOptions.where.groupId, { [require('sequelize').Op.in]: [101, 102] })
-        assert.strictEqual(sentData.students.length, 1)
-    } finally {
-        User.findByPk = origUserFindByPk
-        Teacher.findOne = origTeacherFindOne
-        Supervisor.findAll = origSupervisorFindAll
-        Student.findAll = origStudentFindAll
-    }
-})
-
-test('studentController.get возвращает пустой список для пользователя без привязанного студента', async () => {
-    const origUserFindByPk = User.findByPk
-    const origStudentFindOne = Student.findOne
-
-    try {
-        User.findByPk = async () => ({
-            id: 3,
-            role: 'USER'
-        })
-        Student.findOne = async () => null // не привязан к студенту
-
-        let sentData = null
-        const req = {
-            user: { id: 3, role: 'USER' },
-            query: {}
-        }
-        const res = {
-            json: (data) => { sentData = data }
-        }
-        const next = () => {}
-
-        await studentController.get(req, res, next)
-
-        assert.deepStrictEqual(sentData, { students: [] })
-    } finally {
-        User.findByPk = origUserFindByPk
-        Student.findOne = origStudentFindOne
     }
 })
 
@@ -250,4 +205,3 @@ test('groupController.create и update выполняют запись внут�
         Supervisor.create = origSupervisorCreate
     }
 })
-

@@ -70,7 +70,7 @@ export const formatDuration = (years, months) => {
 };
 
 // Функции для получения данных для выпадающих списков
-export const getDropdownOptions = (fieldName, data, excludeOwnerId = null) => {
+export const getDropdownOptions = (fieldName, data) => {
     switch (fieldName) {
         case 'groupId':
             // Для студентов: показываем номер группы
@@ -89,42 +89,6 @@ export const getDropdownOptions = (fieldName, data, excludeOwnerId = null) => {
             return (data.teachers || []).map(teacher => ({
                 value: teacher.id,
                 label: formatFio(teacher)
-            }));
-        case 'userId':
-            // Для заявок: показываем email пользователя
-            return (data.users || []).map(user => ({
-                value: user.id,
-                label: `${user.email} (${user.role})`
-            }));
-        case 'studentUserId':
-            // Для карточки студента: аккаунты, ещё не привязанные к другому студенту.
-            // excludeOwnerId нужен при редактировании, чтобы не терять текущую привязку
-            return (data.users || [])
-                .filter(user => !data.students?.some(s => s.userId === user.id && s.id !== excludeOwnerId))
-                .map(user => ({
-                    value: user.id,
-                    label: `${user.email} (${user.role})`
-                }));
-        case 'teacherUserId':
-            // Для карточки куратора: аккаунты, ещё не привязанные к другому преподавателю
-            return (data.users || [])
-                .filter(user => !data.teachers?.some(t => t.userId === user.id && t.id !== excludeOwnerId))
-                .map(user => ({
-                    value: user.id,
-                    label: `${user.email} (${user.role})`
-                }));
-        case 'documentId':
-            // Для заявок: показываем название документа
-            return (data.documents || []).map(doc => ({
-                value: doc.id,
-                label: doc.document_name
-            }));
-        case 'studentIds':
-            // Для заявок: показываем ФИО студентов с группой
-            return (data.students || []).map(student => ({
-                value: student.id,
-                label: formatFio(student) +
-                       (student.groupId ? ` (${getNameById('groupId', student.groupId, data)})` : '')
             }));
         default:
             return [];
@@ -153,12 +117,6 @@ export const getNameById = (fieldName, id, data) => {
         case 'teacherId':
             const teacher = (data.teachers || []).find(t => t.id === id);
             return teacher ? formatFio(teacher) : `ID: ${id}`;
-        case 'userId':
-            const user = (data.users || []).find(u => u.id === id);
-            return user ? `${user.email}` : `ID: ${id}`;
-        case 'documentId':
-            const doc = (data.documents || []).find(d => d.id === id);
-            return doc ? doc.document_name : `ID: ${id}`;
         default:
             return id;
     }
@@ -170,10 +128,6 @@ export const getTableData = (activeTab, data) => {
         let result;
         switch (activeTab) {
             case 'users': result = data.users || [];
-                break;
-            case 'documents': result = data.documents || [];
-                break;
-            case 'requests': result = data.requests || [];
                 break;
             case 'students': 
                 // Используем allStudents для полного списка без серверной фильтрации
@@ -200,14 +154,11 @@ export const filterData = (
     searchTerm, 
     activeTab, 
     selectedGroupFilter = '', 
-    selectedRoleFilter = '',
-    selectedStatusFilter = '',
     selectedSpecialtyFilter = '',
     selectedStudentStatusFilter = ''
 ) => {
     let filteredData = tableData;
 
-    // Фильтрация по специфичным фильтрам для каждой таблицы
     switch (activeTab) {
         case 'students':
             // Фильтрация по группе
@@ -235,35 +186,11 @@ export const filterData = (
             break;
 
         case 'users':
-            // Фильтрация по роли
-            if (selectedRoleFilter && selectedRoleFilter !== '') {
-                filteredData = filteredData.filter(user => 
-                    user.role === selectedRoleFilter
-                );
-            }
-            
             // Фильтрация по email
             if (searchTerm && searchTerm.trim()) {
                 const searchLower = searchTerm.toLowerCase();
                 filteredData = filteredData.filter(user => {
                     return user.email?.toLowerCase().includes(searchLower);
-                });
-            }
-            break;
-
-        case 'requests':
-            // Фильтрация по статусу
-            if (selectedStatusFilter && selectedStatusFilter !== '') {
-                filteredData = filteredData.filter(request => 
-                    request.status === selectedStatusFilter
-                );
-            }
-            
-            // Фильтрация по описанию
-            if (searchTerm && searchTerm.trim()) {
-                const searchLower = searchTerm.toLowerCase();
-                filteredData = filteredData.filter(request => {
-                    return request.description?.toLowerCase().includes(searchLower);
                 });
             }
             break;
@@ -298,16 +225,6 @@ export const filterData = (
             }
             break;
 
-        case 'documents':
-            // Фильтрация по названию
-            if (searchTerm && searchTerm.trim()) {
-                const searchLower = searchTerm.toLowerCase();
-                filteredData = filteredData.filter(doc => {
-                    return doc.document_name?.toLowerCase().includes(searchLower);
-                });
-            }
-            break;
-
         case 'specialties':
             // Фильтрация по названию или квалификации
             if (searchTerm && searchTerm.trim()) {
@@ -338,26 +255,6 @@ export const filterData = (
 // Функция для подготовки данных формы перед отправкой
 export const prepareFormData = (formData, activeTab) => {
     let submitData = { ...formData };
-    
-    // Специальная обработка для заявок
-    if (activeTab === 'requests') {
-        if (submitData.studentIds) {
-            submitData.studentIds = (Array.isArray(submitData.studentIds)
-                ? submitData.studentIds
-                : [submitData.studentIds]
-            ).map(id => parseInt(id, 10));
-        }
-
-        // Преобразуем documentId в число, если он есть, или null если пустая строка/не задан
-        if ('documentId' in submitData) {
-            submitData.documentId = submitData.documentId ? parseInt(submitData.documentId, 10) : null;
-        }
-    }
-
-    // Привязка аккаунта к студенту или куратору
-    if ((activeTab === 'students' || activeTab === 'teachers') && 'userId' in submitData) {
-        submitData.userId = submitData.userId ? parseInt(submitData.userId, 10) : null;
-    }
 
     if (activeTab === 'students' && 'expell_reason' in submitData) {
         submitData.expell_reason = submitData.expell_reason || null;

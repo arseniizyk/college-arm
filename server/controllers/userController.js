@@ -2,7 +2,6 @@ const ApiError = require('../error/ApiError')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const { User, USER_WITH_PASSWORD } = require('../models/models')
-const { findSupervisorGroupIds } = require('../utils/supervisorGroup')
 const { validatePassword } = require('../utils/passwordPolicy')
 const { buildEmailWhere, findByEmail, isSameEmail } = require('../utils/userEmail')
 
@@ -16,26 +15,7 @@ const generateJwt = (id, email, role) => {
 
 class UserController {
     async registration(req, res, next) {
-        try {
-            const { email, password } = req.body
-            if (!password || !email) {
-                return next(ApiError.badRequest('Некорректный email или пароль'))
-            }
-            const { error: passwordError } = validatePassword(password)
-            if (passwordError) {
-                return next(passwordError)
-            }
-            const candidate = await findByEmail(email)
-            if (candidate) {
-                return next(ApiError.badRequest("Пользователь с таким email уже существует"))
-            }
-            const hashPassword = await bcrypt.hash(password, 5)
-            const user = await User.create({ email, password: hashPassword })
-            const token = generateJwt(user.id, user.email, user.role)
-            return res.json({ token })
-        } catch (error) {
-            next(ApiError.internalRequest(error.message))
-        }
+        return next(ApiError.forbiddenRequest('Регистрация отключена. Обратитесь к администратору'))
     }
 
     async login(req, res, next) {
@@ -54,6 +34,9 @@ class UserController {
             if (!comparePassword) {
                 return next(ApiError.badRequest('Неверный email или пароль'))
             }
+            if (user.role !== 'ADMIN') {
+                return next(ApiError.forbiddenRequest('Доступ разрешен только администраторам'))
+            }
             const token = generateJwt(user.id, user.email, user.role)
             return res.json({ token })
         } catch (error) {
@@ -69,6 +52,9 @@ class UserController {
             if (!user) {
                 return res.status(401).json({ message: 'Пользователь не авторизован' })
             }
+            if (user.role !== 'ADMIN') {
+                return res.status(403).json({ message: 'Доступ разрешен только администраторам' })
+            }
             const token = generateJwt(user.id, user.email, user.role)
             return res.json({ token })
         } catch (error) {
@@ -78,10 +64,10 @@ class UserController {
 
     async getMe(req, res, next) {
         try {
-            const userId = req.user.id; // Получаем ID из токена (authMiddleware)
+            const userId = req.user.id;
             
             const user = await User.findByPk(userId, {
-                attributes: { exclude: ['password'] } // Исключаем пароль из ответа
+                attributes: { exclude: ['password'] }
             });
             
             if (!user) {
@@ -89,12 +75,6 @@ class UserController {
             }
 
             const payload = user.get({ plain: true });
-
-            // Куратору сообщаем его группы, чтобы форма заявки показала только их студентов
-            if (payload.role === 'TEACHER') {
-                payload.groupIds = await findSupervisorGroupIds(userId);
-            }
-
             return res.json(payload);
         } catch (error) {
             next(ApiError.internalRequest(error.message));
@@ -114,7 +94,7 @@ class UserController {
 
     async create(req, res, next) {
         try {
-            const {email, password, role} = req.body
+            const {email, password} = req.body
             
             if (!email || !password) {
                 return next(ApiError.badRequest('Не все обязательные поля заполнены'));
@@ -131,7 +111,7 @@ class UserController {
             }
 
             const hashPassword = await bcrypt.hash(password, 5)
-            const user = await User.create({ email, role: role || 'USER', password: hashPassword })
+            const user = await User.create({ email, role: 'ADMIN', password: hashPassword })
             const safeUser = { ...user.get({ plain: true }) };
             delete safeUser.password;
             res.json(safeUser)
@@ -148,14 +128,16 @@ class UserController {
             if (!id) {
                 return next(ApiError.badRequest('Не указан ID пользователя'));
             }
+
+            if (role && role !== 'ADMIN') {
+                return next(ApiError.badRequest('Допустима только роль ADMIN'));
+            }
             
             const user = await User.findByPk(id);
             if (!user) {
                 return next(ApiError.badRequest('Пользователь не найден'));
             }
             
-            // Проверяем, не занят ли email другим пользователем. Смена одного
-            // только регистра исключается: это тот же самый аккаунт.
             if (email && !isSameEmail(email, user.email)) {
                 const candidate = await findByEmail(email, user.id);
                 if (candidate) {
@@ -165,7 +147,6 @@ class UserController {
             
             const updateData = {};
             if (email) updateData.email = email;
-            if (role) updateData.role = role;
             if (password) {
                 const { error: passwordError } = validatePassword(password)
                 if (passwordError) {
@@ -176,7 +157,6 @@ class UserController {
             
             await user.update(updateData);
             
-            // Возвращаем обновленного пользователя без пароля
             const updatedUser = await User.findByPk(id, {
                 attributes: { exclude: ['password'] }
             });
@@ -187,24 +167,20 @@ class UserController {
         }
     }
 
-    async delete(req, res, next){
+    async delete(req, res, next) {
         try {
-            const { id } = req.params; 
+            const { id } = req.params;
             if (!id) {
                 return next(ApiError.badRequest('Не указан ID пользователя'));
             }
-            if (String(id) === String(req.user.id)) {
-                return next(ApiError.badRequest('Нельзя удалить свой собственный аккаунт'));
-            }
-            const usr = await User.findByPk(id);
-            if (!usr) {
+
+            const user = await User.findByPk(id);
+            if (!user) {
                 return next(ApiError.badRequest('Пользователь не найден'));
             }
-            await usr.destroy();
-            return res.json({
-                message: 'User deleted successfully',
-                deletedUser: usr
-            });
+
+            await user.destroy();
+            return res.json({ message: 'Пользователь успешно удален' });
         } catch (error) {
             next(ApiError.internalRequest(error.message));
         }
@@ -212,41 +188,32 @@ class UserController {
 
     async changePassword(req, res, next) {
         try {
-            const userId = req.user.id; // Получаем ID из токена (authMiddleware)
+            const userId = req.user.id;
             const { currentPassword, newPassword } = req.body;
 
             if (!currentPassword || !newPassword) {
-                return next(ApiError.badRequest('Не все поля заполнены'));
+                return next(ApiError.badRequest('Заполните все поля'));
             }
 
-            const { error: passwordError } = validatePassword(newPassword)
+            const { error: passwordError } = validatePassword(newPassword);
             if (passwordError) {
-                return next(passwordError)
+                return next(passwordError);
             }
 
-            // Находим пользователя (нужен хеш пароля для проверки)
             const user = await User.scope(USER_WITH_PASSWORD).findByPk(userId);
             if (!user) {
                 return next(ApiError.badRequest('Пользователь не найден'));
             }
 
-            // Проверяем текущий пароль
-            const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
-            if (!isPasswordValid) {
+            const comparePassword = await bcrypt.compare(currentPassword, user.password);
+            if (!comparePassword) {
                 return next(ApiError.badRequest('Неверный текущий пароль'));
             }
 
-            // Проверяем, что новый пароль отличается от текущего
-            const isSamePassword = await bcrypt.compare(newPassword, user.password);
-            if (isSamePassword) {
-                return next(ApiError.badRequest('Новый пароль должен отличаться от текущего'));
-            }
-
-            // Хешируем новый пароль и обновляем
             const hashPassword = await bcrypt.hash(newPassword, 5);
             await user.update({ password: hashPassword });
 
-            res.json({ message: 'Пароль успешно изменен' });
+            return res.json({ message: 'Пароль успешно изменен' });
         } catch (error) {
             next(ApiError.internalRequest(error.message));
         }
@@ -254,52 +221,34 @@ class UserController {
 
     async changeEmail(req, res, next) {
         try {
-            const userId = req.user.id; // Получаем ID из токена (authMiddleware)
+            const userId = req.user.id;
             const { newEmail, password } = req.body;
 
             if (!newEmail || !password) {
-                return next(ApiError.badRequest('Не все поля заполнены'));
+                return next(ApiError.badRequest('Заполните все поля'));
             }
 
-            // Валидация email
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(newEmail)) {
-                return next(ApiError.badRequest('Некорректный формат email'));
-            }
-
-            // Находим пользователя (нужен хеш пароля для проверки)
             const user = await User.scope(USER_WITH_PASSWORD).findByPk(userId);
             if (!user) {
                 return next(ApiError.badRequest('Пользователь не найден'));
             }
 
-            // Проверяем пароль
-            const isPasswordValid = await bcrypt.compare(password, user.password);
-            if (!isPasswordValid) {
+            const comparePassword = await bcrypt.compare(password, user.password);
+            if (!comparePassword) {
                 return next(ApiError.badRequest('Неверный пароль'));
             }
 
-            // Проверяем, что новый email отличается от текущего
-            if (isSameEmail(user.email, newEmail)) {
-                return next(ApiError.badRequest('Новый email совпадает с текущим'));
+            if (!isSameEmail(newEmail, user.email)) {
+                const candidate = await findByEmail(newEmail, userId);
+                if (candidate) {
+                    return next(ApiError.badRequest('Пользователь с таким email уже существует'));
+                }
             }
 
-            // Проверяем, не занят ли email другим пользователем
-            const existingUser = await findByEmail(newEmail, user.id);
-            if (existingUser) {
-                return next(ApiError.badRequest('Пользователь с таким email уже существует'));
-            }
-
-            // Обновляем email
             await user.update({ email: newEmail });
-
-            // Генерируем новый токен с обновленным email
             const token = generateJwt(user.id, newEmail, user.role);
 
-            res.json({ 
-                message: 'Email успешно изменен',
-                token: token
-            });
+            return res.json({ message: 'Email успешно изменен', token });
         } catch (error) {
             next(ApiError.internalRequest(error.message));
         }
@@ -307,29 +256,25 @@ class UserController {
 
     async deleteMyAccount(req, res, next) {
         try {
-            const userId = req.user.id; // Получаем ID из токена (authMiddleware)
+            const userId = req.user.id;
             const { password } = req.body;
 
             if (!password) {
-                return next(ApiError.badRequest('Необходимо ввести пароль для подтверждения'));
+                return next(ApiError.badRequest('Введите пароль для подтверждения'));
             }
 
-            // Находим пользователя (нужен хеш пароля для проверки)
             const user = await User.scope(USER_WITH_PASSWORD).findByPk(userId);
             if (!user) {
                 return next(ApiError.badRequest('Пользователь не найден'));
             }
 
-            // Проверяем пароль
-            const isPasswordValid = await bcrypt.compare(password, user.password);
-            if (!isPasswordValid) {
+            const comparePassword = await bcrypt.compare(password, user.password);
+            if (!comparePassword) {
                 return next(ApiError.badRequest('Неверный пароль'));
             }
 
-            // Удаляем пользователя
             await user.destroy();
-
-            res.json({ message: 'Аккаунт успешно удален' });
+            return res.json({ message: 'Аккаунт успешно удален' });
         } catch (error) {
             next(ApiError.internalRequest(error.message));
         }

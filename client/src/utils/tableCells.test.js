@@ -29,15 +29,12 @@ test('у всех колонок известный форматтер', () => {
 })
 
 test('у вычисляемых колонок есть форматтер', () => {
-  // course, supervisor, duration и students в строке группы или заявки
-  // отсутствуют — без форматтера в колонке был бы дефис.
   const renderOf = (table, key) =>
     TABLE_COLUMNS[table].find(col => col.key === key)?.render
 
   expect(renderOf('groups', 'course')).toBe('course')
   expect(renderOf('groups', 'supervisor')).toBe('supervisor')
   expect(renderOf('specialties', 'duration')).toBe('duration')
-  expect(renderOf('requests', 'students')).toBe('students')
 })
 
 test('неизвестный форматтер падает с именем колонки', () => {
@@ -67,7 +64,6 @@ test('ноль — не пустое значение', () => {
 })
 
 test('число не превращается в дату', () => {
-  // Без раннего выхода typeof number проверка дат проглатывала бы его в Date.
   expect(resolveCellContent(column('duration_years'), { duration_years: 2019 })).toEqual({ text: '2019' })
 })
 
@@ -84,7 +80,7 @@ test('не-дата в колонке даты показывается как �
 
 test('длинный текст обрезается, полный остаётся в подсказке', () => {
   const long = 'я'.repeat(80)
-  const cell = resolveCellContent(column('description'), { description: long })
+  const cell = resolveCellContent(column('qualification'), { qualification: long })
   expect(cell.text).toBe(`${'я'.repeat(50)}...`)
   expect(cell.title).toBe(long)
 })
@@ -105,11 +101,6 @@ test('несуществующий id в ссылке не молчит', () => 
   const names = (key, value) => getNameById(key, value, {})
   expect(resolveCellContent(column('groupId', 'reference'), { groupId: 9 }, { names }))
     .toEqual({ text: 'ID: 9' })
-})
-
-test('статус приходит бейджем с подписью из requestStatus', () => {
-  expect(resolveCellContent(column('status', 'status'), { status: 'completed' }))
-    .toEqual({ text: 'Завершено', variant: 'success' })
 })
 
 test('неизвестная роль остаётся как есть', () => {
@@ -153,27 +144,4 @@ test('куратор читается из вложенного supervisor.teach
 test('группа без куратора показывает дефис', () => {
   expect(resolveCellContent(column('supervisor', 'supervisor'), group({ supervisor: null }))).toBeNull()
   expect(resolveCellContent(column('supervisor', 'supervisor'), group({ supervisor: {} }))).toBeNull()
-})
-
-test('студенты заявки склеиваются в одну строку', () => {
-  const students = [
-    { last_name: 'Петров', name: 'Пётр' },
-    { last_name: 'Сидоров', name: 'Сидор', father_name: 'Сидорович' }
-  ]
-  expect(resolveCellContent(column('students', 'students'), { students }))
-    .toEqual({ text: 'Петров Пётр, Сидоров Сидор Сидорович' })
-})
-
-test('заявка без студентов показывает дефис', () => {
-  expect(resolveCellContent(column('students', 'students'), { students: [] })).toBeNull()
-  expect(resolveCellContent(column('students', 'students'), {})).toBeNull()
-})
-
-test('список студентов обрезается с подсказкой, а не молча', () => {
-  const students = Array.from({ length: 20 }, (_, i) => ({
-    last_name: `Фамилия${i}`, name: 'Имя'
-  }))
-  const cell = resolveCellContent(column('students', 'students'), { students })
-  expect(cell.text.endsWith('...')).toBe(true)
-  expect(cell.title.split(', ')).toHaveLength(20)
 })

@@ -6,13 +6,12 @@ const { spawnSync } = require('child_process')
 const bcrypt = require('bcrypt')
 const sequelize = require('../db')
 const {
-    User, Student, Teacher, Supervisor, Group, Specialty, Document,
-    Request, Notification, StudentRequest
+    User, Student, Teacher, Supervisor, Group, Specialty
 } = require('../models/models')
 const { isSameEmail } = require('../utils/userEmail')
 
 // Разбор аргументов командной строки:
-// node scripts/importDocxStudents.js [путь_к_docx] [--force] [--admin-email=admin@test.ru] [--admin-password=pass] [--with-accounts]
+// node scripts/importDocxStudents.js [путь_к_docx] [--force] [--admin-email=admin@test.ru] [--admin-password=pass]
 const rawArgs = process.argv.slice(2)
 const flags = Object.fromEntries(
     rawArgs
@@ -25,8 +24,7 @@ const flags = Object.fromEntries(
 
 const positionalPath = rawArgs.find(a => !a.startsWith('--'))
 const FORCE = flags.force === true || flags.force === 'true'
-const WITH_ACCOUNTS = flags['with-accounts'] === true || flags['with-accounts'] === 'true'
-const ADMIN_EMAIL = flags['admin-email'] || null
+const ADMIN_EMAIL = flags['admin-email'] || 'admin@test.ru'
 const ADMIN_PASSWORD = flags['admin-password'] || 'password123'
 
 function resolveDocxPath() {
@@ -43,15 +41,11 @@ function resolveDocxPath() {
 
 async function wipeDatabase() {
     console.log('Очистка базы данных (--force):')
-    await StudentRequest.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true })
-    await Notification.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true })
-    await Request.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true })
     await Supervisor.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true })
     await Student.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true })
     await Teacher.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true })
     await Group.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true })
     await Specialty.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true })
-    await Document.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true })
     await User.destroy({ where: {}, truncate: true, cascade: true, restartIdentity: true })
     console.log('✓ Таблицы очищены.')
 }
@@ -68,7 +62,6 @@ async function main() {
         console.error('  --force                       Полная очистка базы перед импортом')
         console.error('  --admin-email=<email>         Создать администратора с указанным email')
         console.error('  --admin-password=<password>   Пароль для администратора (по умолчанию password123)')
-        console.error('  --with-accounts               Создавать тестовые аккаунты для кураторов и студентов')
         process.exit(1)
     }
 
@@ -76,13 +69,17 @@ async function main() {
 
     // 1. Вызов Python-парсера
     const pythonScript = path.join(__dirname, 'parseDocx.py')
-    let py = spawnSync('python', [pythonScript, docxPath], { encoding: 'utf-8', maxBuffer: 50 * 1024 * 1024, env: { ...process.env, PYTHONIOENCODING: 'utf-8' } })
-    if (py.error && py.error.code === 'ENOENT') {
-        py = spawnSync('py', [pythonScript, docxPath], { encoding: 'utf-8', maxBuffer: 50 * 1024 * 1024, env: { ...process.env, PYTHONIOENCODING: 'utf-8' } })
+    let py = null
+    for (const cmd of ['python3', 'python', 'py']) {
+        const res = spawnSync(cmd, [pythonScript, docxPath], { encoding: 'utf-8', maxBuffer: 50 * 1024 * 1024, env: { ...process.env, PYTHONIOENCODING: 'utf-8' } })
+        if (!res.error && res.status === 0) {
+            py = res
+            break
+        }
     }
 
-    if (py.error || py.status !== 0) {
-        console.error('Ошибка выполнения Python-парсера:', py.stderr || py.error)
+    if (!py || py.error || py.status !== 0) {
+        console.error('Ошибка выполнения Python-парсера:', py ? (py.stderr || py.error) : 'Python не найден')
         process.exit(1)
     }
 
@@ -117,21 +114,7 @@ async function main() {
         }
     }
 
-    // 4. Справочник документов
-    const documentNames = [
-        'Справка об обучении',
-        'Справка об окончании',
-        'Договор о практике',
-        'Приказ о зачислении'
-    ]
-    for (const name of documentNames) {
-        const [doc] = await Document.findOrCreate({
-            where: { document_name: name },
-            defaults: { document_name: name }
-        })
-    }
-
-    // 5. Импорт специальностей
+    // 4. Импорт специальностей
     const specialtyMap = new Map()
     for (const g of groupsData) {
         const key = `${g.specialty_name}|||${g.qualification}`
@@ -144,8 +127,8 @@ async function main() {
                 defaults: {
                     name: g.specialty_name,
                     qualification: g.qualification,
-                    duration_years: g.duration_years,
-                    duration_months: g.duration_months
+                    duration_years: 4,
+                    duration_months: 0
                 }
             })
             specialtyMap.set(key, spec)
@@ -153,29 +136,12 @@ async function main() {
     }
     console.log(`✓ Специальности обработаны: ${specialtyMap.size}`)
 
-    // 6. Импорт преподавателей / кураторов
+    // 5. Импорт преподавателей / кураторов
     const teacherMap = new Map()
-    let teacherUserIndex = 0
 
     for (const g of groupsData) {
         const fio = `${g.curator_last_name} ${g.curator_name} ${g.curator_father_name}`.trim()
         if (fio && !teacherMap.has(fio)) {
-            let userId = null
-
-            if (WITH_ACCOUNTS) {
-                teacherUserIndex++
-                const teacherEmail = `teacher${teacherUserIndex}@test.ru`
-                const [tUser] = await User.findOrCreate({
-                    where: { email: teacherEmail },
-                    defaults: {
-                        email: teacherEmail,
-                        password: defaultPasswordHash,
-                        role: 'TEACHER'
-                    }
-                })
-                userId = tUser.id
-            }
-
             const [teacher] = await Teacher.findOrCreate({
                 where: {
                     last_name: g.curator_last_name,
@@ -185,8 +151,7 @@ async function main() {
                 defaults: {
                     last_name: g.curator_last_name,
                     name: g.curator_name,
-                    father_name: g.curator_father_name,
-                    userId
+                    father_name: g.curator_father_name
                 }
             })
 
@@ -195,10 +160,9 @@ async function main() {
     }
     console.log(`✓ Преподаватели/кураторы обработаны: ${teacherMap.size}`)
 
-    // 7. Импорт групп и студентов
+    // 6. Импорт групп и студентов
     let totalStudentsCount = 0
     let totalExpelledCount = 0
-    let studentUserIndex = 0
 
     for (const g of groupsData) {
         const specKey = `${g.specialty_name}|||${g.qualification}`
@@ -239,21 +203,6 @@ async function main() {
             totalStudentsCount++
             if (s.is_expelled) totalExpelledCount++
 
-            let userId = null
-            if (WITH_ACCOUNTS && studentUserIndex < 15 && !s.is_expelled) {
-                studentUserIndex++
-                const studentEmail = `user${studentUserIndex}@test.ru`
-                const [sUser] = await User.findOrCreate({
-                    where: { email: studentEmail },
-                    defaults: {
-                        email: studentEmail,
-                        password: defaultPasswordHash,
-                        role: 'USER'
-                    }
-                })
-                userId = sUser.id
-            }
-
             studentPayloads.push({
                 last_name: s.last_name,
                 name: s.name,
@@ -262,8 +211,7 @@ async function main() {
                 enroll_date: s.enroll_date ? new Date(s.enroll_date) : new Date(g.enroll_date || '2026-09-01'),
                 expell_date: s.expell_date ? new Date(s.expell_date) : null,
                 expell_reason: s.expell_reason || null,
-                groupId: group.id,
-                userId
+                groupId: group.id
             })
         }
 

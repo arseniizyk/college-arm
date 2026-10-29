@@ -1,5 +1,4 @@
-import { canSelectMultipleStudents, MIN_PASSWORD_LENGTH } from './consts'
-import { statusOptions } from './requestStatus'
+import { MIN_PASSWORD_LENGTH } from './consts'
 
 // Конфигурация колонок для таблиц.
 export const TABLE_COLUMNS = {
@@ -9,19 +8,6 @@ export const TABLE_COLUMNS = {
         { key: 'role', label: 'Роль', render: 'role', sortable: false },
         { key: 'createdAt', label: 'Создан' }
     ],
-    documents: [
-        { key: 'id', label: '№', sortable: false, className: 'col-id' },
-        { key: 'document_name', label: 'Название', sortable: false },
-        { key: 'createdAt', label: 'Создан', sortable: false }
-    ],
-    requests: [
-        { key: 'id', label: '№', className: 'col-id' },
-        { key: 'documentId', label: 'Документ', render: 'reference' },
-        { key: 'description', label: 'Описание', sortable: false, className: 'cell-wrap' },
-        { key: 'students', label: 'Студенты', render: 'students', sortable: false, className: 'cell-wrap' },
-        { key: 'status', label: 'Статус', render: 'status' },
-        { key: 'createdAt', label: 'Создана' }
-    ],
     students: [
         { key: 'id', label: '№', className: 'col-id' },
         { key: 'last_name', label: 'Фамилия' },
@@ -30,8 +16,7 @@ export const TABLE_COLUMNS = {
         { key: 'order_number', label: 'Приказ', sortable: false },
         { key: 'enroll_date', label: 'Зачислен' },
         { key: 'expell_date', label: 'Отчислен', render: 'expellDate' },
-        { key: 'groupId', label: 'Группа', render: 'reference' },
-        { key: 'userId', label: 'Аккаунт', render: 'reference', sortable: false }
+        { key: 'groupId', label: 'Группа', render: 'reference' }
     ],
     groups: [
         { key: 'id', label: '№', className: 'col-id' },
@@ -52,27 +37,17 @@ export const TABLE_COLUMNS = {
         { key: 'id', label: '№', className: 'col-id' },
         { key: 'last_name', label: 'Фамилия' },
         { key: 'name', label: 'Имя' },
-        { key: 'father_name', label: 'Отчество' },
-        { key: 'userId', label: 'Аккаунт', render: 'reference', sortable: false }
+        { key: 'father_name', label: 'Отчество' }
     ]
 };
 
 // Конфигурация форм по умолчанию
-export const getDefaultFormData = (table, userRole) => {
+export const getDefaultFormData = (table) => {
     const defaults = {
         users: {
             email: '',
             password: '',
-            role: 'USER'
-        },
-        documents: {
-            document_name: ''
-        },
-        requests: {
-            documentId: '',
-            description: '',
-            studentIds: canSelectMultipleStudents(userRole) ? [] : '',
-            status: 'pending'
+            role: 'ADMIN'
         },
         students: {
             last_name: '',
@@ -82,8 +57,7 @@ export const getDefaultFormData = (table, userRole) => {
             enroll_date: '',
             expell_date: '',
             expell_reason: '',
-            groupId: '',
-            userId: ''
+            groupId: ''
         },
         groups: {
             group_number: '',
@@ -101,42 +75,19 @@ export const getDefaultFormData = (table, userRole) => {
         teachers: {
             last_name: '',
             name: '',
-            father_name: '',
-            userId: ''
+            father_name: ''
         }
     };
     return defaults[table] || {};
 };
 
 // Конфигурация полей форм
-export const getFieldsConfig = (userRole, getDropdownOptions, modalType = 'create') => ({
+export const getFieldsConfig = (_userRole, getDropdownOptions, modalType = 'create') => ({
     users: [
-        { name: 'email', label: 'Email', type: 'email', required: true, placeholder: 'user@example.com' },
+        { name: 'email', label: 'Email', type: 'email', required: true, placeholder: 'admin@example.com' },
         { name: 'password', label: 'Пароль', type: 'password', required: modalType === 'create',
           placeholder: modalType === 'create' ? 'Введите пароль' : 'Оставьте пустым, если не меняете',
-          helpText: `Минимум ${MIN_PASSWORD_LENGTH} символа` },
-        { name: 'role', label: 'Роль', type: 'select', options: ['USER', 'ADMIN', 'TEACHER'] }
-    ],
-    documents: [
-        { name: 'document_name', label: 'Название документа', type: 'text', required: true, 
-          placeholder: 'Введите название документа' }
-    ],
-    requests: [
-        { name: 'documentId', label: 'Документ', type: 'select', options: getDropdownOptions('documentId') },
-        { name: 'description', label: 'Описание (если документ не выбран)', type: 'textarea', placeholder: 'Опишите требуемый документ' },
-        { 
-            name: 'studentIds', 
-            label: 'Студенты', 
-            type: canSelectMultipleStudents(userRole) ? 'multiselect' : 'select', 
-            options: getDropdownOptions('studentIds'), 
-            required: true,
-            helpText: canSelectMultipleStudents(userRole)
-                ? 'Вы можете выбрать нескольких студентов'
-                : 'Вы можете выбрать только одного студента'
-        },
-        { name: 'status', label: 'Статус', type: 'select',
-          options: statusOptions()
-        }
+          helpText: `Минимум ${MIN_PASSWORD_LENGTH} символа` }
     ],
     students: [
         { name: 'last_name', label: 'Фамилия', type: 'text', required: true },
@@ -146,14 +97,12 @@ export const getFieldsConfig = (userRole, getDropdownOptions, modalType = 'creat
         { name: 'enroll_date', label: 'Дата зачисления', type: 'date', required: true },
         { name: 'expell_date', label: 'Дата отчисления', type: 'date' },
         { name: 'expell_reason', label: 'Причина отчисления', type: 'textarea', placeholder: 'Причина и приказ об отчислении' },
-        { name: 'groupId', label: 'Группа', type: 'select', options: getDropdownOptions('groupId'), required: true },
-        { name: 'userId', label: 'Аккаунт', type: 'select', options: getDropdownOptions('studentUserId'),
-          helpText: 'Пользователь, который сможет подавать заявки только на этого студента' }
+        { name: 'groupId', label: 'Группа', type: 'select', options: getDropdownOptions('groupId'), required: true }
     ],
     groups: [
         { name: 'group_number', label: 'Номер группы', type: 'text', required: true },
         { name: 'specialtyId', label: 'Специальность', type: 'select', options: getDropdownOptions('specialtyId'), required: true },
-        { name: 'teacherId', label: 'Преподаватель', type: 'select', options: getDropdownOptions('teacherId'), required: modalType === 'create' },
+        { name: 'teacherId', label: 'Преподаватель (куратор)', type: 'select', options: getDropdownOptions('teacherId'), required: modalType === 'create' },
         { name: 'enroll_date', label: 'Дата зачисления', type: 'date', required: true },
         { name: 'payment_type', label: 'Основа обучения', type: 'select', 
           options: [
@@ -172,17 +121,13 @@ export const getFieldsConfig = (userRole, getDropdownOptions, modalType = 'creat
     teachers: [
         { name: 'last_name', label: 'Фамилия', type: 'text', required: true },
         { name: 'name', label: 'Имя', type: 'text', required: true },
-        { name: 'father_name', label: 'Отчество', type: 'text' },
-        { name: 'userId', label: 'Аккаунт', type: 'select', options: getDropdownOptions('teacherUserId'),
-          helpText: 'Куратор, который сможет подавать заявки только на студентов своей группы' }
+        { name: 'father_name', label: 'Отчество', type: 'text' }
     ]
 });
 
 // Названия таблиц для модальных окон
 export const TABLE_NAMES = {
-    users: 'Пользователя',
-    documents: 'Документа',
-    requests: 'Заявки',
+    users: 'Пользователя (Администратора)',
     students: 'Студента',
     groups: 'Группы',
     specialties: 'Специальности',

@@ -1,31 +1,23 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { Container, Card, Spinner, Alert, Badge, Tabs, Tab, Form, Button, Modal } from 'react-bootstrap';
+import { Container, Card, Spinner, Alert, Tabs, Tab, Form, Button, Modal } from 'react-bootstrap';
 import { Context } from '../index';
 import { observer } from 'mobx-react-lite';
-import { useNavigate, Link } from 'react-router-dom';
-import RequestCard from '../components/RequestCard';
-import { getNameById as getNameByIdForField } from '../utils/dataHelpers';
+import { useNavigate } from 'react-router-dom';
 import { $authHost, errorMessage } from '../http';
-import Pagination from '../components/Pagination';
-import { ITEMS_PER_PAGE, MIN_PASSWORD_LENGTH, REQUEST_ROUTE, MAIN_ROUTE } from '../utils/consts';
-import { REQUEST_STATUSES, STATUS_KEYS, statusLabelPlural } from '../utils/requestStatus';
+import { MIN_PASSWORD_LENGTH, ADMIN_ROUTE, LOGIN_ROUTE } from '../utils/consts';
 import { notify } from '../context/ToastContext';
 import Breadcrumbs from '../components/Breadcrumbs';
 import './Profile.css';
 
 const Profile = observer(() => {
-    const { data, user } = useContext(Context);
+    const { user } = useContext(Context);
     const navigate = useNavigate();
     const currentUser = user.getUser();
     
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [mainTab, setMainTab] = useState('requests'); // Главная вкладка: requests, settings, about
-    const [requestsTab, setRequestsTab] = useState('all'); // Подвкладка заявок
-    const [settingsTab, setSettingsTab] = useState('password'); // Подвкладка настроек: password, email
-    const [currentPage, setCurrentPage] = useState(1);
-    const [isSyncing, setIsSyncing] = useState(false);
-    const itemsPerPage = ITEMS_PER_PAGE; // Количество заявок на странице
+    const [mainTab, setMainTab] = useState('settings');
+    const [settingsTab, setSettingsTab] = useState('password');
 
     // Состояния для формы смены пароля
     const [passwordForm, setPasswordForm] = useState({
@@ -62,131 +54,50 @@ const Profile = observer(() => {
         const loadData = async () => {
             setLoading(true);
             try {
-                // Полная информация о пользователе — её сбой не должен блокировать остальные списки
-                try {
-                    const { data: userData } = await $authHost.get('/api/user/me');
-                    setUserInfo(userData);
-                } catch (err) {
-                    console.error('Ошибка загрузки профиля:', err);
-                }
-
-                await Promise.all([
-                    data.fetchMyRequests(),
-                    data.fetchAll('documents'),
-                    data.fetchAll('students'),
-                    data.fetchAll('groups')
-                ]);
+                const { data: userData } = await $authHost.get('/api/user/me');
+                setUserInfo(userData);
             } catch (err) {
-                setError('Ошибка загрузки данных');
+                console.error('Ошибка загрузки профиля:', err);
+                setError('Ошибка загрузки профиля');
             } finally {
                 setLoading(false);
             }
         };
         loadData();
-    }, [data]);
+    }, []);
 
-    // Автоматическое обновление заявок каждую минуту
-    useEffect(() => {
-        const intervalId = setInterval(async () => {
-            try {
-                setIsSyncing(true);
-                // Получаем просмотренные заявки из localStorage
-                const viewedRequestsStr = localStorage.getItem('viewedRequests');
-                const viewedRequestIds = viewedRequestsStr ? JSON.parse(viewedRequestsStr) : [];
-                
-                // Обновляем заявки
-                await data.fetchMyRequests();
-                
-                // Восстанавливаем статус просмотренных заявок
-                viewedRequestIds.forEach(id => {
-                    data.updateLocal('myRequests', id, { isViewed: true });
-                });
-            } catch (err) {
-                console.error('Ошибка автообновления заявок:', err);
-            } finally {
-                setTimeout(() => setIsSyncing(false), 1200);
-            }
-        }, 60000); // 60000 мс = 1 минута
-
-        return () => clearInterval(intervalId);
-    }, [data]);
-
-    // Заявки приходят с сервера уже отфильтрованными по текущему пользователю
-    const userRequests = data.getMyRequests();
-
-    // Группируем заявки по статусам
-    const requestsByStatus = {
-        all: userRequests
-    };
-    for (const key of STATUS_KEYS) {
-        requestsByStatus[key] = userRequests.filter(req => req.status === key);
-    }
-
-    // Пагинация для текущей вкладки
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    const currentRequests = (requestsByStatus[requestsTab] || []).slice(startIndex, endIndex);
-
-    const totalPages = Math.ceil((requestsByStatus[requestsTab]?.length || 0) / itemsPerPage);
-
-    // Сброс на первую страницу при смене вкладки
-    useEffect(() => {
-        setCurrentPage(1);
-    }, [requestsTab]);
-
-    const getNameById = (fieldName, id) => getNameByIdForField(fieldName, id, data);
-
-    const statusInfo = {
-        all: { label: 'Все заявки', icon: 'bi-list-ul', color: 'secondary' }
-    };
-    for (const key of STATUS_KEYS) {
-        statusInfo[key] = {
-            label: statusLabelPlural(key),
-            icon: REQUEST_STATUSES[key].biIcon,
-            color: REQUEST_STATUSES[key].badge
-        };
-    }
-
-    // Обработчик изменения полей формы пароля
     const handlePasswordChange = (e) => {
         const { name, value } = e.target;
         setPasswordForm(prev => ({
             ...prev,
             [name]: value
         }));
-        // Очищаем ошибки при изменении полей
         setPasswordError(null);
     };
 
-    // Обработчик изменения полей формы email
     const handleEmailChange = (e) => {
         const { name, value } = e.target;
         setEmailForm(prev => ({
             ...prev,
             [name]: value
         }));
-        // Очищаем ошибки при изменении полей
         setEmailError(null);
     };
 
-    // Обработчик изменения полей формы удаления
     const handleDeleteChange = (e) => {
         const { name, value } = e.target;
         setDeleteForm(prev => ({
             ...prev,
             [name]: value
         }));
-        // Очищаем ошибки при изменении полей
         setDeleteError(null);
     };
 
-    // Обработчик отправки формы смены пароля
     const handlePasswordSubmit = async (e) => {
         e.preventDefault();
         setPasswordError(null);
         setPasswordSuccess(null);
 
-        // Валидация
         if (!passwordForm.currentPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
             setPasswordError('Все поля обязательны для заполнения');
             return;
@@ -234,19 +145,16 @@ const Profile = observer(() => {
         }
     };
 
-    // Обработчик отправки формы смены email
     const handleEmailSubmit = async (e) => {
         e.preventDefault();
         setEmailError(null);
         setEmailSuccess(null);
 
-        // Валидация
         if (!emailForm.newEmail || !emailForm.password) {
             setEmailError('Все поля обязательны для заполнения');
             return;
         }
 
-        // Простая валидация email
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(emailForm.newEmail)) {
             setEmailError('Некорректный формат email');
@@ -266,14 +174,12 @@ const Profile = observer(() => {
                 password: emailForm.password
             });
 
-            // Обновляем токен в localStorage
             if (result.token) {
                 localStorage.setItem('token', result.token);
                 user.setIsAuth(true);
                 user.setUser({ ...currentUser, email: emailForm.newEmail });
             }
 
-            // Обновляем информацию о пользователе
             setUserInfo(prev => ({ ...prev, email: emailForm.newEmail }));
 
             const emailMsg = 'Email успешно изменен. Используйте новый email для входа.';
@@ -294,11 +200,9 @@ const Profile = observer(() => {
         }
     };
 
-    // Обработчик удаления аккаунта
     const handleDeleteAccount = async () => {
         setDeleteError(null);
 
-        // Валидация
         if (!deleteForm.password) {
             setDeleteError('Необходимо ввести пароль');
             return;
@@ -316,11 +220,10 @@ const Profile = observer(() => {
                 data: { password: deleteForm.password }
             });
 
-            // Очищаем данные пользователя и перенаправляем на страницу входа
             localStorage.removeItem('token');
             user.setIsAuth(false);
             user.setUser({});
-            navigate('/login');
+            navigate(LOGIN_ROUTE);
 
         } catch (err) {
             setDeleteError(errorMessage(err, 'Ошибка при удалении аккаунта'));
@@ -331,7 +234,6 @@ const Profile = observer(() => {
 
     return (
         <div className="profile-page">
-            {/* Шапка */}
             <header className="profile-header py-5">
                 <div className="container">
                     <div className="row align-items-center">
@@ -340,27 +242,17 @@ const Profile = observer(() => {
                                 Личный кабинет
                             </h1>
                             <p className="lead mb-2">
-                                {currentUser?.email || 'Пользователь'}
+                                {currentUser?.email || 'Администратор'}
                             </p>
-                            <div className="d-flex justify-content-center">
-                                <span
-                                    className="badge bg-white text-dark bg-opacity-75 shadow-sm fw-normal py-1 px-3 d-inline-flex align-items-center"
-                                    title="Периодическая фоновая проверка каждые 60 секунд"
-                                >
-                                    <i className={`bi bi-arrow-repeat me-1 ${isSyncing ? 'spin-icon text-primary' : 'text-muted'}`}></i>
-                                    {isSyncing ? 'Синхронизация заявок...' : 'Данные актуальны'}
-                                </span>
-                            </div>
                         </div>
                     </div>
                 </div>
             </header>
 
-            {/* Основной контент */}
             <Container className="py-4">
                 <Breadcrumbs
                     items={[
-                        { label: 'Главная', path: MAIN_ROUTE, icon: 'bi-house-door' },
+                        { label: 'Панель управления', path: ADMIN_ROUTE, icon: 'bi-gear' },
                         { label: 'Личный кабинет', icon: 'bi-person-circle' }
                     ]}
                 />
@@ -377,123 +269,16 @@ const Profile = observer(() => {
                         <Spinner animation="border" role="status" variant="primary">
                             <span className="visually-hidden">Загрузка...</span>
                         </Spinner>
-                        <p className="mt-3 text-muted">Загрузка ваших заявок...</p>
+                        <p className="mt-3 text-muted">Загрузка профиля...</p>
                     </div>
                 ) : (
                     <>
-                        {/* Главные вкладки */}
                         <Tabs
                             activeKey={mainTab}
                             onSelect={(k) => setMainTab(k)}
                             className="mb-4 main-tabs"
                             variant="pills"
                         >
-                            {/* Вкладка Заявки */}
-                            <Tab
-                                eventKey="requests"
-                                title={
-                                    <span className="px-3">
-                                        <i className="bi bi-file-earmark-text me-2"></i>
-                                        Мои заявки
-                                    </span>
-                                }
-                            >
-                                <Card className="shadow-sm border-0">
-                                    <Card.Body>
-                                        <Tabs
-                                            activeKey={requestsTab}
-                                            onSelect={(k) => setRequestsTab(k)}
-                                            className="mb-4"
-                                        >
-                                            {Object.entries(statusInfo).map(([key, info]) => (
-                                                 <Tab
-                                                    key={key}
-                                                    eventKey={key}
-                                                    title={
-                                                        <span>
-                                                            <i className={`bi ${info.icon} me-2`}></i>
-                                                            {info.label}
-                                                            <Badge bg={info.color} className="ms-2">
-                                                                {requestsByStatus[key].length}
-                                                            </Badge>
-                                                        </span>
-                                                    }
-                                                >
-                                                    <div className="requests-list">
-                                                        {requestsByStatus[key].length > 0 ? (
-                                                            <>
-                                                                <div className="mb-3 d-flex justify-content-between align-items-center">
-                                                                    <small className="text-muted">
-                                                                        Показано заявок: {startIndex + 1}-{Math.min(endIndex, requestsByStatus[key].length)} из {requestsByStatus[key].length}
-                                                                    </small>
-                                                                    <small className="text-muted">
-                                                                        Страница {currentPage} из {totalPages}
-                                                                    </small>
-                                                                </div>
-                                                                {currentRequests.map(request => (
-                                                                    <RequestCard
-                                                                        key={request.id}
-                                                                        request={request}
-                                                                        getNameById={getNameById}
-                                                                        onStatusChange={null}
-                                                                        onViewUpdate={(requestId) => {
-                                                                            data.updateLocal('myRequests', requestId, { isViewed: true });
-                                                                            // Сохраняем в localStorage
-                                                                            const viewedRequestsStr = localStorage.getItem('viewedRequests');
-                                                                            const viewedRequestIds = viewedRequestsStr ? JSON.parse(viewedRequestsStr) : [];
-                                                                            if (!viewedRequestIds.includes(requestId)) {
-                                                                                viewedRequestIds.push(requestId);
-                                                                                localStorage.setItem('viewedRequests', JSON.stringify(viewedRequestIds));
-                                                                            }
-                                                                        }}
-                                                                    />
-                                                                ))}
-                                                                
-                                                                {/* Пагинация */}
-                                                                <Pagination
-                                                                    currentPage={currentPage}
-                                                                    totalPages={totalPages}
-                                                                    onPageChange={setCurrentPage}
-                                                                />
-                                                            </>
-                                                        ) : (
-                                                            <div className="text-center py-5">
-                                                                {key === 'all' ? (
-                                                                    <>
-                                                                        <i className="bi bi-inbox fs-1 text-muted mb-3 d-block"></i>
-                                                                        <h5 className="text-muted">У вас пока нет ни одной заявки</h5>
-                                                                        <p className="text-muted mb-3">
-                                                                            Оформите заявку на необходимый документ в несколько кликов
-                                                                        </p>
-                                                                        <Button as={Link} to={REQUEST_ROUTE} variant="primary">
-                                                                            <i className="bi bi-file-earmark-plus me-2"></i>
-                                                                            Подать заявку
-                                                                        </Button>
-                                                                    </>
-                                                                ) : (
-                                                                    <>
-                                                                        <i className={`bi ${info.icon} fs-1 text-muted mb-3 d-block`}></i>
-                                                                        <h5 className="text-muted">Нет заявок со статусом «{info.label}»</h5>
-                                                                        <p className="text-muted mb-3">
-                                                                            В этой категории пока нет записей
-                                                                        </p>
-                                                                        <Button variant="outline-secondary" size="sm" onClick={() => setRequestsTab('all')}>
-                                                                            <i className="bi bi-list-ul me-2"></i>
-                                                                            Показать все заявки
-                                                                        </Button>
-                                                                    </>
-                                                                )}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </Tab>
-                                            ))}
-                                        </Tabs>
-                                    </Card.Body>
-                                </Card>
-                            </Tab>
-
-                            {/* Вкладка Настройки */}
                             <Tab
                                 eventKey="settings"
                                 title={
@@ -510,7 +295,6 @@ const Profile = observer(() => {
                                             onSelect={(k) => setSettingsTab(k)}
                                             className="mb-4"
                                         >
-                                            {/* Подвкладка: Изменение пароля */}
                                             <Tab
                                                 eventKey="password"
                                                 title={
@@ -605,7 +389,6 @@ const Profile = observer(() => {
                                                 </div>
                                             </Tab>
 
-                                            {/* Подвкладка: Изменение Email */}
                                             <Tab
                                                 eventKey="email"
                                                 title={
@@ -691,7 +474,6 @@ const Profile = observer(() => {
                                                 </div>
                                             </Tab>
 
-                                            {/* Подвкладка: Безопасность */}
                                             <Tab
                                                 eventKey="security"
                                                 title={
@@ -713,15 +495,6 @@ const Profile = observer(() => {
                                                         </div>
                                                     </Alert>
 
-                                                    <div className="p-3 bg-light rounded mb-3">
-                                                        <h6 className="mb-2">Что будет удалено:</h6>
-                                                        <ul className="mb-0">
-                                                            <li>Ваш профиль и учетные данные</li>
-                                                            <li>Все созданные вами заявки</li>
-                                                            <li>История уведомлений</li>
-                                                        </ul>
-                                                    </div>
-
                                                     <Button
                                                         variant="danger"
                                                         onClick={() => setShowDeleteModal(true)}
@@ -736,7 +509,6 @@ const Profile = observer(() => {
                                 </Card>
                             </Tab>
 
-                            {/* Вкладка Обо мне */}
                             <Tab
                                 eventKey="about"
                                 title={
@@ -770,13 +542,7 @@ const Profile = observer(() => {
                                                         <i className="bi bi-shield-check text-success me-3 fs-4"></i>
                                                         <div>
                                                             <small className="text-muted d-block">Роль</small>
-                                                            <strong>
-                                                                {(userInfo?.role || currentUser?.role) === 'ADMIN' 
-                                                                    ? 'Администратор' 
-                                                                    : (userInfo?.role || currentUser?.role) === 'TEACHER' 
-                                                                    ? 'Преподаватель' 
-                                                                    : 'Пользователь'}
-                                                            </strong>
+                                                            <strong>Администратор</strong>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -798,16 +564,6 @@ const Profile = observer(() => {
                                                         </div>
                                                     </div>
                                                 </div>
-
-                                                <div className="info-item mb-3 p-3 bg-light rounded">
-                                                    <div className="d-flex align-items-center">
-                                                        <i className="bi bi-file-earmark-text text-warning me-3 fs-4"></i>
-                                                        <div>
-                                                            <small className="text-muted d-block">Всего заявок</small>
-                                                            <strong>{userRequests.length}</strong>
-                                                        </div>
-                                                    </div>
-                                                </div>
                                             </div>
                                         </div>
                                     </Card.Body>
@@ -818,7 +574,6 @@ const Profile = observer(() => {
                 )}
             </Container>
 
-            {/* Модальное окно подтверждения удаления аккаунта */}
             <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered scrollable>
                 <Modal.Header closeButton className="border-0">
                     <Modal.Title className="text-danger">
